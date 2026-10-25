@@ -15,7 +15,7 @@
   header{box-shadow:0 2px 12px rgba(27,58,95,.12)}
   .band1{background:#DCE5EF;color:#2C6DA8;text-align:center;padding:14px 12px;font-size:20px;font-weight:800;text-transform:uppercase}
   .band2{background:#CBDCEC;color:#1E6B2F;text-align:center;padding:12px;font-size:18px;font-weight:800}
-  main{padding:12px;max-width:1150px;margin:0 auto;background:#fff;box-shadow:0 2px 16px rgba(27,58,95,.10);min-height:100vh}
+  main{padding:12px 16px;max-width:none;margin:0;background:#fff;box-shadow:0 2px 16px rgba(27,58,95,.10);min-height:100vh}
   .card{background:#fff;border:1px solid #E2E8F0;border-radius:16px;padding:14px;margin-bottom:12px;box-shadow:0 2px 10px rgba(27,58,95,.06)}
   .card h2{margin:0 0 8px;font-size:16px}
   .sub{color:#6E6480;font-size:13px;margin:0 0 10px}
@@ -34,11 +34,19 @@
   th{background:#DCE5EF;color:#1B3A5F}
   table input,table select{width:100%;padding:6px;border:1px solid #C9D6E3;border-radius:6px;font-size:13px}
   table input.num{max-width:86px}
+  .req-empty{border-color:#B3261E !important;background:#FDECEA !important}
+  .qty-warn{background:#FFF3CD !important;border-color:#D9A400 !important}
+  .qty-red{background:#F8D7DA !important;border-color:#B3261E !important;color:#B3261E;font-weight:700}
+  table.ops-table th:nth-child(2),table.ops-table td:nth-child(2){min-width:240px}
   textarea{width:100%;min-height:110px;padding:10px;border:1px solid #C9D6E3;border-radius:10px;font-size:14px}
   .tot{font-size:16px;font-weight:700}
   .tag{display:inline-block;background:#EAF2E4;color:#2E5A1E;border-radius:20px;padding:2px 10px;font-size:12px}
   .tag-pend{background:#FBEED3;color:#7A4A00}
   .item{border:1px solid #E2E8F0;border-radius:10px;padding:10px;margin-bottom:8px}
+  .folder{background:#EDF1F7;cursor:pointer}
+  .folder .qty-badge{background:#1B3A5F;color:#fff;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:700;float:right}
+  .std-row{margin-left:16px;border-left:3px solid #2C6DA8;padding-left:10px}
+  mark{background:#FFF3CD;padding:0 2px;border-radius:3px}
   .item b{font-size:14px}
   .mut{color:#6E6480;font-size:13px}
   #status{display:inline-block;font-size:13px;color:#1E6B2F;border:1px solid #C9D6E3;border-radius:20px;padding:4px 12px;background:#fff}
@@ -61,9 +69,22 @@
     table input, table select{ border:0; padding:2px; }
   }
 
-  .topnav{background:#fff;max-width:1150px;margin:0 auto;padding:10px 12px;display:flex;gap:8px;flex-wrap:wrap;box-shadow:0 2px 16px rgba(27,58,95,.10)}
+  .topnav{background:#fff;max-width:none;margin:0;padding:10px 16px;display:flex;gap:8px;flex-wrap:wrap;box-shadow:0 2px 16px rgba(27,58,95,.10)}
   .topnav .btn{flex:1 1 200px}
   .subnav .btn{flex:1 1 140px}
+  .mtr{background:#D9EAD3 !important;font-weight:700}
+  .hide-allow .allow-col{display:none}
+  .folder{cursor:pointer}
+  @media print{
+    body.print-list-only .card{display:none !important}
+    body.print-list-only #homeListPanel{display:block !important}
+    body.print-list-only #pageHome{display:block !important}
+    body.print-list-only #page1, body.print-list-only #page2{display:none !important}
+    body.print-machine-only .card{display:none !important}
+    body.print-machine-only #machinePrintWrap{display:block !important}
+    body.print-machine-only #page1{display:block !important}
+    body.print-machine-only #pageHome, body.print-machine-only #page2{display:none !important}
+  }
 </style>
 </head>
 <body>
@@ -72,14 +93,103 @@
   <div class="band2">Sewing Thread &amp; Accessories Consumption Reports</div>
 </header>
 <nav class="topnav">
-  <button class="btn btn-p" id="navPage1">প্রথম পেজ — Admin Panel</button>
-  <button class="btn btn-o" id="navPage2">দ্বিতীয় পেজ — Sheets</button>
+  <button class="btn btn-p" id="navHome">Home</button>
+  <button class="btn btn-o" id="navPage1">Admin Panel</button>
+  <button class="btn btn-o" id="navPage2">Sheets</button>
 </nav>
 
 <main>
   <p id="status">Loading…</p>
 
-  <div id="page1">
+  <div id="pageHome">
+
+  <!-- ============ HOME ============ -->
+  <section class="card">
+    <h2>Home</h2>
+    <div class="row">
+      <label class="mut">Your name:</label>
+      <input class="fi" id="homeUserName" placeholder="Your name / username" style="max-width:220px">
+      <span class="mut" id="welcomeLine">Welcome to —</span>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <button class="btn btn-p" id="btnHomeStyleCheck">STYLE CHECK</button>
+      <button class="btn btn-o" id="btnHomeFolder">Style Check Folder</button>
+      <button class="btn btn-o" id="btnHomeBuyer">Buyer Wise Consumption</button>
+      <button class="btn btn-o" id="btnHomeList">Style list create</button>
+      <button class="btn btn-o" id="btnHomeDrafts">Saved Styles</button>
+    </div>
+    <div class="row" style="margin-top:8px">
+      <button class="btn btn-p" id="btnOpenReport">OPEN CONSUMPTION REPORT</button>
+      <button class="btn btn-o" id="btnHomeLogout">Logout</button>
+    </div>
+  </section>
+
+  <!-- HOME: STYLE CHECK panel -->
+  <section class="card" id="homeStyleCheckPanel" style="display:none">
+    <h2>▼ STYLE CHECK <span class="tag tag-pend">DRAFT</span></h2>
+    <div class="grid">
+      <div><label>Team Leader / Checker name</label><select class="fi" id="homeChecker"></select></div>
+      <div><label>Check information</label><p class="sub" style="margin:0">You may submit for Style Check, or use FINAL SAVE from any signed-in ID.</p></div>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <button class="btn btn-p" id="homeSubmitCheck">SUBMIT FOR CHECK</button>
+      <button class="btn btn-p" id="homeMarkChecked">MARK AS CHECKED</button>
+      <button class="btn btn-o" id="homeOpenFolder">STYLE CHECK FOLDER</button>
+      <button class="btn btn-o" data-hide-home="stylecheck">HIDE</button>
+    </div>
+  </section>
+
+  <!-- HOME: Style Check Folder panel -->
+  <section class="card" id="homeCheckFolderPanel" style="display:none">
+    <h2>Style check folder (latest 10)</h2>
+    <p class="sub">The latest 10 styles submitted for check are shown here. A pending style can be checked at any later time. This folder is separate from Buyer Standards.</p>
+    <div id="checkFolder"><p class="mut">No submissions yet.</p></div>
+    <div class="row" style="margin-top:8px"><button class="btn btn-o" data-hide-home="folder">HIDE</button></div>
+  </section>
+
+  <!-- HOME: All Buyer Folder panel -->
+  <section class="card" id="homeBuyerPanel" style="display:none">
+    <h2>All Buyer Folder — Buyer Standards</h2>
+    <p class="sub">Only FINAL SAVE standards appear here, buyer-wise, in the All Buyer Folder. Style Check styles are not shown here.</p>
+    <div class="row">
+      <input class="fi" id="stdSearch" placeholder="Search Style Name — Type style name…" style="max-width:320px">
+      <button class="btn btn-o" data-hide-home="buyer">HIDE ALL BUYER FOLDER</button>
+    </div>
+    <div id="stdFolder" style="margin-top:8px"><p class="mut">No final standards yet.</p></div>
+  </section>
+
+  <!-- HOME: Style list create panel -->
+  <section class="card" id="homeListPanel" style="display:none">
+    <h2>▼ Style list create <span id="listPanelBuyer" class="mut"></span></h2>
+    <p class="sub">Add the current completed style to the list. It shows Buyer, Style, Item, Size, Date, total meter, Body and Special Thread, following the Merchant list Excel demo format.</p>
+    <div class="row">
+      <div><label>Buyer-wise style list</label><select class="fi" id="listBuyerSel" style="max-width:220px"></select></div>
+      <div><label>Period</label><input class="fi" id="listPeriod" type="month" style="max-width:180px"></div>
+      <div><label>Heading (automatic)</label><input class="fi" id="listHeading" readonly style="max-width:320px"></div>
+    </div>
+    <div class="row" style="margin-top:8px">
+      <button class="btn btn-o" id="btnListExcel">DOWNLOAD / SAVE LIST EXCEL</button>
+      <button class="btn btn-p" id="btnListPdf">DOWNLOAD / SAVE LIST PDF</button>
+      <button class="btn btn-d" id="btnClearList">CLEAR LIST</button>
+      <button class="btn btn-o" data-hide-home="list">HIDE</button>
+    </div>
+    <p class="sub" id="listConeNote" style="margin-top:8px"></p>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>SL</th><th>BUYER</th><th>STYLE</th><th>ITEM</th><th>SIZE</th><th>Date</th><th>MTR</th><th>BODY THREAD</th><th>SPECIAL THREAD</th><th>REMARKS</th></tr></thead>
+      <tbody id="listBody"></tbody>
+    </table></div>
+  </section>
+
+  <!-- HOME: Saved Styles (drafts kept in Firebase) panel -->
+  <section class="card" id="homeDraftsPanel" style="display:none">
+    <h2>▼ Saved Styles <span id="draftsPanelCount" class="mut"></span></h2>
+    <p class="sub">Styles you saved from the sheet stay stored in Firebase. Open any saved style to continue working on it, or export it to Excel / PDF from the sheet.</p>
+    <div id="draftsList" style="margin-top:8px"><p class="mut">No saved styles yet.</p></div>
+    <div class="row" style="margin-top:8px"><button class="btn btn-o" data-hide-home="drafts">HIDE</button></div>
+  </section>
+  </div>
+
+  <div id="page1" style="display:none">
 
 
   <!-- ============ DASHBOARD ============ -->
@@ -106,7 +216,8 @@
   <!-- ============ ADMIN PANEL ============ -->
   <section class="card">
     <h2>Admin Panel</h2>
-    <p class="sub">অ্যাডমিন প্যানেল থেকে চেকারদের নাম আর হিসাবের নিয়ম (cone rule, allowance) ঠিক করা যাবে। এখানে বদলালে পুরো অ্যাপের হিসাব সেই নিয়মেই চলবে।</p>
+    <p class="sub">Manage machines, SPI, buyers, administrator password and team-user access</p>
+    <p class="sub">Checker names and calculation rules (cone rule, allowance) are set from the Admin Panel. Changes here apply to all calculations across the app.</p>
     <h3 style="margin:10px 0 6px;font-size:15px">Checkers</h3>
     <div class="row">
       <input class="fi" id="newChecker" placeholder="Checker name" style="max-width:220px">
@@ -115,6 +226,24 @@
     <div id="checkerListBox" style="margin-top:8px"><p class="mut">No checkers yet.</p></div>
     <h3 style="margin:14px 0 6px;font-size:15px">Users (from saved styles)</h3>
     <div id="adminUsers"><p class="mut">No users yet.</p></div>
+    <h3 style="margin:14px 0 6px;font-size:15px">Buyers</h3>
+    <div class="row">
+      <input class="fi" id="newBuyer" placeholder="Buyer name" style="max-width:220px">
+      <button class="btn btn-p" id="btnAddBuyer">+ Add buyer</button>
+    </div>
+    <div id="buyerListBox" style="margin-top:8px"><p class="mut">No buyers yet.</p></div>
+    <h3 style="margin:14px 0 6px;font-size:15px">Items</h3>
+    <div class="row">
+      <input class="fi" id="newItem" placeholder="Item name" style="max-width:220px">
+      <button class="btn btn-p" id="btnAddItem">+ Add item</button>
+    </div>
+    <div id="itemListBox" style="margin-top:8px"><p class="mut">No items yet.</p></div>
+    <h3 style="margin:14px 0 6px;font-size:15px">Sizes</h3>
+    <div class="row">
+      <input class="fi" id="newSize" placeholder="Size" style="max-width:220px">
+      <button class="btn btn-p" id="btnAddSize">+ Add size</button>
+    </div>
+    <div id="sizeListBox" style="margin-top:8px"><p class="mut">No sizes yet.</p></div>
     <h3 style="margin:14px 0 6px;font-size:15px">Settings</h3>
     <div class="grid">
       <div><label>Cone rule threshold (pcs): below this → 2000 m cone; this or above → 4000 m cone</label><input class="fi" id="sConeThreshold" type="number" value="2000"></div>
@@ -126,6 +255,31 @@
     <div class="row" style="margin-top:10px">
       <button class="btn btn-p" id="btnSaveSettings">Save Settings</button>
     </div>
+    <h3 style="margin:14px 0 6px;font-size:15px">Machine Management</h3>
+    <p class="sub">Selecting a machine auto-fills SPI and the special-thread Needle/Looper percentages. Previous standard: 4OL 20/80, SN 50/50, FL 40/60. Needle + Looper must equal 100%.</p>
+    <div id="machineTableWrap">
+    <div class="tbl-wrap"><table style="min-width:0">
+      <thead><tr><th>Machine Name</th><th>SPI</th><th>Needle %</th><th>Looper %</th><th>Remarks</th><th>Save</th><th>Delete</th></tr></thead>
+      <tbody id="machineBody"></tbody>
+    </table></div>
+    <p class="mut" id="machineWarn" style="color:#B3261E"></p>
+    </div>
+    <div class="row" style="margin-top:8px">
+      <button class="btn btn-o" id="btnAddMachine">Add machine</button>
+      <button class="btn btn-o" id="btnApplyStdMachines">Apply standard machine splits</button>
+      <button class="btn btn-o" id="btnMachineExcel">PRINT / EXPORT MACHINE LIST</button>
+      <button class="btn btn-p" id="btnSaveMachines">SAVE MACHINE CHANGES</button>
+      <button class="btn btn-o" id="btnHideMachines">HIDE</button>
+    </div>
+    <div id="machinePrintWrap" style="display:none"></div>
+    <h3 style="margin:14px 0 6px;font-size:15px">Special thread default %</h3>
+    <p class="sub">Used as the starting Special % for a process when its machine is not found in the list above. Still editable per process on the Thread Consumption page.</p>
+    <div class="grid">
+      <div><label>Contrast default %</label><input class="fi" id="sdContrast" type="number" value="50"></div>
+      <div><label>Filament default %</label><input class="fi" id="sdFilament" type="number" value="50"></div>
+      <div><label>Other default %</label><input class="fi" id="sdOther" type="number" value="50"></div>
+    </div>
+    <div class="row" style="margin-top:8px"><button class="btn btn-p" id="btnSaveSpecialDefaults">Save special defaults</button></div>
   </section>
   </div>
 
@@ -138,41 +292,43 @@
 
   <div id="subThreadWrap">
 
+  <!-- ============ SHEET TOP BAR ============ -->
+  <section class="card">
+    <div class="row">
+      <button class="btn btn-o" id="btnBackDashboard">← Dashboard</button>
+      <button class="btn btn-o" id="btnExportExcel">DOWNLOAD / SAVE EXCEL</button>
+      <button class="btn btn-p" id="btnExportPdf">DOWNLOAD / SAVE PDF</button>
+      <label class="mut">SAVE TO</label>
+      <select class="fi" id="saveToSel" style="max-width:200px"><option value="firebase">Firebase (online)</option><option value="device">Device (this browser)</option></select>
+      <button class="btn btn-p" id="btnSaveTo">Save</button>
+      <button class="btn btn-p" id="btnFinalSave">FINAL SAVE</button>
+    </div>
+    <div class="row" style="margin-top:8px">
+      <button class="btn btn-o" id="btnNewSheet">New sheet</button>
+      <button class="btn btn-o" id="btnPasteGoto">PASTE FROM EXCEL</button>
+      <button class="btn btn-o" id="btnAddToList">ADD CURRENT STYLE TO LIST</button>
+      <button class="btn btn-o" id="btnUndo">Undo</button>
+      <button class="btn btn-o" id="bellBtn">🔔 <span id="bellCount">0</span> pending</button>
+    </div>
+  </section>
 
   <!-- ============ STYLE HEADER ============ -->
   <section class="card">
     <h2>Style Header</h2>
     <div class="grid">
-      <div><label>Buyer</label><input class="fi" id="fBuyer" placeholder="Buyer"></div>
+      <div><label>Buyer</label><select class="fi" id="fBuyer"></select><div class="row" id="fBuyerCustomWrap" style="display:none;margin-top:6px"><input class="fi" id="fBuyerCustom" placeholder="Type new buyer name" style="flex:1"><button class="btn btn-o btn-sm" id="btnSaveBuyerCustom">Save</button></div></div>
       <div><label>Style</label><input class="fi" id="fStyle" placeholder="Style no."></div>
-      <div><label>Item</label><input class="fi" id="fItem" placeholder="e.g. T-Shirt"></div>
-      <div><label>Size</label><input class="fi" id="fSize" placeholder="e.g. M / S–XL"></div>
+      <div><label>Item</label><select class="fi" id="fItem"></select><div class="row" id="fItemCustomWrap" style="display:none;margin-top:6px"><input class="fi" id="fItemCustom" placeholder="Type new item" style="flex:1"><button class="btn btn-o btn-sm" id="btnSaveItemCustom">Save</button></div></div>
+      <div><label>Size</label><select class="fi" id="fSize"></select><div class="row" id="fSizeCustomWrap" style="display:none;margin-top:6px"><input class="fi" id="fSizeCustom" placeholder="Type new size" style="flex:1"><button class="btn btn-o btn-sm" id="btnSaveSizeCustom">Save</button></div></div>
+      <div><label>Fit</label><select class="fi" id="fFit"><option value="">Select fit</option><option>Relaxed</option><option>Loose</option><option>Slim</option></select></div>
+      <div><label>Body thread name</label><input class="fi" id="fBodyThread" placeholder="e.g. 30/2"></div>
+      <div><label>Date</label><input class="fi" id="fDate" type="date"></div>
+      <div><label>Thread allowance %</label><input class="fi" id="fAllowPct" type="number" value="20"></div>
+      <div><label>Cone size</label><select class="fi" id="fConeMode"><option value="auto">Auto</option><option value="manual">Manual</option></select></div>
+      <div id="manualConeWrap" style="display:none"><label>Manual cone length (m)</label><input class="fi" id="fManualCone" type="number" value="4000"></div>
       <div><label>Created by (username)</label><input class="fi" id="fCreatedBy" placeholder="Your name / username"></div>
-      <div><label>Checker name</label><input class="fi" id="fChecker" placeholder="Checker name" list="checkerList"></div>
     </div>
     <datalist id="checkerList"></datalist>
-    <div class="row" style="margin-top:10px">
-      <button class="btn btn-p" id="btnAddOp">+ Add operation row</button>
-      <button class="btn btn-o" id="btnSaveDraft">Save Draft</button>
-      <button class="btn btn-o" id="btnSubmitCheck">Submit for Check</button>
-      <button class="btn btn-p" id="btnFinalSave">Final Save</button>
-      <button class="btn btn-o" id="btnAddToList">Add to Style List</button>
-      <button class="btn btn-d" id="btnClear">Clear</button>
-      <button class="btn btn-o" id="btnExportExcel">Export Excel</button>
-      <button class="btn btn-p" id="btnExportPdf">Export PDF</button>
-    </div>
-  </section>
-
-
-  <!-- ============ STYLE CHECK DRAFT ============ -->
-  <section class="card">
-    <h2>STYLE CHECK DRAFT</h2>
-    <p class="sub">Complete the style, select the checker, then submit for check.</p>
-    <div class="row">
-      <span class="mut">Checker:</span>
-      <input class="fi" id="fChecker2" placeholder="Checker name" list="checkerList" style="max-width:220px">
-      <button class="btn btn-p" id="btnSubmitCheck2">Submit for check</button>
-    </div>
   </section>
 
 
@@ -183,18 +339,31 @@
       <label class="mut">Filter:</label>
       <select class="fi" id="selProcess" style="max-width:200px"><option value="">ALL PROCESS</option></select>
       <select class="fi" id="selMachine" style="max-width:200px"><option value="">ALL M/C</option></select>
+      <button class="btn btn-o btn-sm" id="btnShowAll">SHOW ALL</button>
+      <span class="mut" id="opCount"></span>
     </div>
-    <div class="tbl-wrap"><table>
+    <div class="row" style="margin-bottom:8px">
+      <label class="mut">CONTRAST / SPECIAL:</label>
+      <select class="fi" id="csThread" style="max-width:150px"><option>Contrast</option><option>Filament</option><option>Other</option></select>
+      <input class="fi" id="csColour" placeholder="Thread colour" style="max-width:150px">
+      <input class="fi num" id="csPct" type="number" value="20" style="max-width:90px">
+      <button class="btn btn-p btn-sm" id="btnCsApply">APPLY</button>
+      <button class="btn btn-d btn-sm" id="btnDeleteAllHp">DELETE ALL HP</button>
+    </div>
+    <div class="tbl-wrap"><table class="ops-table">
       <thead><tr>
         <th>SL</th><th>Operation description</th><th>M/C name</th><th>Seam length (in)</th>
         <th>Mc thread (in)</th><th>Seam qty</th><th>Consumption (in)</th>
         <th>Thread 1</th><th>Colour 1</th><th>Looper % 1</th>
         <th>Thread 2</th><th>Colour 2</th><th>Looper % 2</th>
-        <th>Body (in)</th><th>Special (in)</th><th></th>
+        <th>Body (in)</th><th>Special (in)</th><th>Add / Del</th>
       </tr></thead>
       <tbody id="opsBody"></tbody>
     </table></div>
-    <p class="sub" style="margin-top:8px">Consumption = seam length × Mc thread × seam qty. Each process has two editable special-thread colour slots (Contrast, Filament or Other). Enter each percentage separately; the remaining percentage stays on body thread.</p>
+    <p class="sub" style="margin-top:8px">Consumption = seam length × Mc thread × seam qty. Each process has two editable special-thread colour slots (Contrast, Filament or Other). Enter each percentage separately; the remaining percentage stays on body thread. Seam qty 2–9 shows yellow, 10 or above shows red.</p>
+    <div class="row" style="margin-top:8px">
+      <button class="btn btn-p" id="btnAddOp">Add operation at the end</button>
+    </div>
   </section>
 
 
@@ -213,8 +382,15 @@
   <!-- ============ TOTALS ============ -->
   <section class="card">
     <h2>Total per garment</h2>
-    <p class="tot">Total consumption: <span id="totIn">0.00</span> in = <span id="totM">0.0000</span> m</p>
+    <p class="tot">Consumption: <span id="totIn">0.00</span> in &nbsp;|&nbsp; Metres: <span id="totM">0.0000</span> m &nbsp;|&nbsp; Allowance: <span id="totAllow">20</span>% &nbsp;|&nbsp; Total per garment: <span id="totGrand">0.0000</span> m</p>
     <p class="mut">Body thread: <span id="totBodyIn">0.00</span> in (<span id="totBodyM">0.0000</span> m) &nbsp;|&nbsp; Special thread: <span id="totSpecIn">0.00</span> in (<span id="totSpecM">0.0000</span> m)</p>
+    <div class="row" style="margin-bottom:6px">
+      <label><input type="checkbox" id="showAllowLines" checked> Show allowance lines (hiding does not change the cone calculation)</label>
+    </div>
+    <div class="tbl-wrap"><table id="tpgTable" style="min-width:0">
+      <thead><tr><th>Thread</th><th>Consumption (inch)</th><th>Metres</th><th class="allow-col">Allowance %</th><th>Total metres</th></tr></thead>
+      <tbody id="tpgBody"></tbody>
+    </table></div>
   </section>
 
 
@@ -230,37 +406,12 @@
       <tbody id="coneBody"></tbody>
     </table></div>
     <div class="row" style="margin-top:8px">
-      <button class="btn btn-o" id="btnAddCone">+ Add cone row</button>
+      <button class="btn btn-o" id="btnAddCone">Add colour</button>
       <button class="btn btn-o" id="btnConeFromBody">Use body total as thread per pc</button>
     </div>
   </section>
 
 
-  <!-- ============ STYLE CHECK FOLDER ============ -->
-  <section class="card">
-    <h2>Style check folder (latest 10)</h2>
-    <p class="sub">Check-এর জন্য submit করা সর্বশেষ ১০টি style এখানে দেখা যাবে। Pending style পরে যেকোনো সময় check করা যাবে। Buyer Standard থেকে এই folder আলাদা।</p>
-    <div id="checkFolder"><p class="mut">No submissions yet.</p></div>
-  </section>
-
-
-  <!-- ============ BUYER STANDARDS ============ -->
-  <section class="card">
-    <h2>All Buyer Folder — Buyer Standards</h2>
-    <p class="sub">FINAL SAVE করা Standard-গুলোই শুধু All Buyer Folder-এ buyer-wise দেখা যাবে। Style Check-এর style এখানে দেখাবে না।</p>
-    <div id="stdFolder"><p class="mut">No final standards yet.</p></div>
-  </section>
-
-
-  <!-- ============ STYLE LIST ============ -->
-  <section class="card">
-    <h2>Style list</h2>
-    <p class="sub">Current completed style-টি list-এ যোগ করুন। Merchant list Excel demo format অনুযায়ী Buyer, Style, Item, Size, total meter, Body এবং Special Thread দেখাবে।</p>
-    <div class="tbl-wrap"><table>
-      <thead><tr><th>SL</th><th>BUYER</th><th>STYLE</th><th>ITEM</th><th>SIZE</th><th>MTR</th><th>BODY THREAD</th><th>SPECIAL THREAD</th><th>REMARKS</th></tr></thead>
-      <tbody id="listBody"></tbody>
-    </table></div>
-  </section>
   </div>
 
   <div id="subAccWrap" style="display:none">
@@ -269,7 +420,16 @@
   <!-- ============ ACCESSORIES ============ -->
   <section class="card">
     <h2>Accessories consumption</h2>
+    <div class="row" style="margin-bottom:8px">
+      <label class="mut">Style</label>
+      <input class="fi" id="accStyle" placeholder="Style no." style="max-width:220px">
+      <span class="mut" id="accStyleCtx"></span>
+    </div>
     <p class="sub" id="accRuleText">Allowance is added by type: back twill tape +7%, back tape elastic or other elastic tape +10%, waist belt elastic +7% and then another +7% wastage. Type the item name and the rule is picked automatically, or choose it yourself. Enter lengths in CM or inch for each row. Order totals use the total Body Colors quantity.</p>
+    <div class="row" style="margin-bottom:8px">
+      <label class="mut">Show totals in</label>
+      <select class="fi" id="accTotalsUnit" style="max-width:120px"><option value="CM">CM</option><option value="inch">inch</option></select>
+    </div>
     <div class="tbl-wrap"><table>
       <thead><tr>
         <th>Item for sew process</th><th>Allowance rule</th><th>Seam length</th><th>Seam allowance</th>
@@ -280,7 +440,7 @@
     <div class="row" style="margin-top:8px">
       <button class="btn btn-o" id="btnAddAcc">+ Add accessory row</button>
       <button class="btn btn-o" id="btnExportExcel2">Export Excel</button>
-      <button class="btn btn-p" id="btnExportPdf2">Export PDF</button>
+      <button class="btn btn-p" id="btnExportPdf2">DOWNLOAD ACCESSORIES PDF</button>
     </div>
   </section>
   </div>
@@ -310,6 +470,15 @@ var SHEET = "sewingSheet"; /* ALL data lives under this root node only */
 /* ================= Helpers ================= */
 function esc(s){ return String(s == null ? "" : s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
 function num(v){ var n = parseFloat(v); return isNaN(n) ? 0 : n; }
+/* Safe arithmetic for the Seam qty cell: only digits, spaces and + - * / ( ) allowed. Returns a number or null. */
+function evalQtyExpr(s){
+  s = String(s).trim();
+  if(!s || !/^[0-9+\-*/().\s]+$/.test(s)) return null;
+  try{
+    var v = Function('"use strict";return (' + s + ')')();
+    return (typeof v === "number" && isFinite(v)) ? v : null;
+  }catch(e){ return null; }
+}
 function $(id){ return document.getElementById(id); }
 function setStatus(t){ $("status").textContent = t; }
 function uid(){ return "op" + Date.now().toString(36) + Math.floor(Math.random()*1e6).toString(36); }
@@ -323,6 +492,48 @@ var stdCache = [];   /* standards snapshots */
 var listCache = [];  /* styleList snapshots */
 var stylesCache = [];/* styles (drafts) snapshots */
 var checkersCache = []; /* admin/checkers snapshots: {key, name} */
+var buyersCache = [];   /* admin/buyers snapshots: {key, name} */
+var itemsCache = [];    /* admin/items snapshots: {key, name} */
+var sizesCache = [];    /* admin/sizes snapshots: {key, name} */
+var machinesCache = []; /* admin/machines snapshots: {key, name, spi, needle, looper, remarks} */
+var specialDefaults = { contrast: 50, filament: 50, other: 50 };
+var undoStack = [];     /* JSON snapshots of OPS, for Undo */
+var expandedBuyer = ""; /* buyer folder currently expanded in All Buyer Folder */
+var stdSearchTerm = ""; /* style-name search filter for All Buyer Folder */
+var accTotalsUnit = "CM"; /* accessories totals display unit */
+var currentListBuyer = ""; /* "" = all buyers in Style list panel */
+var currentListPeriod = ""; /* "" = all periods in Style list panel (YYYY-MM) */
+/* Master-list seeds (shown when the Firebase lists are empty; written only on explicit add). */
+var SEED_BUYERS = ["CARNET A/S", "JJ ORIGINALS", "JJ PREMIUM", "JULES", "NAME IT", "PPP FASHION"];
+var SEED_ITEMS = ["T-SHIRT"];
+var SEED_SIZES = ["S", "M", "L", "XL", "S–XL"];
+/* Standard machine splits (Machine, SPI, Needle%, Looper%, Remarks) — the admin seed list. */
+var SEED_MACHINES = [
+  ["4OL",23,20,80,""],["3OL",18,20,80,""],["SN",4,50,50,""],["2FL",12,40,60,""],
+  ["4FL",24,40,60,""],["5FL",28,40,60,""],["BRTK",50,50,50,""],["BH",50,50,50,""],
+  ["KS",24,60,40,""],["VK",4,50,50,""],["1OL",5,50,50,""],["3FL",18,40,60,""],
+  ["PICOTING",20,25,75,""],["VG(FL)",26,55,45,"WAIST ELASTIC JOIN"],
+  ["ABRK",40,100,0,"AUTO BUTTON RAPING (LIKE HAND STITCH)"],
+  ["LOGO/ETR",100,100,0,""],["LOGO",10,100,0,""],["6FL",32,40,60,""],
+  ["VT",12,40,60,""],["3OL BLIND HEM",18,50,50,""],["FA-1",12,40,60,""],
+  ["FA-2",12,40,60,""],["CS",12,40,60,""],["FL-CS",18,40,60,""],
+  ["FL-RC",18,40,60,""],["FL-FB",12,40,60,""],["BS",50,100,0,""],
+  ["FL-CL",18,40,60,""],["2NDL",8,50,50,""],["FA",24,40,60,""],["FOA",24,40,60,""]
+];
+function machineRows(){ return machinesCache.length ? machinesCache : SEED_MACHINES.map(function(m){ return { key: "", name: m[0], spi: m[1], needle: m[2], looper: m[3], remarks: m[4] }; }); }
+function findMachine(name){
+  var n = String(name || "").trim().toLowerCase();
+  if(!n) return null;
+  var rows = machineRows();
+  for(var i = 0; i < rows.length; i++) if(String(rows[i].name).trim().toLowerCase() === n) return rows[i];
+  return null;
+}
+function specialDefaultFor(typeName){
+  var t = String(typeName || "").toLowerCase();
+  if(t.indexOf("filament") !== -1) return specialDefaults.filament;
+  if(t.indexOf("other") !== -1) return specialDefaults.other;
+  return specialDefaults.contrast;
+}
 /* Admin settings (Firebase admin/settings overrides these defaults). */
 var SETTINGS = { coneThreshold: 2000, twill: 7, elastic: 10, waist1: 7, waist2: 7 };
 
@@ -331,6 +542,7 @@ function newOp(d){
   return { id: uid(), name: d.name || "", machine: d.machine || "",
     seamLength: d.seamLength == null ? "" : d.seamLength,
     mcThread: d.mcThread == null ? "" : d.mcThread,
+    mcAuto: !!d.mcAuto,
     seamQty: d.seamQty == null ? 1 : d.seamQty,
     thread1: d.thread1 || "", colour1: d.colour1 || "", pct1: d.pct1 == null ? "" : d.pct1,
     thread2: d.thread2 || "", colour2: d.colour2 || "", pct2: d.pct2 == null ? "" : d.pct2 };
@@ -343,6 +555,7 @@ function newCone(d){
 function newAcc(d){
   d = d || {};
   return { id: uid(), item: d.item || "", rule: d.rule || "auto",
+    customPct: d.customPct == null ? "" : d.customPct,
     seamLength: d.seamLength == null ? "" : d.seamLength,
     seamAllowance: d.seamAllowance == null ? "" : d.seamAllowance,
     unit: d.unit || "CM" };
@@ -367,8 +580,14 @@ function totals(){
   return t;
 }
 function inToM(inches){ return inches * 0.0254; }
-function coneLengthForQty(qty){ return qty < SETTINGS.coneThreshold ? 2000 : 4000; }
+function coneModeVal(){ var el = $("fConeMode"); return el ? el.value : "auto"; }
+function manualConeVal(){ var el = $("fManualCone"); return el ? num(el.value) : 0; }
+function coneLengthForQty(qty){
+  if(coneModeVal() === "manual" && manualConeVal() > 0) return manualConeVal();
+  return qty < SETTINGS.coneThreshold ? 2000 : 4000;
+}
 function conesNeeded(totalM, coneLen){ return coneLen > 0 ? Math.ceil(totalM / coneLen) : 0; }
+function conesExact(totalM, coneLen){ return coneLen > 0 ? totalM / coneLen : 0; }
 function totalBodyQty(){ var q = 0; CONES.forEach(function(r){ q += num(r.qty); }); return q; }
 
 /* Accessories: allowance picked from the item name, or chosen manually. */
@@ -380,25 +599,56 @@ function accRuleFor(item, manual){
   if(n.indexOf("twill tape") !== -1) return "twill";
   return "none";
 }
-function accFactor(rule){
+function accFactor(rule, customPct){
   if(rule === "twill") return 1 + SETTINGS.twill / 100;
   if(rule === "elastic") return 1 + SETTINGS.elastic / 100;
   if(rule === "waist") return (1 + SETTINGS.waist1 / 100) * (1 + SETTINGS.waist2 / 100);
+  if(rule === "other") return 1 + num(customPct) / 100;
   return 1;
 }
-function accPct(rule){
+function accPct(rule, customPct){
   if(rule === "twill") return SETTINGS.twill;
   if(rule === "elastic") return SETTINGS.elastic;
   if(rule === "waist") return Math.round(((1 + SETTINGS.waist1 / 100) * (1 + SETTINGS.waist2 / 100) - 1) * 10000) / 100;
+  if(rule === "other") return num(customPct);
   return 0;
 }
 function accCompute(row){
   var len = num(row.seamLength) + num(row.seamAllowance);
   var cm = row.unit === "inch" ? len * 2.54 : len;
   var rule = accRuleFor(row.item, row.rule);
-  var perGarment = cm * accFactor(rule);
+  var perGarment = cm * accFactor(rule, row.customPct);
   var order = perGarment * totalBodyQty();
-  return { cm: cm, rule: rule, pct: accPct(rule), perGarment: perGarment, order: order };
+  return { cm: cm, rule: rule, pct: accPct(rule, row.customPct), perGarment: perGarment, order: order };
+}
+
+/* ================= Undo (operations table snapshots) ================= */
+function pushUndo(){
+  undoStack.push(JSON.stringify(OPS));
+  if(undoStack.length > 20) undoStack.shift();
+}
+function doUndo(){
+  if(!undoStack.length){ alert("Nothing to undo."); return; }
+  OPS = JSON.parse(undoStack.pop()).map(function(o){ return newOp(o); });
+  renderOps();
+  setStatus("Undo done.");
+}
+
+/* ================= Machine auto-fill for operation rows ================= */
+/* Selecting a machine sets Mc thread = SPI (unless the user hand-edited it)
+   and fills empty Looper % slots from the machine split. Unknown machines use
+   the Special thread default % values. Hand-typed values are never overwritten. */
+function applyMachineToRow(op){
+  if(!op) return;
+  var m = findMachine(op.machine);
+  if(m){
+    if(op.mcThread === "" || op.mcThread == null || op.mcAuto){ op.mcThread = m.spi; op.mcAuto = true; }
+    if(op.pct1 === "" || op.pct1 == null) op.pct1 = m.looper;
+    if((op.pct2 === "" || op.pct2 == null) && (op.thread2 || op.colour2)) op.pct2 = m.needle;
+  } else {
+    if(op.pct1 === "" || op.pct1 == null) op.pct1 = specialDefaultFor(op.thread1);
+    if((op.pct2 === "" || op.pct2 == null) && (op.thread2 || op.colour2)) op.pct2 = specialDefaultFor(op.thread2);
+  }
 }
 
 /* ================= Render: operations ================= */
@@ -415,20 +665,32 @@ function refreshFilters(){
   ps.value = curP; ms.value = curM;
 }
 function renderOps(){
+  var keepId = null, keepF = null;
+  var ae = document.activeElement;
+  if(ae && ae.closest && ae.closest("#opsBody")){
+    var atr = ae.closest("tr");
+    if(atr){ keepId = atr.getAttribute("data-id"); keepF = ae.getAttribute("data-f"); }
+  }
   refreshFilters();
   var fp = $("selProcess").value, fm = $("selMachine").value;
   var html = "";
+  var visible = 0;
   OPS.forEach(function(op, i){
     if(fp && op.name !== fp) return;
     if(fm && op.machine !== fm) return;
+    visible++;
     var s = opSplit(op);
+    var mopts = '<option value=""></option>' + machineRows().map(function(m){
+      return '<option value="' + esc(m.name) + '"' + (op.machine === m.name ? " selected" : "") + '>' + esc(m.name) + '</option>';
+    }).join("");
+    if(op.machine && !findMachine(op.machine)) mopts += '<option value="' + esc(op.machine) + '" selected>' + esc(op.machine) + '</option>';
     html += '<tr data-id="' + op.id + '">'
       + '<td>' + (i + 1) + '</td>'
-      + '<td><input data-f="name" value="' + esc(op.name) + '"></td>'
-      + '<td><input data-f="machine" value="' + esc(op.machine) + '"></td>'
+      + '<td><input data-f="name" value="' + esc(op.name) + '"' + (op.name && op.name.trim() ? "" : " class=\"req-empty\"") + '></td>'
+      + '<td><select data-f="machine">' + mopts + '</select></td>'
       + '<td><input class="num" data-f="seamLength" value="' + esc(op.seamLength) + '"></td>'
       + '<td><input class="num" data-f="mcThread" value="' + esc(op.mcThread) + '"></td>'
-      + '<td><input class="num" data-f="seamQty" value="' + esc(op.seamQty) + '"></td>'
+      + '<td><input class="num' + (function(){ var q = num(op.seamQty); return q >= 10 ? " qty-red" : (q >= 2 ? " qty-warn" : ""); })() + '" data-f="seamQty" value="' + esc(op.seamQty) + '"></td>'
       + '<td>' + s.consumption.toFixed(2) + '</td>'
       + '<td><input data-f="thread1" value="' + esc(op.thread1) + '"></td>'
       + '<td><input data-f="colour1" value="' + esc(op.colour1) + '"></td>'
@@ -438,45 +700,178 @@ function renderOps(){
       + '<td><input class="num" data-f="pct2" value="' + esc(op.pct2) + '"></td>'
       + '<td>' + s.body.toFixed(2) + '</td>'
       + '<td>' + s.special.toFixed(2) + '</td>'
-      + '<td><button class="btn btn-d btn-sm" data-del="' + op.id + '">Delete</button></td></tr>';
+      + '<td style="white-space:nowrap"><button class="btn btn-p btn-sm" data-ins="' + op.id + '" title="Insert a row below">＋</button> <button class="btn btn-d btn-sm" data-del="' + op.id + '" title="Delete this row">−</button></td></tr>';
   });
   $("opsBody").innerHTML = html || '<tr><td colspan="16" class="mut">No operations yet. Add a row or paste from Excel.</td></tr>';
+  $("opCount").textContent = visible + " processes" + (visible !== OPS.length ? " (of " + OPS.length + " total)" : "");
   renderTotals();
+  if(keepId && keepF){
+    var krow = $("opsBody").querySelector('tr[data-id="' + keepId + '"]');
+    if(krow){
+      var kel = krow.querySelector('[data-f="' + keepF + '"]');
+      if(kel) kel.focus();
+    }
+  }
 }
+function allowPctVal(){ var el = $("fAllowPct"); return el ? num(el.value) : 20; }
 function renderTotals(){
   var t = totals();
+  var bodyM = inToM(t.body), totalM = inToM(t.consumption), allow = allowPctVal();
   $("totIn").textContent = t.consumption.toFixed(2);
-  $("totM").textContent = inToM(t.consumption).toFixed(4);
+  $("totM").textContent = totalM.toFixed(4);
+  $("totAllow").textContent = allow;
+  $("totGrand").textContent = (totalM * (1 + allow / 100)).toFixed(4);
   $("totBodyIn").textContent = t.body.toFixed(2);
-  $("totBodyM").textContent = inToM(t.body).toFixed(4);
+  $("totBodyM").textContent = bodyM.toFixed(4);
   $("totSpecIn").textContent = t.special.toFixed(2);
   $("totSpecM").textContent = inToM(t.special).toFixed(4);
+  var bodyName = ($("fBodyThread") && $("fBodyThread").value.trim()) || "Body thread";
+  $("tpgBody").innerHTML =
+    '<tr><td>' + esc(bodyName) + '</td><td>' + t.body.toFixed(2) + '</td><td>' + bodyM.toFixed(4) + '</td>'
+    + '<td class="allow-col">' + allow + '%</td><td>' + (bodyM * (1 + allow / 100)).toFixed(4) + '</td></tr>'
+    + '<tr><td>All threads</td><td>' + t.consumption.toFixed(2) + '</td><td>' + totalM.toFixed(4) + '</td>'
+    + '<td class="allow-col">' + allow + '%</td><td>' + (totalM * (1 + allow / 100)).toFixed(4) + '</td></tr>';
   renderCones();
   renderAccs();
 }
+$("showAllowLines").addEventListener("change", function(){
+  $("tpgTable").className = $("showAllowLines").checked ? "" : "hide-allow";
+});
+$("fAllowPct").addEventListener("input", renderTotals);
+$("fBodyThread").addEventListener("input", renderTotals);
 $("opsBody").addEventListener("input", function(e){
+  var inp = e.target, f = inp.getAttribute("data-f");
+  if(!f || f === "machine") return; /* machine selects are handled by the change listener below */
+  var tr = inp.closest("tr"), id = tr.getAttribute("data-id");
+  var op = OPS.filter(function(o){ return o.id === id; })[0];
+  if(!op) return;
+  if(f === "mcThread") op.mcAuto = false; /* hand-edited Mc thread is never auto-overwritten */
+  op[f] = inp.value;
+  renderTotals(); /* no full re-render while typing, so focus is kept (expressions like 2+1 stay typable) */
+});
+$("opsBody").addEventListener("change", function(e){
   var inp = e.target, f = inp.getAttribute("data-f");
   if(!f) return;
   var tr = inp.closest("tr"), id = tr.getAttribute("data-id");
   var op = OPS.filter(function(o){ return o.id === id; })[0];
   if(!op) return;
-  op[f] = inp.value;
+  if(f === "seamQty"){
+    var v = evalQtyExpr(inp.value);
+    if(v !== null && v >= 0) op.seamQty = v; /* "2+1" -> 3, "5-2" -> 3, "2*3" -> 6, "10/4" -> 2.5 */
+    renderOps();
+    return;
+  }
+  if(f === "machine"){
+    op.machine = inp.value;
+    applyMachineToRow(op);
+  }
   renderOps();
 });
 $("opsBody").addEventListener("click", function(e){
-  var id = e.target.getAttribute("data-del");
-  if(!id) return;
-  OPS = OPS.filter(function(o){ return o.id !== id; });
+  var insId = e.target.getAttribute("data-ins");
+  if(insId){
+    var idx = -1;
+    OPS.forEach(function(o, k){ if(o.id === insId) idx = k; });
+    if(idx === -1) return;
+    pushUndo();
+    var nop = newOp({});
+    OPS.splice(idx + 1, 0, nop);
+    $("selProcess").value = ""; $("selMachine").value = "";
+    renderOps();
+    var nrow = $("opsBody").querySelector('tr[data-id="' + nop.id + '"]');
+    if(nrow){
+      var nin = nrow.querySelector('[data-f="name"]');
+      if(nin) nin.focus();
+    }
+    return;
+  }
+  var delId = e.target.getAttribute("data-del");
+  if(!delId) return;
+  pushUndo();
+  OPS = OPS.filter(function(o){ return o.id !== delId; });
   renderOps();
+});
+/* Arrow-key navigation inside the operations table: Up/Down move rows (same column);
+   Left/Right at the start/end of a cell's text move to the next cell (any direction, any cell). */
+$("opsBody").addEventListener("keydown", function(e){
+  if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].indexOf(e.key) === -1) return;
+  var t = e.target;
+  var tr = t.closest ? t.closest("tr") : null;
+  if(!tr) return;
+  var rows = Array.prototype.slice.call($("opsBody").querySelectorAll("tr"));
+  var ri = rows.indexOf(tr);
+  if(ri === -1) return;
+  var cells = Array.prototype.slice.call(tr.querySelectorAll("input,select,button"));
+  var ci = cells.indexOf(t);
+  if(ci === -1) return;
+  function focusAt(r, c){
+    var rws = $("opsBody").querySelectorAll("tr");
+    if(r < 0 || r >= rws.length) return false;
+    var cs = rws[r].querySelectorAll("input,select,button");
+    if(!cs.length) return false;
+    if(c < 0) c = 0;
+    if(c >= cs.length) c = cs.length - 1;
+    cs[c].focus();
+    return true;
+  }
+  function caretPos(el){
+    try{ return el.selectionStart; }catch(err){ return null; }
+  }
+  if(e.key === "ArrowUp"){ e.preventDefault(); focusAt(ri - 1, ci); }
+  else if(e.key === "ArrowDown"){ e.preventDefault(); focusAt(ri + 1, ci); }
+  else if(e.key === "ArrowLeft"){
+    if(t.tagName === "SELECT") return;
+    if(t.tagName === "INPUT"){
+      var p = caretPos(t);
+      if(p === null || p > 0) return;
+    }
+    e.preventDefault();
+    if(ci > 0) cells[ci - 1].focus();
+    else focusAt(ri - 1, 9999);
+  }
+  else if(e.key === "ArrowRight"){
+    if(t.tagName === "SELECT") return;
+    if(t.tagName === "INPUT"){
+      var q = caretPos(t);
+      if(q === null || q < t.value.length) return;
+    }
+    e.preventDefault();
+    if(ci < cells.length - 1) cells[ci + 1].focus();
+    else focusAt(ri + 1, 0);
+  }
 });
 $("selProcess").addEventListener("change", renderOps);
 $("selMachine").addEventListener("change", renderOps);
-$("btnAddOp").onclick = function(){ OPS.push(newOp({})); renderOps(); };
+$("btnAddOp").onclick = function(){ pushUndo(); OPS.push(newOp({})); renderOps(); };
+$("btnShowAll").onclick = function(){ $("selProcess").value = ""; $("selMachine").value = ""; renderOps(); };
+$("btnDeleteAllHp").onclick = function(){
+  var hpRows = OPS.filter(function(o){ return String(o.machine || "").trim().toLowerCase() === "hp"; });
+  if(!hpRows.length){ alert("No HP rows to delete."); return; }
+  if(!confirm("Delete all " + hpRows.length + " HP row(s)?")) return;
+  pushUndo();
+  OPS = OPS.filter(function(o){ return String(o.machine || "").trim().toLowerCase() !== "hp"; });
+  renderOps();
+  setStatus(hpRows.length + " HP row(s) deleted.");
+};
+$("btnCsApply").onclick = function(){
+  var type = $("csThread").value, colour = $("csColour").value.trim(), pct = $("csPct").value;
+  var fp = $("selProcess").value, fm = $("selMachine").value, n = 0;
+  pushUndo();
+  OPS.forEach(function(op){
+    if(fp && op.name !== fp) return;
+    if(fm && op.machine !== fm) return;
+    op.thread1 = type; op.colour1 = colour; op.pct1 = pct; n++;
+  });
+  renderOps();
+  setStatus("Special thread applied to " + n + " visible row(s).");
+};
+$("btnUndo").onclick = doUndo;
 
 /* ================= Paste from Excel ================= */
 function pasteOps(){
   var text = $("pasteBox").value;
   if(!text.trim()){ alert("Paste box is empty."); return; }
+  pushUndo();
   var lines = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n").split("\n")
     .map(function(l){ return l.replace(/\s+$/, ""); })
     .filter(function(l){ return l.trim() !== ""; });
@@ -511,21 +906,28 @@ $("btnPasteClear").onclick = function(){ $("pasteBox").value = ""; };
 /* ================= Render: cone requirement ================= */
 function renderCones(){
   var html = "";
+  var sumM = 0, sumExact = 0, sumOrder = 0;
   CONES.forEach(function(r){
     var qty = num(r.qty), perPc = num(r.perPc);
     var totalM = qty * perPc;
     var cone = coneLengthForQty(qty);
-    var cones = conesNeeded(totalM, cone);
+    var exact = conesExact(totalM, cone);
+    var order = conesNeeded(totalM, cone);
+    sumM += totalM; sumExact += exact; sumOrder += order;
     html += '<tr data-id="' + r.id + '">'
       + '<td><input data-f="colour" value="' + esc(r.colour) + '"></td>'
       + '<td><input class="num" data-f="qty" value="' + esc(r.qty) + '"></td>'
       + '<td><input class="num" data-f="perPc" value="' + esc(r.perPc) + '"></td>'
       + '<td>' + totalM.toFixed(2) + '</td>'
       + '<td>' + cone + '</td>'
-      + '<td>' + cones + '</td>'
-      + '<td>' + cones + '</td>'
+      + '<td>' + exact.toFixed(2) + '</td>'
+      + '<td>' + order + '</td>'
       + '<td><button class="btn btn-d btn-sm" data-del="' + r.id + '">Delete</button></td></tr>';
   });
+  if(CONES.length){
+    html += '<tr><td><b>Total</b></td><td></td><td></td><td><b>' + sumM.toFixed(2) + '</b></td><td></td>'
+      + '<td><b>' + sumExact.toFixed(2) + '</b></td><td><b>' + sumOrder + '</b></td><td></td></tr>';
+  }
   $("coneBody").innerHTML = html || '<tr><td colspan="8" class="mut">No cone rows yet.</td></tr>';
 }
 $("coneBody").addEventListener("input", function(e){
@@ -555,6 +957,9 @@ function renderAccs(){
   var html = "";
   ACCS.forEach(function(r){
     var c = accCompute(r);
+    var pg = accTotalsUnit === "inch" ? c.perGarment / 2.54 : c.perGarment;
+    var od = accTotalsUnit === "inch" ? c.order / 2.54 : c.order;
+    var unitLabel = accTotalsUnit === "inch" ? " inch" : " cm";
     html += '<tr data-id="' + r.id + '">'
       + '<td><input data-f="item" value="' + esc(r.item) + '"></td>'
       + '<td><select data-f="rule">'
@@ -562,18 +967,22 @@ function renderAccs(){
       + '<option value="twill"' + (r.rule === "twill" ? " selected" : "") + '>Back twill tape +7%</option>'
       + '<option value="elastic"' + (r.rule === "elastic" ? " selected" : "") + '>Elastic tape +10%</option>'
       + '<option value="waist"' + (r.rule === "waist" ? " selected" : "") + '>Waist belt elastic +7% +7%</option>'
+      + '<option value="other"' + (r.rule === "other" ? " selected" : "") + '>Other (custom %)</option>'
       + '<option value="none"' + (r.rule === "none" ? " selected" : "") + '>No allowance</option>'
-      + '</select></td>'
+      + '</select>'
+      + (r.rule === "other" ? '<br><input class="num" data-f="customPct" placeholder="Custom %" value="' + esc(r.customPct) + '" style="margin-top:4px">' : '')
+      + '</td>'
       + '<td><input class="num" data-f="seamLength" value="' + esc(r.seamLength) + '"></td>'
       + '<td><input class="num" data-f="seamAllowance" value="' + esc(r.seamAllowance) + '"></td>'
       + '<td><select data-f="unit"><option value="CM"' + (r.unit === "CM" ? " selected" : "") + '>CM</option><option value="inch"' + (r.unit === "inch" ? " selected" : "") + '>inch</option></select></td>'
       + '<td>' + c.cm.toFixed(2) + '</td>'
       + '<td>' + c.pct.toFixed(2) + '%</td>'
-      + '<td>' + c.perGarment.toFixed(2) + ' cm</td>'
-      + '<td>' + c.order.toFixed(2) + ' cm</td>'
+      + '<td>' + pg.toFixed(2) + unitLabel + '</td>'
+      + '<td>' + od.toFixed(2) + unitLabel + '</td>'
       + '<td><button class="btn btn-d btn-sm" data-del="' + r.id + '">Delete</button></td></tr>';
   });
   $("accBody").innerHTML = html || '<tr><td colspan="10" class="mut">No accessory rows yet.</td></tr>';
+  syncAccStyle();
 }
 $("accBody").addEventListener("input", function(e){
   var inp = e.target, f = inp.getAttribute("data-f");
@@ -600,26 +1009,96 @@ $("accBody").addEventListener("click", function(e){
   renderAccs();
 });
 $("btnAddAcc").onclick = function(){ ACCS.push(newAcc({})); renderAccs(); };
+$("accTotalsUnit").addEventListener("change", function(){ accTotalsUnit = $("accTotalsUnit").value; renderAccs(); });
+/* Required fields show red while empty (Buyer, Style, operation names). */
+function markRequired(){
+  var bSel = $("fBuyer"), bCus = $("fBuyerCustom");
+  var bEmpty = !selVal("fBuyer", "fBuyerCustom");
+  if(bSel) bSel.classList.toggle("req-empty", bEmpty && bSel.value !== "__custom");
+  if(bCus) bCus.classList.toggle("req-empty", bEmpty && bSel && bSel.value === "__custom");
+  var st = $("fStyle"), a = $("accStyle");
+  var sEmpty = !st || !st.value.trim();
+  if(st) st.classList.toggle("req-empty", sEmpty);
+  if(a) a.classList.toggle("req-empty", sEmpty);
+}
+["fBuyer","fBuyerCustom","fStyle"].forEach(function(id){
+  var el = $(id);
+  if(el){ el.addEventListener("input", markRequired); el.addEventListener("change", markRequired); }
+});
+markRequired();
+function syncAccStyle(){
+  var a = $("accStyle"), f = $("fStyle");
+  if(!a || !f) return;
+  if(document.activeElement !== a) a.value = f.value;
+  var parts = [selVal("fBuyer", "fBuyerCustom"), selVal("fItem", "fItemCustom"), selVal("fSize", "fSizeCustom")].filter(Boolean);
+  $("accStyleCtx").textContent = (parts.length ? parts.join("  •  ") + "  •  " : "") + "Order qty (pcs): " + totalBodyQty();
+  markRequired();
+}
+$("accStyle").addEventListener("input", function(){ $("fStyle").value = $("accStyle").value; });
+
+function todayISO(){
+  var d = new Date();
+  return d.getFullYear() + "-" + ("0" + (d.getMonth() + 1)).slice(-2) + "-" + ("0" + d.getDate()).slice(-2);
+}
+function selVal(selId, customId){
+  var el = $(selId);
+  if(!el) return "";
+  if(el.value === "__custom"){
+    var c = $(customId);
+    return c ? c.value.trim() : "";
+  }
+  return (el.value || "").trim ? (el.value || "").trim() : el.value;
+}
+function deriveSpecialThread(){
+  for(var i = 0; i < OPS.length; i++){
+    var op = OPS[i];
+    if(num(op.pct1) > 0) return (op.thread1 || "Special") + " " + (op.colour1 || "") + " " + num(op.pct1) + "%";
+    if(num(op.pct2) > 0) return (op.thread2 || "Special") + " " + (op.colour2 || "") + " " + num(op.pct2) + "%";
+  }
+  return "";
+}
+function setMasterSelect(selId, customId, val){
+  var sel = $(selId), custom = $(customId);
+  if(!sel) return;
+  var opts = sel.options || [], found = false;
+  for(var i = 0; i < opts.length; i++) if(opts[i].value === val) found = true;
+  if(found && val){ sel.value = val; setCustomVisible(customId, false); }
+  else { sel.value = "__custom"; if(custom){ setCustomVisible(customId, true); custom.value = val || ""; } }
+}
 
 /* ================= Sheet snapshot ================= */
 function sheetData(){
   var t = totals();
   return {
-    buyer: $("fBuyer").value.trim(), style: $("fStyle").value.trim(),
-    item: $("fItem").value.trim(), size: $("fSize").value.trim(),
+    buyer: selVal("fBuyer", "fBuyerCustom"), style: $("fStyle").value.trim(),
+    item: selVal("fItem", "fItemCustom"), size: selVal("fSize", "fSizeCustom"),
+    fit: $("fFit").value, bodyThread: $("fBodyThread").value.trim(),
+    date: $("fDate").value, allowPct: allowPctVal(),
+    coneMode: coneModeVal(), manualCone: manualConeVal(),
     createdBy: $("fCreatedBy").value.trim(),
-    checker: ($("fChecker").value.trim() || $("fChecker2").value.trim()),
+    checker: $("homeChecker") ? $("homeChecker").value : "",
     ops: OPS, cones: CONES, accs: ACCS,
     totalIn: t.consumption, totalM: inToM(t.consumption),
     bodyIn: t.body, bodyM: inToM(t.body), specialIn: t.special, specialM: inToM(t.special),
+    bodyThreadName: $("fBodyThread").value.trim(),
+    specialThread: deriveSpecialThread(),
     updatedAt: Date.now()
   };
 }
 function loadSheet(d){
-  $("fBuyer").value = d.buyer || ""; $("fStyle").value = d.style || "";
-  $("fItem").value = d.item || ""; $("fSize").value = d.size || "";
+  setMasterSelect("fBuyer", "fBuyerCustom", d.buyer || "");
+  $("fStyle").value = d.style || "";
+  setMasterSelect("fItem", "fItemCustom", d.item || "");
+  setMasterSelect("fSize", "fSizeCustom", d.size || "");
+  $("fFit").value = d.fit || "";
+  $("fBodyThread").value = d.bodyThread || d.bodyThreadName || "";
+  $("fDate").value = d.date || todayISO();
+  $("fAllowPct").value = (d.allowPct != null ? d.allowPct : 20);
+  $("fConeMode").value = d.coneMode || "auto";
+  $("fManualCone").value = (d.manualCone != null ? d.manualCone : 4000);
+  $("manualConeWrap").style.display = ($("fConeMode").value === "manual") ? "" : "none";
   $("fCreatedBy").value = d.createdBy || "";
-  $("fChecker").value = d.checker || ""; $("fChecker2").value = d.checker || "";
+  if($("homeChecker")) $("homeChecker").value = d.checker || "";
   OPS = (d.ops || []).map(function(o){ return newOp(o); });
   CONES = (d.cones || []).map(function(c){ return newCone(c); });
   ACCS = (d.accs || []).map(function(a){ return newAcc(a); });
@@ -627,7 +1106,8 @@ function loadSheet(d){
   window.scrollTo(0, 0);
 }
 function validHeader(){
-  if(!$("fBuyer").value.trim() || !$("fStyle").value.trim()){
+  markRequired();
+  if(!selVal("fBuyer", "fBuyerCustom") || !$("fStyle").value.trim()){
     alert("Please enter Buyer and Style first."); return false;
   }
   return true;
@@ -638,21 +1118,62 @@ function fbPush(node, data, doneMsg){
     setStatus(doneMsg);
   }).catch(function(e){ alert("Save failed: " + e.message); });
 }
-$("btnSaveDraft").onclick = function(){
+function saveDraft(){
   if(!validHeader()) return;
   var d = sheetData(); d.status = "draft";
-  fbPush("styles", d, "Draft saved.");
-};
+  if(!FB_OK){ alert("Firebase is not connected (offline?). The sheet is kept only on this device for now."); return; }
+  var existing = null;
+  stylesCache.forEach(function(it){
+    if(it.data && it.data.buyer === d.buyer && it.data.style === d.style) existing = it;
+  });
+  if(existing){
+    fbDB.ref(SHEET + "/styles/" + existing.key).set(d).then(function(){
+      setStatus("Draft updated.");
+    }).catch(function(e){ alert("Save failed: " + e.message); });
+  } else {
+    fbPush("styles", d, "Draft saved.");
+  }
+}
+function saveToDevice(d){
+  try{ localStorage.setItem("sewingSheetDevice", JSON.stringify(d)); }catch(e){}
+  var blob = new Blob([JSON.stringify(d, null, 2)], { type: "application/json" });
+  var a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = (d.style || "Thread-Sheet") + "-sheet.json";
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setStatus("Sheet saved to this device + downloaded as JSON.");
+}
 function submitForCheck(){
   if(!validHeader()) return;
   var d = sheetData(); d.status = "Pending"; d.remark = "";
   fbPush("checkQueue", d, "Submitted for check.");
 }
-$("btnSubmitCheck").onclick = submitForCheck;
-$("btnSubmitCheck2").onclick = function(){
-  $("fChecker").value = $("fChecker2").value;
-  submitForCheck();
+$("btnSaveTo").onclick = function(){
+  if($("saveToSel").value === "device"){
+    if(!validHeader()) return;
+    var d = sheetData(); d.status = "draft";
+    saveToDevice(d);
+  } else {
+    saveDraft();
+  }
 };
+$("homeSubmitCheck").onclick = submitForCheck;
+$("homeMarkChecked").onclick = function(){
+  var b = selVal("fBuyer", "fBuyerCustom"), st = $("fStyle").value.trim();
+  if(!b || !st){ alert("Open a sheet (Buyer + Style) first, or pick its pending check in the folder."); return; }
+  var it = null;
+  for(var i = 0; i < checkCache.length; i++){
+    var d = checkCache[i].data;
+    if(d.buyer === b && d.style === st && d.status !== "Checked"){ it = checkCache[i]; break; }
+  }
+  if(!it){ alert("No pending check found for this Buyer + Style."); return; }
+  var remark = prompt("Checker remark (optional):", "");
+  if(!FB_OK) return;
+  fbDB.ref(SHEET + "/checkQueue/" + it.key).update({ status: "Checked", remark: remark || "", checkedAt: Date.now() })
+    .then(function(){ setStatus("Marked Checked."); })
+    .catch(function(err){ alert("Update failed: " + err.message); });
+};
+$("homeOpenFolder").onclick = function(){ showHomePanel("folder"); };
 $("btnFinalSave").onclick = function(){
   if(!validHeader()) return;
   var d = sheetData(); d.status = "standard";
@@ -663,17 +1184,46 @@ $("btnAddToList").onclick = function(){
   var d = sheetData(); d.status = "listed";
   fbPush("styleList", d, "Added to Style List.");
 };
-$("btnClear").onclick = function(){
-  if(!confirm("Clear the whole sheet?")) return;
-  $("fBuyer").value = ""; $("fStyle").value = ""; $("fItem").value = ""; $("fSize").value = "";
-  $("fChecker").value = ""; $("fChecker2").value = "";
+$("btnNewSheet").onclick = function(){
+  if(!confirm("Start a new sheet? Unsaved changes will be lost.")) return;
+  pushUndo();
+  setMasterSelect("fBuyer", "fBuyerCustom", "");
+  $("fStyle").value = "";
+  setMasterSelect("fItem", "fItemCustom", "");
+  setMasterSelect("fSize", "fSizeCustom", "");
+  $("fFit").value = ""; $("fBodyThread").value = "";
+  $("fDate").value = todayISO(); $("fAllowPct").value = 20;
+  $("fConeMode").value = "auto"; $("manualConeWrap").style.display = "none";
   OPS = []; CONES = []; ACCS = [];
   renderOps(); renderCones(); renderAccs();
-  setStatus("Sheet cleared.");
+  setStatus("New sheet started.");
 };
+$("btnPasteGoto").onclick = function(){
+  showPage(2); showSub("thread");
+  var el = $("pasteCard"); if(el && el.scrollIntoView) el.scrollIntoView();
+  $("pasteBox").focus();
+};
+$("btnBackDashboard").onclick = function(){ showPage(1); };
+$("btnOpenReport").onclick = function(){ showPage(2); showSub("thread"); };
+$("btnHomeLogout").onclick = function(){ showHomePanel(""); window.scrollTo(0, 0); setStatus("Home view reset."); };
+$("homeUserName").addEventListener("input", function(){
+  $("welcomeLine").textContent = "Welcome to " + ($("homeUserName").value.trim() || "—");
+});
+$("bellBtn").onclick = function(){ showPage("home"); showHomePanel("folder"); };
+$("fConeMode").addEventListener("change", function(){
+  $("manualConeWrap").style.display = ($("fConeMode").value === "manual") ? "" : "none";
+  renderCones(); updateConeNote();
+});
+$("fManualCone").addEventListener("input", function(){ renderCones(); updateConeNote(); });
 
 /* ================= Folders & lists ================= */
+function renderBell(){
+  var pend = 0;
+  checkCache.forEach(function(it){ if(it.data.status !== "Checked") pend++; });
+  var b = $("bellCount"); if(b) b.textContent = pend;
+}
 function renderCheckFolder(){
+  renderBell();
   var box = $("checkFolder");
   if(!checkCache.length){ box.innerHTML = '<p class="mut">No submissions yet.</p>'; return; }
   box.innerHTML = checkCache.slice(0, 10).map(function(it){
@@ -697,30 +1247,136 @@ function renderStdFolder(){
     var b = it.data.buyer || "(No buyer)";
     (groups[b] = groups[b] || []).push(it);
   });
+  var term = stdSearchTerm.toLowerCase();
+  function markMatch(text, t){
+    if(!t) return esc(text);
+    var low = (text || "").toLowerCase(), i = low.indexOf(t);
+    if(i === -1) return esc(text);
+    return esc(text.slice(0, i)) + "<mark>" + esc(text.slice(i, i + t.length)) + "</mark>" + esc(text.slice(i + t.length));
+  }
   var html = "";
   Object.keys(groups).sort().forEach(function(b){
-    html += '<h3 style="margin:10px 0 6px;font-size:15px">' + esc(b) + '</h3>';
-    groups[b].forEach(function(it){
-      var d = it.data;
-      html += '<div class="item"><b>' + esc(d.style) + '</b> <span class="mut">' + esc(d.item) + ' | Size ' + esc(d.size) + ' | Total ' + Number(d.totalM || 0).toFixed(4) + ' m</span> '
-        + '<button class="btn btn-o btn-sm" data-open-std="' + it.key + '">Open sheet</button></div>';
+    var items = groups[b].filter(function(it){
+      if(!term) return true;
+      return (it.data.style || "").toLowerCase().indexOf(term) !== -1 || b.toLowerCase().indexOf(term) !== -1;
     });
+    if(!items.length) return;
+    var open = !!term || expandedBuyer === b;
+    html += '<div class="item folder" data-folder="' + esc(b) + '"><b>📁 ' + esc(b) + '</b> <span class="qty-badge">' + (term ? items.length + " matching" : "Style Qty: " + groups[b].length) + '</span></div>';
+    if(open){
+      items.forEach(function(it){
+        var d = it.data;
+        html += '<div class="item std-row"><b>' + markMatch(d.style || "", term) + '</b> <span class="mut">' + esc(d.item) + ' | Size ' + esc(d.size) + ' | Total ' + Number(d.totalM || 0).toFixed(4) + ' m</span> '
+          + '<button class="btn btn-o btn-sm" data-open-std="' + it.key + '">Open sheet</button></div>';
+      });
+    }
   });
-  box.innerHTML = html;
+  box.innerHTML = html || '<p class="mut">No matching standards.</p>';
+}
+$("stdSearch").addEventListener("input", function(){ stdSearchTerm = $("stdSearch").value.trim(); renderStdFolder(); });
+
+function entryMonth(d){
+  if(d.date && /^\d{4}-\d{2}/.test(d.date)) return d.date.slice(0, 7);
+  if(d.updatedAt){
+    var dt = new Date(Number(d.updatedAt));
+    if(!isNaN(dt.getTime())) return dt.getFullYear() + "-" + ("0" + (dt.getMonth() + 1)).slice(-2);
+  }
+  return "";
+}
+function entryDate(d){
+  if(d.date) return d.date;
+  if(d.updatedAt){
+    var dt = new Date(Number(d.updatedAt));
+    if(!isNaN(dt.getTime())) return dt.getFullYear() + "-" + ("0" + (dt.getMonth() + 1)).slice(-2) + "-" + ("0" + dt.getDate()).slice(-2);
+  }
+  return "";
+}
+function listRowsForBuyer(buyer){
+  return listCache.filter(function(it){
+    var d = it.data || {};
+    if(buyer && (d.buyer || "") !== buyer) return false;
+    if(currentListPeriod && entryMonth(d) !== currentListPeriod) return false;
+    return true;
+  });
+}
+function updateListBuyerSel(){
+  var lb = $("listBuyerSel");
+  if(!lb) return;
+  var all = [""].concat(masterNames(buyersCache, SEED_BUYERS));
+  listCache.forEach(function(it){ var b = it.data.buyer; if(b && all.indexOf(b) === -1) all.push(b); });
+  lb.innerHTML = all.map(function(b){ return '<option value="' + esc(b) + '">' + (b ? esc(b) : "All buyers") + '</option>'; }).join("");
+  lb.value = currentListBuyer;
 }
 function renderStyleList(){
+  var buyer = currentListBuyer;
+  var rows = listRowsForBuyer(buyer);
+  $("listPanelBuyer").textContent = buyer ? "— " + buyer + " (" + rows.length + " styles)" : "";
+  $("listHeading").value = (buyer ? buyer + " THREAD CONSUMPTION" : "ALL BUYERS THREAD CONSUMPTION");
   var html = "";
-  listCache.forEach(function(it, i){
-    var d = it.data;
+  rows.forEach(function(it, i){
+    var d = it.data || {};
+    var body = d.bodyThreadName || d.bodyThread || (d.bodyM != null ? Number(d.bodyM).toFixed(4) + " m" : "");
+    var spec = d.specialThread || (d.specialM != null ? Number(d.specialM).toFixed(4) + " m" : "");
     html += '<tr><td>' + (i + 1) + '</td><td>' + esc(d.buyer) + '</td><td>' + esc(d.style) + '</td>'
-      + '<td>' + esc(d.item) + '</td><td>' + esc(d.size) + '</td>'
-      + '<td>' + Number(d.totalM || 0).toFixed(4) + '</td>'
-      + '<td>' + Number(d.bodyM || 0).toFixed(4) + '</td>'
-      + '<td>' + Number(d.specialM || 0).toFixed(4) + '</td>'
+      + '<td>' + esc(d.item) + '</td><td>' + esc(d.size) + '</td><td>' + esc(entryDate(d)) + '</td>'
+      + '<td class="mtr">' + Number(d.totalM || 0).toFixed(4) + '</td>'
+      + '<td>' + esc(body) + '</td>'
+      + '<td>' + esc(spec) + '</td>'
       + '<td>' + esc(d.status || "") + '</td></tr>';
   });
-  $("listBody").innerHTML = html || '<tr><td colspan="9" class="mut">Style list is empty.</td></tr>';
+  $("listBody").innerHTML = html || '<tr><td colspan="10" class="mut">Style list is empty.</td></tr>';
+  updateListBuyerSel();
 }
+$("listBuyerSel").addEventListener("change", function(){
+  currentListBuyer = $("listBuyerSel").value;
+  renderStyleList();
+});
+$("listPeriod").addEventListener("change", function(){
+  currentListPeriod = $("listPeriod").value;
+  renderStyleList();
+});
+$("btnClearList").onclick = function(){
+  if(!currentListBuyer){ alert("Pick a buyer first."); return; }
+  var rows = listRowsForBuyer(currentListBuyer);
+  var scope = currentListBuyer + (currentListPeriod ? " (" + currentListPeriod + ")" : "");
+  if(!rows.length){ alert("Nothing to clear for " + scope + "."); return; }
+  if(!confirm("Clear " + rows.length + " list row(s) for " + scope + "?")) return;
+  if(!FB_OK) return;
+  var jobs = rows.map(function(it){ return fbDB.ref(SHEET + "/styleList/" + it.key).remove(); });
+  Promise.all(jobs).then(function(){ setStatus("List cleared for " + scope + "."); })
+    .catch(function(e){ alert("Clear failed: " + e.message); });
+};
+function buildListSheetForBuyer(buyer){
+  var rows = [["SL", "BUYER", "STYLE", "ITEM", "SIZE", "DATE", "MTR", "BODY THREAD", "SPECIAL THREAD", "REMARKS"]];
+  listRowsForBuyer(buyer).forEach(function(it, i){
+    var d = it.data || {};
+    rows.push([i + 1, d.buyer || "", d.style || "", d.item || "", d.size || "", entryDate(d),
+      r4(Number(d.totalM || 0)), d.bodyThreadName || d.bodyThread || r4(Number(d.bodyM || 0)),
+      d.specialThread || r4(Number(d.specialM || 0)), d.status || ""]);
+  });
+  return rows;
+}
+$("btnListExcel").onclick = function(){
+  setStatus("Loading Excel writer...");
+  ensureXLSX(function(){
+    try{
+      var wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(buildListSheetForBuyer(currentListBuyer)), "Style List");
+      var nm = (currentListBuyer ? currentListBuyer.replace(/[\\\/\?\%\*\:\|\"<>]/g, "") : "All-Buyers") + "-Style-List.xlsx";
+      XLSX.writeFile(wb, nm);
+      setStatus("List Excel exported.");
+    }catch(err){ setStatus("Ready"); alert("The Excel file could not be created. Please try again."); }
+  }, function(){ setStatus("Ready"); alert("The Excel writer could not be downloaded from any mirror.\n\nPlease check your network connection and try again."); });
+};
+$("btnListPdf").onclick = function(){
+  document.body.classList.add("print-list-only");
+  function done(){ document.body.classList.remove("print-list-only"); }
+  var old = window.onafterprint;
+  window.onafterprint = function(){ done(); window.onafterprint = old; };
+  window.print();
+  setTimeout(done, 2000);
+};
+
 function watch(node, cacheName, renderFn, limitN){
   if(!FB_OK) return;
   var ref = fbDB.ref(SHEET + "/" + node);
@@ -779,6 +1435,12 @@ function renderDashboard(){
 }
 function renderCheckers(){
   $("checkerList").innerHTML = checkersCache.map(function(c){ return '<option value="' + esc(c.name) + '">'; }).join("");
+  var hc = $("homeChecker");
+  if(hc){
+    var cur = hc.value;
+    hc.innerHTML = '<option value=""></option>' + checkersCache.map(function(c){ return '<option value="' + esc(c.name) + '">' + esc(c.name) + '</option>'; }).join("");
+    hc.value = cur;
+  }
   $("checkerListBox").innerHTML = checkersCache.length
     ? checkersCache.map(function(c){
         return '<div class="item"><b>' + esc(c.name) + '</b> '
@@ -805,11 +1467,20 @@ function applySettingsToInputs(){
   $("sElastic").value = SETTINGS.elastic;
   $("sWaist1").value = SETTINGS.waist1;
   $("sWaist2").value = SETTINGS.waist2;
-  $("coneRuleText").textContent = "Cone rule: colour quantity below " + SETTINGS.coneThreshold + " pcs uses 2000-meter cones; "
-    + SETTINGS.coneThreshold + " pcs or above uses 4000-meter cones. Cones = total thread ÷ cone length, rounded up when ordering. Metres = inches × 0.0254.";
+  updateConeNote();
   $("accRuleText").textContent = "Allowance is added by type: back twill tape +" + SETTINGS.twill + "%, back tape elastic or other elastic tape +"
     + SETTINGS.elastic + "%, waist belt elastic +" + SETTINGS.waist1 + "% and then another +" + SETTINGS.waist2 + "% wastage. "
     + "Type the item name and the rule is picked automatically, or choose it yourself. Enter lengths in CM or inch for each row. Order totals use the total Body Colors quantity.";
+}
+function updateConeNote(){
+  var t = "Cone size follows each colour's quantity: below " + SETTINGS.coneThreshold + " pcs uses 2000 m cones, "
+    + SETTINGS.coneThreshold + " pcs or more uses 4000 m cones. Body thread is calculated colour-wise. "
+    + "Contrast and other special threads use the total body-colour quantity. Add colours only as you need them.";
+  if(coneModeVal() === "manual") t += " (Manual cone length: " + manualConeVal() + " m.)";
+  $("coneRuleText").textContent = t;
+  var ln = $("listConeNote");
+  if(ln) ln.textContent = "Cone Rule: Color quantity below " + SETTINGS.coneThreshold + " pcs uses 2,000-meter cones; "
+    + SETTINGS.coneThreshold + " pcs or above uses 4,000-meter cones.";
 }
 function watchSettings(){
   if(!FB_OK) return;
@@ -876,8 +1547,70 @@ $("btnSaveSettings").onclick = function(){
 document.addEventListener("click", function(e){
   var ok = e.target.getAttribute("data-open");
   var os = e.target.getAttribute("data-open-std");
+  var od = e.target.getAttribute("data-open-draft");
+  var dd = e.target.getAttribute("data-del-draft");
   var ck = e.target.getAttribute("data-check");
   var dc = e.target.getAttribute("data-del-checker");
+  var hh = e.target.getAttribute("data-hide-home");
+  var foEl = e.target.closest ? e.target.closest("[data-folder]") : null;
+  var fo = foEl ? foEl.getAttribute("data-folder") : null;
+  var db = e.target.getAttribute("data-del-buyers");
+  var di = e.target.getAttribute("data-del-items");
+  var ds = e.target.getAttribute("data-del-sizes");
+  var ms = e.target.getAttribute("data-msave");
+  var md = e.target.getAttribute("data-mdel");
+  if(hh){ showHomePanel(""); return; }
+  if(fo){ expandedBuyer = (expandedBuyer === fo) ? "" : fo; renderStdFolder(); return; }
+  if(db || di || ds){
+    if(!FB_OK) return;
+    if(!confirm("Delete this entry?")) return;
+    var node = db ? "buyers" : di ? "items" : "sizes";
+    var key = db || di || ds;
+    fbDB.ref(SHEET + "/admin/" + node + "/" + key).remove()
+      .then(function(){ setStatus("Deleted."); })
+      .catch(function(err){ alert("Delete failed: " + err.message); });
+    return;
+  }
+  if(ms){
+    var trS = e.target.closest ? e.target.closest("tr") : null;
+    if(!trS) return;
+    var rowS = readMachineRow(trS);
+    var errS = machineValid(rowS);
+    if(errS){ $("machineWarn").textContent = errS; return; }
+    $("machineWarn").textContent = "";
+    if(!FB_OK){ alert("Firebase is not connected."); return; }
+    if(ms.indexOf("seed") === 0){
+      if(!FB_OK){ alert("Firebase is not connected."); return; }
+      fbDB.ref(SHEET + "/admin/machines").push(rowS).then(function(){ setStatus("Machine saved."); })
+        .catch(function(err){ alert("Save failed: " + err.message); });
+    } else if(ms.indexOf("draft") === 0){
+      var di2 = parseInt(ms.replace("draft", ""), 10);
+      if(!FB_OK){ alert("Firebase is not connected."); return; }
+      fbDB.ref(SHEET + "/admin/machines").push(rowS).then(function(){
+        machineDrafts.splice(di2, 1); renderMachines(); setStatus("Machine saved.");
+      }).catch(function(err){ alert("Save failed: " + err.message); });
+    } else {
+      fbDB.ref(SHEET + "/admin/machines/" + ms).set(rowS)
+        .then(function(){ setStatus("Machine saved."); })
+        .catch(function(err){ alert("Save failed: " + err.message); });
+    }
+    return;
+  }
+  if(md){
+    if(!confirm("Delete this machine?")) return;
+    if(md.indexOf("seed") === 0){
+      var trD = e.target.closest ? e.target.closest("tr") : null;
+      if(trD) hiddenSeeds.push(readMachineRow(trD).name);
+      renderMachines();
+    } else if(md.indexOf("draft") === 0){
+      machineDrafts.splice(parseInt(md.replace("draft", ""), 10), 1); renderMachines();
+    } else if(FB_OK){
+      fbDB.ref(SHEET + "/admin/machines/" + md).remove()
+        .then(function(){ setStatus("Machine deleted."); })
+        .catch(function(err){ alert("Delete failed: " + err.message); });
+    }
+    return;
+  }
   if(dc){
     if(!FB_OK) return;
     if(!confirm("Delete this checker?")) return;
@@ -888,10 +1621,19 @@ document.addEventListener("click", function(e){
   }
   if(ok){
     var it = checkCache.filter(function(x){ return x.key === ok; })[0];
-    if(it) loadSheet(it.data);
+    if(it){ loadSheet(it.data); showPage(2); showSub("thread"); }
   } else if(os){
     var it2 = stdCache.filter(function(x){ return x.key === os; })[0];
-    if(it2) loadSheet(it2.data);
+    if(it2){ loadSheet(it2.data); showPage(2); showSub("thread"); }
+  } else if(od){
+    var it3 = stylesCache.filter(function(x){ return x.key === od; })[0];
+    if(it3){ loadSheet(it3.data); showPage(2); showSub("thread"); }
+  } else if(dd){
+    if(!FB_OK) return;
+    if(!confirm("Delete this saved style?")) return;
+    fbDB.ref(SHEET + "/styles/" + dd).remove()
+      .then(function(){ setStatus("Saved style deleted."); })
+      .catch(function(err){ alert("Delete failed: " + err.message); });
   } else if(ck){
     var remark = prompt("Checker remark (optional):", "");
     if(!FB_OK) return;
@@ -901,7 +1643,245 @@ document.addEventListener("click", function(e){
   }
 });
 
+/* ================= Master lists: buyers / items / sizes ================= */
+function masterNames(cache, seeds){ return cache.length ? cache.map(function(c){ return c.name; }) : seeds.slice(); }
+function refreshMasterSelects(){
+  function fill(selId, customId, names){
+    var sel = $(selId); if(!sel) return;
+    var cur = sel.value;
+    sel.innerHTML = names.map(function(n){ return '<option value="' + esc(n) + '">' + esc(n) + '</option>'; }).join("")
+      + '<option value="__custom">＋ Custom…</option>';
+    sel.value = names.indexOf(cur) !== -1 ? cur : (cur === "__custom" ? "__custom" : (names[0] || ""));
+    setCustomVisible(customId, sel.value === "__custom");
+  }
+  fill("fBuyer", "fBuyerCustom", masterNames(buyersCache, SEED_BUYERS));
+  fill("fItem", "fItemCustom", masterNames(itemsCache, SEED_ITEMS));
+  fill("fSize", "fSizeCustom", masterNames(sizesCache, SEED_SIZES));
+}
+/* Show/hide a Custom name input together with its Save button. */
+function setCustomVisible(customId, show){
+  var w = $(customId + "Wrap");
+  if(w){ w.style.display = show ? "" : "none"; return; }
+  var c = $(customId);
+  if(c) c.style.display = show ? "" : "none";
+}
+/* Save a new Buyer/Item/Size name to the admin master list (used by the Save button and by blur). */
+function saveCustomName(selId, customId, node){
+  var custom = $(customId);
+  var v = custom ? custom.value.trim() : "";
+  if(!v) return false;
+  if(!FB_OK){ alert("Firebase is not connected. The new name is kept only on this device for now."); return false; }
+  var cache = node === "buyers" ? buyersCache : node === "items" ? itemsCache : sizesCache;
+  if(cache.some(function(c){ return c.name === v; })){ setStatus(v + " is already saved."); return true; }
+  fbDB.ref(SHEET + "/admin/" + node).push({ name: v, createdAt: Date.now() });
+  setStatus(v + " saved.");
+  return true;
+}
+function bindCustom(selId, customId, node){
+  $(selId).addEventListener("change", function(){
+    setCustomVisible(customId, $(selId).value === "__custom");
+  });
+  $(customId).addEventListener("change", function(){
+    saveCustomName(selId, customId, node);
+  });
+}
+function renderMasterBox(boxId, cache, delAttr, emptyText){
+  var box = $(boxId);
+  box.innerHTML = cache.length
+    ? cache.map(function(c){ return '<div class="item"><b>' + esc(c.name) + '</b> '
+        + '<button class="btn btn-d btn-sm" data-' + delAttr + '="' + c.key + '">Delete</button></div>'; }).join("")
+    : '<p class="mut">' + emptyText + '</p>';
+}
+function watchMaster(node){
+  if(!FB_OK) return;
+  fbDB.ref(SHEET + "/admin/" + node).on("value", function(snap){
+    var arr = [];
+    snap.forEach(function(ch){ var v = ch.val(); arr.push({ key: ch.key, name: (v && v.name) || "" }); });
+    if(node === "buyers") buyersCache = arr;
+    if(node === "items") itemsCache = arr;
+    if(node === "sizes") sizesCache = arr;
+    renderMasterBox(node === "buyers" ? "buyerListBox" : node === "items" ? "itemListBox" : "sizeListBox",
+      arr, "del-" + node, "No " + node + " yet.");
+    refreshMasterSelects();
+  });
+}
+function addMaster(node, inputId){
+  var name = $(inputId).value.trim();
+  if(!name){ alert("Enter a name first."); return; }
+  if(!FB_OK){ alert("Firebase is not connected."); return; }
+  fbDB.ref(SHEET + "/admin/" + node).push({ name: name, createdAt: Date.now() }).then(function(){
+    $(inputId).value = ""; setStatus("Added.");
+  }).catch(function(e){ alert("Save failed: " + e.message); });
+}
+$("btnAddBuyer").onclick = function(){ addMaster("buyers", "newBuyer"); };
+$("btnAddItem").onclick = function(){ addMaster("items", "newItem"); };
+$("btnAddSize").onclick = function(){ addMaster("sizes", "newSize"); };
+
+/* ================= Machines (admin) ================= */
+var machineDrafts = []; /* unsaved blank rows added via Add machine */
+var hiddenSeeds = []; /* seed names the user deleted this session (cache still empty) */
+function renderMachines(){
+  var base = machineRows().filter(function(r){ return !(r.key === "" && hiddenSeeds.indexOf(r.name) !== -1); });
+  var rows = base.map(function(r, i){ return { key: r.key || ("seed" + i), name: r.name, spi: r.spi, needle: r.needle, looper: r.looper, remarks: r.remarks }; });
+  machineDrafts.forEach(function(d, j){ rows.push({ key: "draft" + j, name: d.name, spi: d.spi, needle: d.needle, looper: d.looper, remarks: d.remarks }); });
+  var html = "";
+  rows.forEach(function(r, i){
+    var key = r.key;
+    html += '<tr data-mid="' + key + '">'
+      + '<td><input data-mf="name" value="' + esc(r.name) + '"></td>'
+      + '<td><input class="num" data-mf="spi" value="' + esc(r.spi) + '"></td>'
+      + '<td><input class="num" data-mf="needle" value="' + esc(r.needle) + '"></td>'
+      + '<td><input class="num" data-mf="looper" value="' + esc(r.looper) + '"></td>'
+      + '<td><input data-mf="remarks" value="' + esc(r.remarks) + '"></td>'
+      + '<td><button class="btn btn-p btn-sm" data-msave="' + key + '">Save</button></td>'
+      + '<td><button class="btn btn-d btn-sm" data-mdel="' + key + '">Delete</button></td></tr>';
+  });
+  $("machineBody").innerHTML = html || '<tr><td colspan="7" class="mut">No machines yet.</td></tr>';
+}
+function readMachineRow(tr){
+  function v(f){
+    var el = tr.querySelector ? tr.querySelector('[data-mf="' + f + '"]') : null;
+    return el ? el.value : "";
+  }
+  return { name: v("name").trim(), spi: num(v("spi")), needle: num(v("needle")), looper: num(v("looper")), remarks: v("remarks").trim() };
+}
+function machineValid(r){
+  if(!r.name) return "Machine name is required.";
+  if(r.needle + r.looper !== 100) return "Needle % + Looper % must equal 100 (now " + (r.needle + r.looper) + ").";
+  return "";
+}
+function watchMachines(){
+  if(!FB_OK) return;
+  fbDB.ref(SHEET + "/admin/machines").on("value", function(snap){
+    var arr = [];
+    snap.forEach(function(ch){ var v = ch.val() || {}; arr.push({ key: ch.key, name: v.name || "", spi: v.spi, needle: v.needle, looper: v.looper, remarks: v.remarks || "" }); });
+    machinesCache = arr;
+    renderMachines();
+    renderOps();
+  });
+}
+$("btnAddMachine").onclick = function(){
+  machineDrafts.push({ key: "", name: "", spi: "", needle: "", looper: "", remarks: "" });
+  renderMachines();
+};
+$("btnApplyStdMachines").onclick = function(){
+  if(!confirm("Reset the machine table to the standard splits? Custom machines will be replaced.")) return;
+  if(!FB_OK){ machinesCache = SEED_MACHINES.map(function(m){ return { key: "", name: m[0], spi: m[1], needle: m[2], looper: m[3], remarks: m[4] }; }); renderMachines(); renderOps(); return; }
+  var ref = fbDB.ref(SHEET + "/admin/machines");
+  ref.remove().then(function(){
+    var jobs = SEED_MACHINES.map(function(m){ return ref.push({ name: m[0], spi: m[1], needle: m[2], looper: m[3], remarks: m[4] }); });
+    return Promise.all(jobs);
+  }).then(function(){ setStatus("Standard machine splits applied."); })
+  .catch(function(e){ alert("Apply failed: " + e.message); });
+};
+$("btnSaveMachines").onclick = function(){
+  var trs = document.querySelectorAll ? document.querySelectorAll("#machineBody tr[data-mid]") : [];
+  var rows = [], keys = [];
+  for(var i = 0; i < trs.length; i++){
+    var r = readMachineRow(trs[i]);
+    var err = machineValid(r);
+    if(err){ $("machineWarn").textContent = "Row " + (i + 1) + ": " + err; return; }
+    rows.push(r); keys.push(trs[i].getAttribute("data-mid"));
+  }
+  $("machineWarn").textContent = "";
+  if(!FB_OK){ alert("Firebase is not connected."); return; }
+  var ref = fbDB.ref(SHEET + "/admin/machines");
+  var jobs = rows.map(function(r){ return ref.push(r); });
+  ref.remove().then(function(){ return Promise.all(jobs); })
+    .then(function(){ machineDrafts = []; setStatus("Machine changes saved."); })
+    .catch(function(e){ alert("Save failed: " + e.message); });
+};
+$("btnHideMachines").onclick = function(){
+  var w = $("machineTableWrap");
+  var hidden = w.style.display === "none";
+  w.style.display = hidden ? "" : "none";
+  $("btnHideMachines").textContent = hidden ? "HIDE" : "SHOW";
+};
+$("btnMachineExcel").onclick = function(){
+  setStatus("Loading Excel writer...");
+  ensureXLSX(function(){
+    try{
+      var wb = XLSX.utils.book_new();
+      var rows = [["Machine Name", "SPI", "Needle %", "Looper %", "Remarks"]];
+      machineRows().forEach(function(r){ rows.push([r.name, r.spi, r.needle, r.looper, r.remarks]); });
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), "Machines");
+      XLSX.writeFile(wb, "Machine-List.xlsx");
+      setStatus("Machine list exported. (Use the browser print dialog for a printed copy.)");
+    }catch(err){ setStatus("Ready"); alert("The Excel file could not be created. Please try again."); }
+  }, function(){ setStatus("Ready"); alert("The Excel writer could not be downloaded from any mirror.\n\nPlease check your network connection and try again."); });
+};
+
+/* ================= Special thread defaults (admin) ================= */
+function applySpecialDefaultsToInputs(){
+  $("sdContrast").value = specialDefaults.contrast;
+  $("sdFilament").value = specialDefaults.filament;
+  $("sdOther").value = specialDefaults.other;
+}
+function watchSpecialDefaults(){
+  if(!FB_OK) return;
+  fbDB.ref(SHEET + "/admin/specialDefaults").on("value", function(snap){
+    var v = snap.val();
+    if(v){
+      if(v.contrast != null) specialDefaults.contrast = num(v.contrast);
+      if(v.filament != null) specialDefaults.filament = num(v.filament);
+      if(v.other != null) specialDefaults.other = num(v.other);
+    }
+    applySpecialDefaultsToInputs();
+  });
+}
+$("btnSaveSpecialDefaults").onclick = function(){
+  if(!FB_OK){ alert("Firebase is not connected."); return; }
+  var s = { contrast: num($("sdContrast").value), filament: num($("sdFilament").value), other: num($("sdOther").value) };
+  fbDB.ref(SHEET + "/admin/specialDefaults").set(s).then(function(){ setStatus("Special defaults saved."); })
+    .catch(function(e){ alert("Save failed: " + e.message); });
+};
+
+/* ================= Saved Styles (drafts in Firebase) ================= */
+function renderDrafts(){
+  var box = $("draftsList");
+  if(!stylesCache.length){
+    box.innerHTML = '<p class="mut">No saved styles yet.</p>';
+    $("draftsPanelCount").textContent = "";
+    return;
+  }
+  var sorted = stylesCache.slice().sort(function(a, b){ return (b.data.updatedAt || 0) - (a.data.updatedAt || 0); });
+  $("draftsPanelCount").textContent = "— " + sorted.length + " styles";
+  var html = "";
+  sorted.forEach(function(it){
+    var d = it.data || {};
+    html += '<div class="item"><b>' + esc(d.style) + '</b> <span class="mut">' + esc(d.buyer) + ' | ' + esc(d.item) + ' | Size ' + esc(d.size) + ' | ' + entryDate(d) + ' | Total ' + Number(d.totalM || 0).toFixed(4) + ' m</span> '
+      + '<button class="btn btn-o btn-sm" data-open-draft="' + it.key + '">Open</button> '
+      + '<button class="btn btn-d btn-sm" data-del-draft="' + it.key + '">Delete</button></div>';
+  });
+  box.innerHTML = html;
+}
+
+/* ================= Home navigation ================= */
+function showHomePanel(name){
+  var map = { stylecheck: "homeStyleCheckPanel", folder: "homeCheckFolderPanel", buyer: "homeBuyerPanel", list: "homeListPanel", drafts: "homeDraftsPanel" };
+  Object.keys(map).forEach(function(n){ $(map[n]).style.display = (n === name) ? "" : "none"; });
+  if(name === "folder") renderCheckFolder();
+  if(name === "buyer") renderStdFolder();
+  if(name === "list") renderStyleList();
+  if(name === "drafts") renderDrafts();
+}
+$("btnHomeStyleCheck").onclick = function(){ showHomePanel("stylecheck"); };
+$("btnHomeFolder").onclick = function(){ showHomePanel("folder"); };
+$("btnHomeBuyer").onclick = function(){ showHomePanel("buyer"); };
+$("btnHomeList").onclick = function(){ showHomePanel("list"); };
+$("btnHomeDrafts").onclick = function(){ showHomePanel("drafts"); };
+
 /* ================= Init ================= */
+if($("fDate")) $("fDate").value = todayISO();
+refreshMasterSelects();
+renderMachines();
+applySpecialDefaultsToInputs();
+bindCustom("fBuyer", "fBuyerCustom", "buyers");
+bindCustom("fItem", "fItemCustom", "items");
+bindCustom("fSize", "fSizeCustom", "sizes");
+$("btnSaveBuyerCustom").onclick = function(){ saveCustomName("fBuyer", "fBuyerCustom", "buyers"); };
+$("btnSaveItemCustom").onclick = function(){ saveCustomName("fItem", "fItemCustom", "items"); };
+$("btnSaveSizeCustom").onclick = function(){ saveCustomName("fSize", "fSizeCustom", "sizes"); };
 OPS.push(newOp({}));
 CONES.push(newCone({}));
 ACCS.push(newAcc({}));
@@ -912,17 +1892,24 @@ if(FB_OK){
   watch("checkQueue", "check", renderCheckFolder, 0);
   watch("standards", "std", renderStdFolder, 0);
   watch("styleList", "list", renderStyleList, 0);
-  watch("styles", "styles", renderDashboard, 0);
+  watch("styles", "styles", function(){ if($("homeDraftsPanel") && $("homeDraftsPanel").style.display !== "none") renderDrafts(); }, 0);
   watchSettings();
   watchCheckers();
+  watchMaster("buyers");
+  watchMaster("items");
+  watchMaster("sizes");
+  watchMachines();
+  watchSpecialDefaults();
 } else {
   setStatus("Firebase could not connect — check your connection and reload. Editing still works on this device.");
 }
 
 /* ================= Page navigation (show/hide only — no reload, no data loss) ================= */
 function showPage(p){
+  $("pageHome").style.display = p === "home" ? "" : "none";
   $("page1").style.display = p === 1 ? "" : "none";
   $("page2").style.display = p === 2 ? "" : "none";
+  $("navHome").className = "btn " + (p === "home" ? "btn-p" : "btn-o");
   $("navPage1").className = "btn " + (p === 1 ? "btn-p" : "btn-o");
   $("navPage2").className = "btn " + (p === 2 ? "btn-p" : "btn-o");
 }
@@ -931,9 +1918,12 @@ function showSub(s){
   $("subAccWrap").style.display = s === "acc" ? "" : "none";
   $("subThread").className = "btn " + (s === "thread" ? "btn-p" : "btn-o");
   $("subAcc").className = "btn " + (s === "acc" ? "btn-p" : "btn-o");
+  if(s === "acc") syncAccStyle();
 }
+$("navHome").onclick = function(){ showPage("home"); };
 $("navPage1").onclick = function(){ showPage(1); };
 $("navPage2").onclick = function(){ showPage(2); };
+showPage("home");
 $("subThread").onclick = function(){ showSub("thread"); };
 $("subAcc").onclick = function(){ showSub("acc"); };
 
@@ -964,10 +1954,10 @@ function ncell(v){ return (v === "" || v == null) ? null : num(v); }
 function r4(x){ return Math.round(x * 10000) / 10000; }
 function headerVals(){
   return {
-    buyer: $("fBuyer").value.trim(), style: $("fStyle").value.trim(),
-    item: $("fItem").value.trim(), size: $("fSize").value.trim(),
+    buyer: selVal("fBuyer", "fBuyerCustom"), style: $("fStyle").value.trim(),
+    item: selVal("fItem", "fItemCustom"), size: selVal("fSize", "fSizeCustom"),
     createdBy: $("fCreatedBy").value.trim(),
-    checker: ($("fChecker").value.trim() || $("fChecker2").value.trim())
+    checker: $("homeChecker") ? $("homeChecker").value : ""
   };
 }
 function buildStyleSheet(){
@@ -977,7 +1967,31 @@ function buildStyleSheet(){
     [h.buyer, h.style, h.item, h.size, h.createdBy, h.checker]
   ];
 }
+function buildSummarySheet(){
+  var h = headerVals();
+  var t = totals();
+  var totalM = inToM(t.consumption);
+  var allow = allowPctVal();
+  var rows = [
+    ["Buyer", h.buyer],
+    ["Style", h.style],
+    ["Item", h.item],
+    ["Size", h.size],
+    ["Date", $("fDate").value || ""],
+    [],
+    ["Mark", "SL", "Process name", "M/C", "Consumption (m)"]
+  ];
+  OPS.forEach(function(op, i){
+    rows.push(["", i + 1, op.name, op.machine, r4(inToM(opSplit(op).consumption))]);
+  });
+  rows.push([]);
+  rows.push(["", "", "Total metres", "", r4(totalM)]);
+  rows.push(["", "", "Allowance", "", allow + "%"]);
+  rows.push(["", "", "Total per garment (m)", "", r4(totalM * (1 + allow / 100))]);
+  return rows;
+}
 function buildOperationsSheet(){
+  var t = totals();
   var rows = [["SL", "Operation", "M/C", "Seam length", "Mc thread", "Seam qty",
     "Consumption", "Thread 1", "Colour 1", "Looper % 1", "Thread 2", "Colour 2",
     "Looper % 2", "Body", "Special"]];
@@ -987,6 +2001,7 @@ function buildOperationsSheet(){
       ncell(op.seamQty), r4(s.consumption), op.thread1, op.colour1, ncell(op.pct1),
       op.thread2, op.colour2, ncell(op.pct2), r4(s.body), r4(s.special)]);
   });
+  rows.push(["", "TOTAL", "", "", "", "", r4(t.consumption), "", "", "", "", "", "", r4(t.body), r4(t.special)]);
   return rows;
 }
 function buildConeSheet(){
@@ -994,8 +2009,8 @@ function buildConeSheet(){
     "Total thread (m)", "Cone (m)", "Cones", "Cones to order"]];
   CONES.forEach(function(r){
     var qty = num(r.qty), perPc = num(r.perPc), totalM = qty * perPc;
-    var cone = coneLengthForQty(qty), cones = conesNeeded(totalM, cone);
-    rows.push([r.colour, ncell(r.qty), ncell(r.perPc), r4(totalM), cone, cones, cones]);
+    var cone = coneLengthForQty(qty);
+    rows.push([r.colour, ncell(r.qty), ncell(r.perPc), r4(totalM), cone, r4(conesExact(totalM, cone)), conesNeeded(totalM, cone)]);
   });
   return rows;
 }
@@ -1003,6 +2018,7 @@ function accRuleLabel(rule){
   if(rule === "twill") return "Back twill tape";
   if(rule === "elastic") return "Elastic tape";
   if(rule === "waist") return "Waist belt elastic";
+  if(rule === "other") return "Other (custom %)";
   return "None";
 }
 function buildAccessoriesSheet(){
@@ -1032,6 +2048,7 @@ function exportExcel(){
   ensureXLSX(function(){
     try{
       var wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(buildSummarySheet()), "Summary");
       XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(buildStyleSheet()), "Style");
       XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(buildOperationsSheet()), "Operations");
       XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(buildConeSheet()), "Cone Requirement");
