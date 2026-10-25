@@ -1,0 +1,1058 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sewing Thread Consumption Sheet — GMS</title>
+<!-- DRAFT ONLY — not deployed. Data is stored in Firebase Realtime Database
+     under the /sewingSheet/ node of the thread-calculator-gms project.
+     No Gmail dependency of any kind. -->
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js"></script>
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans Bengali",sans-serif;background:#EDF1F7;color:#1B3A5F}
+  header{box-shadow:0 2px 12px rgba(27,58,95,.12)}
+  .band1{background:#DCE5EF;color:#2C6DA8;text-align:center;padding:14px 12px;font-size:20px;font-weight:800;text-transform:uppercase}
+  .band2{background:#CBDCEC;color:#1E6B2F;text-align:center;padding:12px;font-size:18px;font-weight:800}
+  main{padding:12px;max-width:1150px;margin:0 auto;background:#fff;box-shadow:0 2px 16px rgba(27,58,95,.10);min-height:100vh}
+  .card{background:#fff;border:1px solid #E2E8F0;border-radius:16px;padding:14px;margin-bottom:12px;box-shadow:0 2px 10px rgba(27,58,95,.06)}
+  .card h2{margin:0 0 8px;font-size:16px}
+  .sub{color:#6E6480;font-size:13px;margin:0 0 10px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .grid label{font-size:13px;color:#6E6480;display:block}
+  .fi{width:100%;padding:11px 12px;border:1px solid #C9D6E3;border-radius:10px;font-size:15px;background:#fff}
+  .btn{border:0;border-radius:8px;padding:10px 14px;font-size:14px;cursor:pointer}
+  .btn-p{background:#1B3A5F;color:#fff;font-weight:700;box-shadow:0 2px 6px rgba(27,58,95,.25)}
+  .btn-o{background:#fff;color:#1B3A5F;border:1px solid #C9D6E3;font-weight:700}
+  .btn-d{background:#B3261E;color:#fff}
+  .btn-sm{padding:6px 10px;font-size:13px}
+  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .tbl-wrap{overflow-x:auto}
+  table{border-collapse:collapse;width:100%;min-width:900px;font-size:13px}
+  th,td{border:1px solid #E2E8F0;padding:6px;text-align:left;vertical-align:top}
+  th{background:#DCE5EF;color:#1B3A5F}
+  table input,table select{width:100%;padding:6px;border:1px solid #C9D6E3;border-radius:6px;font-size:13px}
+  table input.num{max-width:86px}
+  textarea{width:100%;min-height:110px;padding:10px;border:1px solid #C9D6E3;border-radius:10px;font-size:14px}
+  .tot{font-size:16px;font-weight:700}
+  .tag{display:inline-block;background:#EAF2E4;color:#2E5A1E;border-radius:20px;padding:2px 10px;font-size:12px}
+  .tag-pend{background:#FBEED3;color:#7A4A00}
+  .item{border:1px solid #E2E8F0;border-radius:10px;padding:10px;margin-bottom:8px}
+  .item b{font-size:14px}
+  .mut{color:#6E6480;font-size:13px}
+  #status{display:inline-block;font-size:13px;color:#1E6B2F;border:1px solid #C9D6E3;border-radius:20px;padding:4px 12px;background:#fff}
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}
+  .stat{background:#DCE5EF;border-radius:12px;padding:10px;text-align:center}
+  .stat b{display:block;font-size:22px;color:#1B3A5F}
+  .stat span{font-size:12px;color:#1B3A5F}
+  @media(max-width:600px){.stats{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:600px){.grid{grid-template-columns:1fr}header h1{font-size:17px}}
+  /* ================= Print: PDF looks almost the same as the on-screen sheet ================= */
+  @media print{
+    *{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+    body{ background:#fff; }
+    nav.topnav, .subnav, .btn, #status, #pasteCard{ display:none !important; }
+    main{ box-shadow:none; max-width:none; padding:0; }
+    .card{ box-shadow:none; page-break-inside:auto; }
+    tr{ page-break-inside:avoid; }
+    .tbl-wrap{ overflow:visible; }
+    table{ min-width:0; font-size:11px; }
+    table input, table select{ border:0; padding:2px; }
+  }
+
+  .topnav{background:#fff;max-width:1150px;margin:0 auto;padding:10px 12px;display:flex;gap:8px;flex-wrap:wrap;box-shadow:0 2px 16px rgba(27,58,95,.10)}
+  .topnav .btn{flex:1 1 200px}
+  .subnav .btn{flex:1 1 140px}
+</style>
+</head>
+<body>
+<header>
+  <div class="band1">GMS Composite Knitting Ind Ltd.</div>
+  <div class="band2">Sewing Thread &amp; Accessories Consumption Reports</div>
+</header>
+<nav class="topnav">
+  <button class="btn btn-p" id="navPage1">প্রথম পেজ — Admin Panel</button>
+  <button class="btn btn-o" id="navPage2">দ্বিতীয় পেজ — Sheets</button>
+</nav>
+
+<main>
+  <p id="status">Loading…</p>
+
+  <div id="page1">
+
+
+  <!-- ============ DASHBOARD ============ -->
+  <section class="card">
+    <h2>Dashboard</h2>
+    <p class="sub">Live summary from the saved Firebase data.</p>
+    <div class="stats" id="dashCards">
+      <div class="stat"><b id="dashStyles">0</b><span>Styles saved (drafts)</span></div>
+      <div class="stat"><b id="dashPending">0</b><span>Pending checks</span></div>
+      <div class="stat"><b id="dashChecked">0</b><span>Checked</span></div>
+      <div class="stat"><b id="dashStd">0</b><span>Standards (Final Save)</span></div>
+      <div class="stat"><b id="dashList">0</b><span>Style list</span></div>
+    </div>
+    <h3 style="margin:10px 0 6px;font-size:15px">Buyer-wise standards</h3>
+    <div id="dashBuyers"><p class="mut">No data yet.</p></div>
+    <h3 style="margin:10px 0 6px;font-size:15px">Latest activity</h3>
+    <div id="dashActivity"><p class="mut">No data yet.</p></div>
+    <div class="row" style="margin-top:10px">
+      <button class="btn btn-o" id="btnDashRefresh">Refresh dashboard</button>
+    </div>
+  </section>
+
+
+  <!-- ============ ADMIN PANEL ============ -->
+  <section class="card">
+    <h2>Admin Panel</h2>
+    <p class="sub">অ্যাডমিন প্যানেল থেকে চেকারদের নাম আর হিসাবের নিয়ম (cone rule, allowance) ঠিক করা যাবে। এখানে বদলালে পুরো অ্যাপের হিসাব সেই নিয়মেই চলবে।</p>
+    <h3 style="margin:10px 0 6px;font-size:15px">Checkers</h3>
+    <div class="row">
+      <input class="fi" id="newChecker" placeholder="Checker name" style="max-width:220px">
+      <button class="btn btn-p" id="btnAddChecker">+ Add checker</button>
+    </div>
+    <div id="checkerListBox" style="margin-top:8px"><p class="mut">No checkers yet.</p></div>
+    <h3 style="margin:14px 0 6px;font-size:15px">Users (from saved styles)</h3>
+    <div id="adminUsers"><p class="mut">No users yet.</p></div>
+    <h3 style="margin:14px 0 6px;font-size:15px">Settings</h3>
+    <div class="grid">
+      <div><label>Cone rule threshold (pcs): below this → 2000 m cone; this or above → 4000 m cone</label><input class="fi" id="sConeThreshold" type="number" value="2000"></div>
+      <div><label>Back twill tape allowance (%)</label><input class="fi" id="sTwill" type="number" value="7"></div>
+      <div><label>Back tape / other elastic tape allowance (%)</label><input class="fi" id="sElastic" type="number" value="10"></div>
+      <div><label>Waist belt elastic — first allowance (%)</label><input class="fi" id="sWaist1" type="number" value="7"></div>
+      <div><label>Waist belt elastic — second allowance / wastage (%)</label><input class="fi" id="sWaist2" type="number" value="7"></div>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <button class="btn btn-p" id="btnSaveSettings">Save Settings</button>
+    </div>
+  </section>
+  </div>
+
+  <div id="page2" style="display:none">
+
+  <div class="row subnav" style="margin-bottom:12px">
+    <button class="btn btn-p" id="subThread">Sewing Thread</button>
+    <button class="btn btn-o" id="subAcc">Accessories</button>
+  </div>
+
+  <div id="subThreadWrap">
+
+
+  <!-- ============ STYLE HEADER ============ -->
+  <section class="card">
+    <h2>Style Header</h2>
+    <div class="grid">
+      <div><label>Buyer</label><input class="fi" id="fBuyer" placeholder="Buyer"></div>
+      <div><label>Style</label><input class="fi" id="fStyle" placeholder="Style no."></div>
+      <div><label>Item</label><input class="fi" id="fItem" placeholder="e.g. T-Shirt"></div>
+      <div><label>Size</label><input class="fi" id="fSize" placeholder="e.g. M / S–XL"></div>
+      <div><label>Created by (username)</label><input class="fi" id="fCreatedBy" placeholder="Your name / username"></div>
+      <div><label>Checker name</label><input class="fi" id="fChecker" placeholder="Checker name" list="checkerList"></div>
+    </div>
+    <datalist id="checkerList"></datalist>
+    <div class="row" style="margin-top:10px">
+      <button class="btn btn-p" id="btnAddOp">+ Add operation row</button>
+      <button class="btn btn-o" id="btnSaveDraft">Save Draft</button>
+      <button class="btn btn-o" id="btnSubmitCheck">Submit for Check</button>
+      <button class="btn btn-p" id="btnFinalSave">Final Save</button>
+      <button class="btn btn-o" id="btnAddToList">Add to Style List</button>
+      <button class="btn btn-d" id="btnClear">Clear</button>
+      <button class="btn btn-o" id="btnExportExcel">Export Excel</button>
+      <button class="btn btn-p" id="btnExportPdf">Export PDF</button>
+    </div>
+  </section>
+
+
+  <!-- ============ STYLE CHECK DRAFT ============ -->
+  <section class="card">
+    <h2>STYLE CHECK DRAFT</h2>
+    <p class="sub">Complete the style, select the checker, then submit for check.</p>
+    <div class="row">
+      <span class="mut">Checker:</span>
+      <input class="fi" id="fChecker2" placeholder="Checker name" list="checkerList" style="max-width:220px">
+      <button class="btn btn-p" id="btnSubmitCheck2">Submit for check</button>
+    </div>
+  </section>
+
+
+  <!-- ============ OPERATIONS ============ -->
+  <section class="card">
+    <h2>Operations</h2>
+    <div class="row" style="margin-bottom:8px">
+      <label class="mut">Filter:</label>
+      <select class="fi" id="selProcess" style="max-width:200px"><option value="">ALL PROCESS</option></select>
+      <select class="fi" id="selMachine" style="max-width:200px"><option value="">ALL M/C</option></select>
+    </div>
+    <div class="tbl-wrap"><table>
+      <thead><tr>
+        <th>SL</th><th>Operation description</th><th>M/C name</th><th>Seam length (in)</th>
+        <th>Mc thread (in)</th><th>Seam qty</th><th>Consumption (in)</th>
+        <th>Thread 1</th><th>Colour 1</th><th>Looper % 1</th>
+        <th>Thread 2</th><th>Colour 2</th><th>Looper % 2</th>
+        <th>Body (in)</th><th>Special (in)</th><th></th>
+      </tr></thead>
+      <tbody id="opsBody"></tbody>
+    </table></div>
+    <p class="sub" style="margin-top:8px">Consumption = seam length × Mc thread × seam qty. Each process has two editable special-thread colour slots (Contrast, Filament or Other). Enter each percentage separately; the remaining percentage stays on body thread.</p>
+  </section>
+
+
+  <!-- ============ PASTE FROM EXCEL ============ -->
+  <section class="card" id="pasteCard">
+    <h2>Paste operations from Excel</h2>
+    <p class="sub">Copy from Excel and paste here. Accepted: SL, Process and Machine name only; the same with a seam length; or the complete process table (with or without its header row). Without a header the column order is SL (optional), Process, Machine, Seam length, Mc thread, Seam qty, Consumption. Empty numbers can be filled on the sheet later. SL is renumbered automatically.</p>
+    <textarea id="pasteBox" placeholder="Paste rows copied from Excel here (tab-separated)…"></textarea>
+    <div class="row" style="margin-top:8px">
+      <button class="btn btn-p" id="btnPaste">Insert pasted operations</button>
+      <button class="btn btn-o" id="btnPasteClear">Clear paste box</button>
+    </div>
+  </section>
+
+
+  <!-- ============ TOTALS ============ -->
+  <section class="card">
+    <h2>Total per garment</h2>
+    <p class="tot">Total consumption: <span id="totIn">0.00</span> in = <span id="totM">0.0000</span> m</p>
+    <p class="mut">Body thread: <span id="totBodyIn">0.00</span> in (<span id="totBodyM">0.0000</span> m) &nbsp;|&nbsp; Special thread: <span id="totSpecIn">0.00</span> in (<span id="totSpecM">0.0000</span> m)</p>
+  </section>
+
+
+  <!-- ============ CONE REQUIREMENT ============ -->
+  <section class="card">
+    <h2>Cone requirement</h2>
+    <p class="sub" id="coneRuleText">Cone rule: colour quantity below 2000 pcs uses 2000-meter cones; 2000 pcs or above uses 4000-meter cones. Cones = total thread ÷ cone length, rounded up when ordering. Metres = inches × 0.0254.</p>
+    <div class="tbl-wrap"><table>
+      <thead><tr>
+        <th>Body colour / Thread and colour</th><th>Qty (pcs)</th><th>Thread per pc (m)</th>
+        <th>Total thread (m)</th><th>Cone (m)</th><th>Cones</th><th>Cones to order</th><th></th>
+      </tr></thead>
+      <tbody id="coneBody"></tbody>
+    </table></div>
+    <div class="row" style="margin-top:8px">
+      <button class="btn btn-o" id="btnAddCone">+ Add cone row</button>
+      <button class="btn btn-o" id="btnConeFromBody">Use body total as thread per pc</button>
+    </div>
+  </section>
+
+
+  <!-- ============ STYLE CHECK FOLDER ============ -->
+  <section class="card">
+    <h2>Style check folder (latest 10)</h2>
+    <p class="sub">Check-এর জন্য submit করা সর্বশেষ ১০টি style এখানে দেখা যাবে। Pending style পরে যেকোনো সময় check করা যাবে। Buyer Standard থেকে এই folder আলাদা।</p>
+    <div id="checkFolder"><p class="mut">No submissions yet.</p></div>
+  </section>
+
+
+  <!-- ============ BUYER STANDARDS ============ -->
+  <section class="card">
+    <h2>All Buyer Folder — Buyer Standards</h2>
+    <p class="sub">FINAL SAVE করা Standard-গুলোই শুধু All Buyer Folder-এ buyer-wise দেখা যাবে। Style Check-এর style এখানে দেখাবে না।</p>
+    <div id="stdFolder"><p class="mut">No final standards yet.</p></div>
+  </section>
+
+
+  <!-- ============ STYLE LIST ============ -->
+  <section class="card">
+    <h2>Style list</h2>
+    <p class="sub">Current completed style-টি list-এ যোগ করুন। Merchant list Excel demo format অনুযায়ী Buyer, Style, Item, Size, total meter, Body এবং Special Thread দেখাবে।</p>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>SL</th><th>BUYER</th><th>STYLE</th><th>ITEM</th><th>SIZE</th><th>MTR</th><th>BODY THREAD</th><th>SPECIAL THREAD</th><th>REMARKS</th></tr></thead>
+      <tbody id="listBody"></tbody>
+    </table></div>
+  </section>
+  </div>
+
+  <div id="subAccWrap" style="display:none">
+
+
+  <!-- ============ ACCESSORIES ============ -->
+  <section class="card">
+    <h2>Accessories consumption</h2>
+    <p class="sub" id="accRuleText">Allowance is added by type: back twill tape +7%, back tape elastic or other elastic tape +10%, waist belt elastic +7% and then another +7% wastage. Type the item name and the rule is picked automatically, or choose it yourself. Enter lengths in CM or inch for each row. Order totals use the total Body Colors quantity.</p>
+    <div class="tbl-wrap"><table>
+      <thead><tr>
+        <th>Item for sew process</th><th>Allowance rule</th><th>Seam length</th><th>Seam allowance</th>
+        <th>Input unit</th><th>Actual total (cm)</th><th>Allowance %</th><th>Per garment</th><th>Order total</th><th></th>
+      </tr></thead>
+      <tbody id="accBody"></tbody>
+    </table></div>
+    <div class="row" style="margin-top:8px">
+      <button class="btn btn-o" id="btnAddAcc">+ Add accessory row</button>
+      <button class="btn btn-o" id="btnExportExcel2">Export Excel</button>
+      <button class="btn btn-p" id="btnExportPdf2">Export PDF</button>
+    </div>
+  </section>
+  </div>
+  </div>
+</main>
+<script>
+/* ================= Firebase (user's own project, browser config) ================= */
+var firebaseConfig = {
+  apiKey: "AIzaSyARMeTI7Bt5zF_jBKXgmFD5VfugmNi7FiI",
+  authDomain: "thread-calculator-gms.firebaseapp.com",
+  databaseURL: "https://thread-calculator-gms-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "thread-calculator-gms",
+  storageBucket: "thread-calculator-gms.firebasestorage.app",
+  messagingSenderId: "969274625383",
+  appId: "1:969274625383:web:37e6882489d1f336adf3c2"
+};
+var fbDB = null, FB_OK = false;
+try{
+  if(typeof firebase !== "undefined"){
+    firebase.initializeApp(firebaseConfig);
+    fbDB = firebase.database();
+    FB_OK = true;
+  }
+}catch(e){ FB_OK = false; }
+var SHEET = "sewingSheet"; /* ALL data lives under this root node only */
+
+/* ================= Helpers ================= */
+function esc(s){ return String(s == null ? "" : s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+function num(v){ var n = parseFloat(v); return isNaN(n) ? 0 : n; }
+function $(id){ return document.getElementById(id); }
+function setStatus(t){ $("status").textContent = t; }
+function uid(){ return "op" + Date.now().toString(36) + Math.floor(Math.random()*1e6).toString(36); }
+
+/* ================= State ================= */
+var OPS = [];        /* operation rows */
+var CONES = [];      /* cone rows */
+var ACCS = [];       /* accessory rows */
+var checkCache = []; /* checkQueue snapshots (newest first) */
+var stdCache = [];   /* standards snapshots */
+var listCache = [];  /* styleList snapshots */
+var stylesCache = [];/* styles (drafts) snapshots */
+var checkersCache = []; /* admin/checkers snapshots: {key, name} */
+/* Admin settings (Firebase admin/settings overrides these defaults). */
+var SETTINGS = { coneThreshold: 2000, twill: 7, elastic: 10, waist1: 7, waist2: 7 };
+
+function newOp(d){
+  d = d || {};
+  return { id: uid(), name: d.name || "", machine: d.machine || "",
+    seamLength: d.seamLength == null ? "" : d.seamLength,
+    mcThread: d.mcThread == null ? "" : d.mcThread,
+    seamQty: d.seamQty == null ? 1 : d.seamQty,
+    thread1: d.thread1 || "", colour1: d.colour1 || "", pct1: d.pct1 == null ? "" : d.pct1,
+    thread2: d.thread2 || "", colour2: d.colour2 || "", pct2: d.pct2 == null ? "" : d.pct2 };
+}
+function newCone(d){
+  d = d || {};
+  return { id: uid(), colour: d.colour || "", qty: d.qty == null ? "" : d.qty,
+    perPc: d.perPc == null ? "" : d.perPc };
+}
+function newAcc(d){
+  d = d || {};
+  return { id: uid(), item: d.item || "", rule: d.rule || "auto",
+    seamLength: d.seamLength == null ? "" : d.seamLength,
+    seamAllowance: d.seamAllowance == null ? "" : d.seamAllowance,
+    unit: d.unit || "CM" };
+}
+
+/* ================= Core formulas ================= */
+function opConsumption(op){
+  /* Consumption = seam length × Mc thread × seam qty */
+  return num(op.seamLength) * num(op.mcThread) * num(op.seamQty);
+}
+function opSplit(op){
+  var c = opConsumption(op);
+  var p1 = num(op.pct1), p2 = num(op.pct2);
+  var special = c * (p1 + p2) / 100;
+  var body = c - special;
+  if(body < 0) body = 0;
+  return { consumption: c, body: body, special: special };
+}
+function totals(){
+  var t = { consumption: 0, body: 0, special: 0 };
+  OPS.forEach(function(op){ var s = opSplit(op); t.consumption += s.consumption; t.body += s.body; t.special += s.special; });
+  return t;
+}
+function inToM(inches){ return inches * 0.0254; }
+function coneLengthForQty(qty){ return qty < SETTINGS.coneThreshold ? 2000 : 4000; }
+function conesNeeded(totalM, coneLen){ return coneLen > 0 ? Math.ceil(totalM / coneLen) : 0; }
+function totalBodyQty(){ var q = 0; CONES.forEach(function(r){ q += num(r.qty); }); return q; }
+
+/* Accessories: allowance picked from the item name, or chosen manually. */
+function accRuleFor(item, manual){
+  if(manual && manual !== "auto") return manual;
+  var n = String(item || "").toLowerCase();
+  if(n.indexOf("waist belt elastic") !== -1) return "waist";
+  if(n.indexOf("elastic tape") !== -1 || n.indexOf("back tape elastic") !== -1 || n.indexOf("elastic") !== -1) return "elastic";
+  if(n.indexOf("twill tape") !== -1) return "twill";
+  return "none";
+}
+function accFactor(rule){
+  if(rule === "twill") return 1 + SETTINGS.twill / 100;
+  if(rule === "elastic") return 1 + SETTINGS.elastic / 100;
+  if(rule === "waist") return (1 + SETTINGS.waist1 / 100) * (1 + SETTINGS.waist2 / 100);
+  return 1;
+}
+function accPct(rule){
+  if(rule === "twill") return SETTINGS.twill;
+  if(rule === "elastic") return SETTINGS.elastic;
+  if(rule === "waist") return Math.round(((1 + SETTINGS.waist1 / 100) * (1 + SETTINGS.waist2 / 100) - 1) * 10000) / 100;
+  return 0;
+}
+function accCompute(row){
+  var len = num(row.seamLength) + num(row.seamAllowance);
+  var cm = row.unit === "inch" ? len * 2.54 : len;
+  var rule = accRuleFor(row.item, row.rule);
+  var perGarment = cm * accFactor(rule);
+  var order = perGarment * totalBodyQty();
+  return { cm: cm, rule: rule, pct: accPct(rule), perGarment: perGarment, order: order };
+}
+
+/* ================= Render: operations ================= */
+function refreshFilters(){
+  var ps = $("selProcess"), ms = $("selMachine");
+  var curP = ps.value, curM = ms.value;
+  var procs = [], machs = [];
+  OPS.forEach(function(op){
+    if(op.name && procs.indexOf(op.name) === -1) procs.push(op.name);
+    if(op.machine && machs.indexOf(op.machine) === -1) machs.push(op.machine);
+  });
+  ps.innerHTML = '<option value="">ALL PROCESS</option>' + procs.map(function(p){ return '<option value="' + esc(p) + '">' + esc(p) + '</option>'; }).join("");
+  ms.innerHTML = '<option value="">ALL M/C</option>' + machs.map(function(m){ return '<option value="' + esc(m) + '">' + esc(m) + '</option>'; }).join("");
+  ps.value = curP; ms.value = curM;
+}
+function renderOps(){
+  refreshFilters();
+  var fp = $("selProcess").value, fm = $("selMachine").value;
+  var html = "";
+  OPS.forEach(function(op, i){
+    if(fp && op.name !== fp) return;
+    if(fm && op.machine !== fm) return;
+    var s = opSplit(op);
+    html += '<tr data-id="' + op.id + '">'
+      + '<td>' + (i + 1) + '</td>'
+      + '<td><input data-f="name" value="' + esc(op.name) + '"></td>'
+      + '<td><input data-f="machine" value="' + esc(op.machine) + '"></td>'
+      + '<td><input class="num" data-f="seamLength" value="' + esc(op.seamLength) + '"></td>'
+      + '<td><input class="num" data-f="mcThread" value="' + esc(op.mcThread) + '"></td>'
+      + '<td><input class="num" data-f="seamQty" value="' + esc(op.seamQty) + '"></td>'
+      + '<td>' + s.consumption.toFixed(2) + '</td>'
+      + '<td><input data-f="thread1" value="' + esc(op.thread1) + '"></td>'
+      + '<td><input data-f="colour1" value="' + esc(op.colour1) + '"></td>'
+      + '<td><input class="num" data-f="pct1" value="' + esc(op.pct1) + '"></td>'
+      + '<td><input data-f="thread2" value="' + esc(op.thread2) + '"></td>'
+      + '<td><input data-f="colour2" value="' + esc(op.colour2) + '"></td>'
+      + '<td><input class="num" data-f="pct2" value="' + esc(op.pct2) + '"></td>'
+      + '<td>' + s.body.toFixed(2) + '</td>'
+      + '<td>' + s.special.toFixed(2) + '</td>'
+      + '<td><button class="btn btn-d btn-sm" data-del="' + op.id + '">Delete</button></td></tr>';
+  });
+  $("opsBody").innerHTML = html || '<tr><td colspan="16" class="mut">No operations yet. Add a row or paste from Excel.</td></tr>';
+  renderTotals();
+}
+function renderTotals(){
+  var t = totals();
+  $("totIn").textContent = t.consumption.toFixed(2);
+  $("totM").textContent = inToM(t.consumption).toFixed(4);
+  $("totBodyIn").textContent = t.body.toFixed(2);
+  $("totBodyM").textContent = inToM(t.body).toFixed(4);
+  $("totSpecIn").textContent = t.special.toFixed(2);
+  $("totSpecM").textContent = inToM(t.special).toFixed(4);
+  renderCones();
+  renderAccs();
+}
+$("opsBody").addEventListener("input", function(e){
+  var inp = e.target, f = inp.getAttribute("data-f");
+  if(!f) return;
+  var tr = inp.closest("tr"), id = tr.getAttribute("data-id");
+  var op = OPS.filter(function(o){ return o.id === id; })[0];
+  if(!op) return;
+  op[f] = inp.value;
+  renderOps();
+});
+$("opsBody").addEventListener("click", function(e){
+  var id = e.target.getAttribute("data-del");
+  if(!id) return;
+  OPS = OPS.filter(function(o){ return o.id !== id; });
+  renderOps();
+});
+$("selProcess").addEventListener("change", renderOps);
+$("selMachine").addEventListener("change", renderOps);
+$("btnAddOp").onclick = function(){ OPS.push(newOp({})); renderOps(); };
+
+/* ================= Paste from Excel ================= */
+function pasteOps(){
+  var text = $("pasteBox").value;
+  if(!text.trim()){ alert("Paste box is empty."); return; }
+  var lines = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n").split("\n")
+    .map(function(l){ return l.replace(/\s+$/, ""); })
+    .filter(function(l){ return l.trim() !== ""; });
+  var added = 0;
+  lines.forEach(function(line){
+    var cells = line.indexOf("\t") !== -1 ? line.split("\t") : line.split(",");
+    cells = cells.map(function(c){ return c.trim().replace(/^"|"$/g, ""); });
+    var low = cells.map(function(c){ return c.toLowerCase(); });
+    /* Header row? skip it. */
+    if(low.some(function(c){ return c.indexOf("process") !== -1 || c.indexOf("operation") !== -1 || c.indexOf("machine") !== -1 || c === "m/c" || c.indexOf("seam length") !== -1; })){
+      return;
+    }
+    /* Optional SL: first cell a pure number and a second cell exists. */
+    if(cells.length >= 2 && /^\d+$/.test(cells[0]) && cells[1] !== "") cells.shift();
+    if(cells.length < 2 || !cells[0]) return;
+    OPS.push(newOp({
+      name: cells[0] || "",
+      machine: cells[1] || "",
+      seamLength: cells[2] || "",
+      mcThread: cells[3] || "",
+      seamQty: cells[4] === "" || cells[4] == null ? 1 : cells[4]
+      /* cells[5] (Consumption) is ignored: it is recomputed by formula. */
+    }));
+    added++;
+  });
+  renderOps();
+  setStatus(added ? added + " operation(s) pasted. SL renumbered automatically." : "No operations found in the pasted text.");
+}
+$("btnPaste").onclick = pasteOps;
+$("btnPasteClear").onclick = function(){ $("pasteBox").value = ""; };
+
+/* ================= Render: cone requirement ================= */
+function renderCones(){
+  var html = "";
+  CONES.forEach(function(r){
+    var qty = num(r.qty), perPc = num(r.perPc);
+    var totalM = qty * perPc;
+    var cone = coneLengthForQty(qty);
+    var cones = conesNeeded(totalM, cone);
+    html += '<tr data-id="' + r.id + '">'
+      + '<td><input data-f="colour" value="' + esc(r.colour) + '"></td>'
+      + '<td><input class="num" data-f="qty" value="' + esc(r.qty) + '"></td>'
+      + '<td><input class="num" data-f="perPc" value="' + esc(r.perPc) + '"></td>'
+      + '<td>' + totalM.toFixed(2) + '</td>'
+      + '<td>' + cone + '</td>'
+      + '<td>' + cones + '</td>'
+      + '<td>' + cones + '</td>'
+      + '<td><button class="btn btn-d btn-sm" data-del="' + r.id + '">Delete</button></td></tr>';
+  });
+  $("coneBody").innerHTML = html || '<tr><td colspan="8" class="mut">No cone rows yet.</td></tr>';
+}
+$("coneBody").addEventListener("input", function(e){
+  var inp = e.target, f = inp.getAttribute("data-f");
+  if(!f) return;
+  var id = inp.closest("tr").getAttribute("data-id");
+  var r = CONES.filter(function(x){ return x.id === id; })[0];
+  if(!r) return;
+  r[f] = inp.value;
+  renderCones(); renderAccs();
+});
+$("coneBody").addEventListener("click", function(e){
+  var id = e.target.getAttribute("data-del");
+  if(!id) return;
+  CONES = CONES.filter(function(x){ return x.id !== id; });
+  renderCones(); renderAccs();
+});
+$("btnAddCone").onclick = function(){ CONES.push(newCone({ perPc: inToM(totals().body).toFixed(4) })); renderCones(); };
+$("btnConeFromBody").onclick = function(){
+  var m = inToM(totals().body).toFixed(4);
+  CONES.forEach(function(r){ r.perPc = m; });
+  renderCones();
+};
+
+/* ================= Render: accessories ================= */
+function renderAccs(){
+  var html = "";
+  ACCS.forEach(function(r){
+    var c = accCompute(r);
+    html += '<tr data-id="' + r.id + '">'
+      + '<td><input data-f="item" value="' + esc(r.item) + '"></td>'
+      + '<td><select data-f="rule">'
+      + '<option value="auto"' + (r.rule === "auto" ? " selected" : "") + '>Auto from name</option>'
+      + '<option value="twill"' + (r.rule === "twill" ? " selected" : "") + '>Back twill tape +7%</option>'
+      + '<option value="elastic"' + (r.rule === "elastic" ? " selected" : "") + '>Elastic tape +10%</option>'
+      + '<option value="waist"' + (r.rule === "waist" ? " selected" : "") + '>Waist belt elastic +7% +7%</option>'
+      + '<option value="none"' + (r.rule === "none" ? " selected" : "") + '>No allowance</option>'
+      + '</select></td>'
+      + '<td><input class="num" data-f="seamLength" value="' + esc(r.seamLength) + '"></td>'
+      + '<td><input class="num" data-f="seamAllowance" value="' + esc(r.seamAllowance) + '"></td>'
+      + '<td><select data-f="unit"><option value="CM"' + (r.unit === "CM" ? " selected" : "") + '>CM</option><option value="inch"' + (r.unit === "inch" ? " selected" : "") + '>inch</option></select></td>'
+      + '<td>' + c.cm.toFixed(2) + '</td>'
+      + '<td>' + c.pct.toFixed(2) + '%</td>'
+      + '<td>' + c.perGarment.toFixed(2) + ' cm</td>'
+      + '<td>' + c.order.toFixed(2) + ' cm</td>'
+      + '<td><button class="btn btn-d btn-sm" data-del="' + r.id + '">Delete</button></td></tr>';
+  });
+  $("accBody").innerHTML = html || '<tr><td colspan="10" class="mut">No accessory rows yet.</td></tr>';
+}
+$("accBody").addEventListener("input", function(e){
+  var inp = e.target, f = inp.getAttribute("data-f");
+  if(!f) return;
+  var id = inp.closest("tr").getAttribute("data-id");
+  var r = ACCS.filter(function(x){ return x.id === id; })[0];
+  if(!r) return;
+  r[f] = inp.value;
+  renderAccs();
+});
+$("accBody").addEventListener("change", function(e){
+  var inp = e.target, f = inp.getAttribute("data-f");
+  if(!f) return;
+  var id = inp.closest("tr").getAttribute("data-id");
+  var r = ACCS.filter(function(x){ return x.id === id; })[0];
+  if(!r) return;
+  r[f] = inp.value;
+  renderAccs();
+});
+$("accBody").addEventListener("click", function(e){
+  var id = e.target.getAttribute("data-del");
+  if(!id) return;
+  ACCS = ACCS.filter(function(x){ return x.id !== id; });
+  renderAccs();
+});
+$("btnAddAcc").onclick = function(){ ACCS.push(newAcc({})); renderAccs(); };
+
+/* ================= Sheet snapshot ================= */
+function sheetData(){
+  var t = totals();
+  return {
+    buyer: $("fBuyer").value.trim(), style: $("fStyle").value.trim(),
+    item: $("fItem").value.trim(), size: $("fSize").value.trim(),
+    createdBy: $("fCreatedBy").value.trim(),
+    checker: ($("fChecker").value.trim() || $("fChecker2").value.trim()),
+    ops: OPS, cones: CONES, accs: ACCS,
+    totalIn: t.consumption, totalM: inToM(t.consumption),
+    bodyIn: t.body, bodyM: inToM(t.body), specialIn: t.special, specialM: inToM(t.special),
+    updatedAt: Date.now()
+  };
+}
+function loadSheet(d){
+  $("fBuyer").value = d.buyer || ""; $("fStyle").value = d.style || "";
+  $("fItem").value = d.item || ""; $("fSize").value = d.size || "";
+  $("fCreatedBy").value = d.createdBy || "";
+  $("fChecker").value = d.checker || ""; $("fChecker2").value = d.checker || "";
+  OPS = (d.ops || []).map(function(o){ return newOp(o); });
+  CONES = (d.cones || []).map(function(c){ return newCone(c); });
+  ACCS = (d.accs || []).map(function(a){ return newAcc(a); });
+  renderOps(); renderCones(); renderAccs();
+  window.scrollTo(0, 0);
+}
+function validHeader(){
+  if(!$("fBuyer").value.trim() || !$("fStyle").value.trim()){
+    alert("Please enter Buyer and Style first."); return false;
+  }
+  return true;
+}
+function fbPush(node, data, doneMsg){
+  if(!FB_OK){ alert("Firebase is not connected (offline?). The sheet is kept only on this device for now."); return; }
+  fbDB.ref(SHEET + "/" + node).push(data).then(function(){
+    setStatus(doneMsg);
+  }).catch(function(e){ alert("Save failed: " + e.message); });
+}
+$("btnSaveDraft").onclick = function(){
+  if(!validHeader()) return;
+  var d = sheetData(); d.status = "draft";
+  fbPush("styles", d, "Draft saved.");
+};
+function submitForCheck(){
+  if(!validHeader()) return;
+  var d = sheetData(); d.status = "Pending"; d.remark = "";
+  fbPush("checkQueue", d, "Submitted for check.");
+}
+$("btnSubmitCheck").onclick = submitForCheck;
+$("btnSubmitCheck2").onclick = function(){
+  $("fChecker").value = $("fChecker2").value;
+  submitForCheck();
+};
+$("btnFinalSave").onclick = function(){
+  if(!validHeader()) return;
+  var d = sheetData(); d.status = "standard";
+  fbPush("standards", d, "Final Save done. It now appears in All Buyer Folder.");
+};
+$("btnAddToList").onclick = function(){
+  if(!validHeader()) return;
+  var d = sheetData(); d.status = "listed";
+  fbPush("styleList", d, "Added to Style List.");
+};
+$("btnClear").onclick = function(){
+  if(!confirm("Clear the whole sheet?")) return;
+  $("fBuyer").value = ""; $("fStyle").value = ""; $("fItem").value = ""; $("fSize").value = "";
+  $("fChecker").value = ""; $("fChecker2").value = "";
+  OPS = []; CONES = []; ACCS = [];
+  renderOps(); renderCones(); renderAccs();
+  setStatus("Sheet cleared.");
+};
+
+/* ================= Folders & lists ================= */
+function renderCheckFolder(){
+  var box = $("checkFolder");
+  if(!checkCache.length){ box.innerHTML = '<p class="mut">No submissions yet.</p>'; return; }
+  box.innerHTML = checkCache.slice(0, 10).map(function(it){
+    var d = it.data;
+    return '<div class="item" data-load="' + it.key + '" data-kind="check">'
+      + '<b>' + esc(d.buyer) + ' — ' + esc(d.style) + '</b> '
+      + '<span class="tag ' + (d.status === "Pending" ? "tag-pend" : "") + '">' + esc(d.status || "Pending") + '</span>'
+      + '<div class="mut">' + esc(d.item) + ' | Size ' + esc(d.size) + ' | Checker: ' + esc(d.checker || "-")
+      + (d.remark ? ' | Remark: ' + esc(d.remark) : '') + '</div>'
+      + '<div class="row" style="margin-top:6px">'
+      + '<button class="btn btn-o btn-sm" data-open="' + it.key + '">Open sheet</button>'
+      + (d.status === "Pending" ? '<button class="btn btn-p btn-sm" data-check="' + it.key + '">Mark Checked</button>' : '')
+      + '</div></div>';
+  }).join("");
+}
+function renderStdFolder(){
+  var box = $("stdFolder");
+  if(!stdCache.length){ box.innerHTML = '<p class="mut">No final standards yet.</p>'; return; }
+  var groups = {};
+  stdCache.forEach(function(it){
+    var b = it.data.buyer || "(No buyer)";
+    (groups[b] = groups[b] || []).push(it);
+  });
+  var html = "";
+  Object.keys(groups).sort().forEach(function(b){
+    html += '<h3 style="margin:10px 0 6px;font-size:15px">' + esc(b) + '</h3>';
+    groups[b].forEach(function(it){
+      var d = it.data;
+      html += '<div class="item"><b>' + esc(d.style) + '</b> <span class="mut">' + esc(d.item) + ' | Size ' + esc(d.size) + ' | Total ' + Number(d.totalM || 0).toFixed(4) + ' m</span> '
+        + '<button class="btn btn-o btn-sm" data-open-std="' + it.key + '">Open sheet</button></div>';
+    });
+  });
+  box.innerHTML = html;
+}
+function renderStyleList(){
+  var html = "";
+  listCache.forEach(function(it, i){
+    var d = it.data;
+    html += '<tr><td>' + (i + 1) + '</td><td>' + esc(d.buyer) + '</td><td>' + esc(d.style) + '</td>'
+      + '<td>' + esc(d.item) + '</td><td>' + esc(d.size) + '</td>'
+      + '<td>' + Number(d.totalM || 0).toFixed(4) + '</td>'
+      + '<td>' + Number(d.bodyM || 0).toFixed(4) + '</td>'
+      + '<td>' + Number(d.specialM || 0).toFixed(4) + '</td>'
+      + '<td>' + esc(d.status || "") + '</td></tr>';
+  });
+  $("listBody").innerHTML = html || '<tr><td colspan="9" class="mut">Style list is empty.</td></tr>';
+}
+function watch(node, cacheName, renderFn, limitN){
+  if(!FB_OK) return;
+  var ref = fbDB.ref(SHEET + "/" + node);
+  if(limitN) ref = ref.limitToLast(limitN);
+  ref.on("value", function(snap){
+    var arr = [];
+    snap.forEach(function(ch){ arr.push({ key: ch.key, data: ch.val() }); });
+    arr.reverse();
+    if(cacheName === "check") checkCache = arr;
+    if(cacheName === "std") stdCache = arr;
+    if(cacheName === "list") listCache = arr;
+    if(cacheName === "styles") stylesCache = arr;
+    renderFn();
+    renderDashboard();
+    renderAdminUsers();
+  });
+}
+
+/* ================= Dashboard & Admin Panel ================= */
+function fmtTime(ts){
+  if(!ts) return "—";
+  try{ return new Date(ts).toLocaleString(); }catch(e){ return "—"; }
+}
+function renderDashboard(){
+  $("dashStyles").textContent = stylesCache.length;
+  var pend = 0, chk = 0;
+  checkCache.forEach(function(it){ if(it.data.status === "Checked") chk++; else pend++; });
+  $("dashPending").textContent = pend;
+  $("dashChecked").textContent = chk;
+  $("dashStd").textContent = stdCache.length;
+  $("dashList").textContent = listCache.length;
+  /* Buyer-wise standards */
+  var groups = {};
+  stdCache.forEach(function(it){
+    var b = it.data.buyer || "(No buyer)";
+    groups[b] = (groups[b] || 0) + 1;
+  });
+  var keys = Object.keys(groups).sort();
+  $("dashBuyers").innerHTML = keys.length
+    ? '<div class="tbl-wrap"><table style="min-width:0"><thead><tr><th>Buyer</th><th>Standards</th></tr></thead><tbody>'
+      + keys.map(function(b){ return '<tr><td>' + esc(b) + '</td><td>' + groups[b] + '</td></tr>'; }).join("")
+      + '</tbody></table></div>'
+    : '<p class="mut">No data yet.</p>';
+  /* Latest 5 activity: checkQueue + standards, newest first */
+  var acts = [];
+  checkCache.forEach(function(it){ acts.push({ t: it.data.checkedAt || it.data.updatedAt || 0, kind: "Check", d: it.data }); });
+  stdCache.forEach(function(it){ acts.push({ t: it.data.updatedAt || 0, kind: "Standard", d: it.data }); });
+  acts.sort(function(a, b){ return b.t - a.t; });
+  $("dashActivity").innerHTML = acts.length
+    ? acts.slice(0, 5).map(function(a){
+        return '<div class="item"><b>' + esc(a.d.buyer) + ' — ' + esc(a.d.style) + '</b> '
+          + '<span class="tag">' + esc(a.kind) + ' · ' + esc(a.d.status || "") + '</span>'
+          + '<div class="mut">' + esc(a.d.item) + ' | ' + fmtTime(a.t) + '</div></div>';
+      }).join("")
+    : '<p class="mut">No data yet.</p>';
+}
+function renderCheckers(){
+  $("checkerList").innerHTML = checkersCache.map(function(c){ return '<option value="' + esc(c.name) + '">'; }).join("");
+  $("checkerListBox").innerHTML = checkersCache.length
+    ? checkersCache.map(function(c){
+        return '<div class="item"><b>' + esc(c.name) + '</b> '
+          + '<button class="btn btn-d btn-sm" data-del-checker="' + c.key + '">Delete</button></div>';
+      }).join("")
+    : '<p class="mut">No checkers yet.</p>';
+}
+function renderAdminUsers(){
+  var seen = {}, users = [];
+  [stylesCache, checkCache, stdCache, listCache].forEach(function(arr){
+    arr.forEach(function(it){
+      var u = it.data.createdBy;
+      if(u && !seen[u]){ seen[u] = 1; users.push(u); }
+    });
+  });
+  users.sort();
+  $("adminUsers").innerHTML = users.length
+    ? users.map(function(u){ return '<span class="tag" style="margin:2px">' + esc(u) + '</span>'; }).join(" ")
+    : '<p class="mut">No users yet.</p>';
+}
+function applySettingsToInputs(){
+  $("sConeThreshold").value = SETTINGS.coneThreshold;
+  $("sTwill").value = SETTINGS.twill;
+  $("sElastic").value = SETTINGS.elastic;
+  $("sWaist1").value = SETTINGS.waist1;
+  $("sWaist2").value = SETTINGS.waist2;
+  $("coneRuleText").textContent = "Cone rule: colour quantity below " + SETTINGS.coneThreshold + " pcs uses 2000-meter cones; "
+    + SETTINGS.coneThreshold + " pcs or above uses 4000-meter cones. Cones = total thread ÷ cone length, rounded up when ordering. Metres = inches × 0.0254.";
+  $("accRuleText").textContent = "Allowance is added by type: back twill tape +" + SETTINGS.twill + "%, back tape elastic or other elastic tape +"
+    + SETTINGS.elastic + "%, waist belt elastic +" + SETTINGS.waist1 + "% and then another +" + SETTINGS.waist2 + "% wastage. "
+    + "Type the item name and the rule is picked automatically, or choose it yourself. Enter lengths in CM or inch for each row. Order totals use the total Body Colors quantity.";
+}
+function watchSettings(){
+  if(!FB_OK) return;
+  fbDB.ref(SHEET + "/admin/settings").on("value", function(snap){
+    var v = snap.val();
+    if(v){
+      if(v.coneThreshold != null) SETTINGS.coneThreshold = num(v.coneThreshold);
+      if(v.twill != null) SETTINGS.twill = num(v.twill);
+      if(v.elastic != null) SETTINGS.elastic = num(v.elastic);
+      if(v.waist1 != null) SETTINGS.waist1 = num(v.waist1);
+      if(v.waist2 != null) SETTINGS.waist2 = num(v.waist2);
+    }
+    applySettingsToInputs();
+    renderCones(); renderAccs();
+  });
+}
+function watchCheckers(){
+  if(!FB_OK) return;
+  fbDB.ref(SHEET + "/admin/checkers").on("value", function(snap){
+    var arr = [];
+    snap.forEach(function(ch){ var v = ch.val(); arr.push({ key: ch.key, name: (v && v.name) || "" }); });
+    checkersCache = arr;
+    renderCheckers();
+  });
+}
+$("btnDashRefresh").onclick = function(){
+  renderDashboard(); renderAdminUsers();
+  if(FB_OK){
+    fbDB.ref(SHEET + "/admin/settings").once("value").then(function(snap){
+      var v = snap.val();
+      if(v){
+        if(v.coneThreshold != null) SETTINGS.coneThreshold = num(v.coneThreshold);
+        if(v.twill != null) SETTINGS.twill = num(v.twill);
+        if(v.elastic != null) SETTINGS.elastic = num(v.elastic);
+        if(v.waist1 != null) SETTINGS.waist1 = num(v.waist1);
+        if(v.waist2 != null) SETTINGS.waist2 = num(v.waist2);
+      }
+      applySettingsToInputs(); renderCones(); renderAccs();
+      setStatus("Dashboard refreshed.");
+    });
+  } else { setStatus("Dashboard refreshed (offline — Firebase not connected)."); }
+};
+$("btnAddChecker").onclick = function(){
+  var name = $("newChecker").value.trim();
+  if(!name){ alert("Enter a checker name first."); return; }
+  if(!FB_OK){ alert("Firebase is not connected."); return; }
+  fbDB.ref(SHEET + "/admin/checkers").push({ name: name, createdAt: Date.now() }).then(function(){
+    $("newChecker").value = ""; setStatus("Checker added.");
+  }).catch(function(e){ alert("Save failed: " + e.message); });
+};
+$("btnSaveSettings").onclick = function(){
+  if(!FB_OK){ alert("Firebase is not connected."); return; }
+  var s = {
+    coneThreshold: num($("sConeThreshold").value) || 2000,
+    twill: num($("sTwill").value),
+    elastic: num($("sElastic").value),
+    waist1: num($("sWaist1").value),
+    waist2: num($("sWaist2").value)
+  };
+  fbDB.ref(SHEET + "/admin/settings").set(s).then(function(){
+    setStatus("Settings saved.");
+  }).catch(function(e){ alert("Save failed: " + e.message); });
+};
+document.addEventListener("click", function(e){
+  var ok = e.target.getAttribute("data-open");
+  var os = e.target.getAttribute("data-open-std");
+  var ck = e.target.getAttribute("data-check");
+  var dc = e.target.getAttribute("data-del-checker");
+  if(dc){
+    if(!FB_OK) return;
+    if(!confirm("Delete this checker?")) return;
+    fbDB.ref(SHEET + "/admin/checkers/" + dc).remove()
+      .then(function(){ setStatus("Checker deleted."); })
+      .catch(function(err){ alert("Delete failed: " + err.message); });
+    return;
+  }
+  if(ok){
+    var it = checkCache.filter(function(x){ return x.key === ok; })[0];
+    if(it) loadSheet(it.data);
+  } else if(os){
+    var it2 = stdCache.filter(function(x){ return x.key === os; })[0];
+    if(it2) loadSheet(it2.data);
+  } else if(ck){
+    var remark = prompt("Checker remark (optional):", "");
+    if(!FB_OK) return;
+    fbDB.ref(SHEET + "/checkQueue/" + ck).update({ status: "Checked", remark: remark || "", checkedAt: Date.now() })
+      .then(function(){ setStatus("Marked Checked."); })
+      .catch(function(err){ alert("Update failed: " + err.message); });
+  }
+});
+
+/* ================= Init ================= */
+OPS.push(newOp({}));
+CONES.push(newCone({}));
+ACCS.push(newAcc({}));
+renderOps(); renderCones(); renderAccs();
+renderDashboard(); renderAdminUsers(); applySettingsToInputs();
+if(FB_OK){
+  setStatus("Connected to Firebase (thread-calculator-gms, data under /sewingSheet/).");
+  watch("checkQueue", "check", renderCheckFolder, 0);
+  watch("standards", "std", renderStdFolder, 0);
+  watch("styleList", "list", renderStyleList, 0);
+  watch("styles", "styles", renderDashboard, 0);
+  watchSettings();
+  watchCheckers();
+} else {
+  setStatus("Firebase could not connect — check your connection and reload. Editing still works on this device.");
+}
+
+/* ================= Page navigation (show/hide only — no reload, no data loss) ================= */
+function showPage(p){
+  $("page1").style.display = p === 1 ? "" : "none";
+  $("page2").style.display = p === 2 ? "" : "none";
+  $("navPage1").className = "btn " + (p === 1 ? "btn-p" : "btn-o");
+  $("navPage2").className = "btn " + (p === 2 ? "btn-p" : "btn-o");
+}
+function showSub(s){
+  $("subThreadWrap").style.display = s === "thread" ? "" : "none";
+  $("subAccWrap").style.display = s === "acc" ? "" : "none";
+  $("subThread").className = "btn " + (s === "thread" ? "btn-p" : "btn-o");
+  $("subAcc").className = "btn " + (s === "acc" ? "btn-p" : "btn-o");
+}
+$("navPage1").onclick = function(){ showPage(1); };
+$("navPage2").onclick = function(){ showPage(2); };
+$("subThread").onclick = function(){ showSub("thread"); };
+$("subAcc").onclick = function(){ showSub("acc"); };
+
+/* ================= Export: Excel + PDF ================= */
+/* SheetJS is loaded on demand (same pattern as ThreadCalc): tried mirrors in
+   turn so one blocked CDN does not break the export. */
+var XLSX_SOURCES = [
+  "https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js",
+  "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js",
+  "https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js"
+];
+function ensureXLSX(onReady, onFail){
+  if(typeof XLSX !== "undefined"){ onReady(); return; }
+  var i = 0;
+  function tryNext(){
+    if(i >= XLSX_SOURCES.length){ onFail && onFail(); return; }
+    var url = XLSX_SOURCES[i++];
+    var s = document.createElement("script");
+    s.src = url; s.async = true;
+    s.onload = function(){ if(typeof XLSX !== "undefined") onReady(); else tryNext(); };
+    s.onerror = function(){ if(s.parentNode) s.parentNode.removeChild(s); tryNext(); };
+    document.head.appendChild(s);
+  }
+  tryNext();
+}
+/* Blank inputs stay blank; every other number lands in the cell as a real number. */
+function ncell(v){ return (v === "" || v == null) ? null : num(v); }
+function r4(x){ return Math.round(x * 10000) / 10000; }
+function headerVals(){
+  return {
+    buyer: $("fBuyer").value.trim(), style: $("fStyle").value.trim(),
+    item: $("fItem").value.trim(), size: $("fSize").value.trim(),
+    createdBy: $("fCreatedBy").value.trim(),
+    checker: ($("fChecker").value.trim() || $("fChecker2").value.trim())
+  };
+}
+function buildStyleSheet(){
+  var h = headerVals();
+  return [
+    ["Buyer", "Style", "Item", "Size", "Created by", "Checker"],
+    [h.buyer, h.style, h.item, h.size, h.createdBy, h.checker]
+  ];
+}
+function buildOperationsSheet(){
+  var rows = [["SL", "Operation", "M/C", "Seam length", "Mc thread", "Seam qty",
+    "Consumption", "Thread 1", "Colour 1", "Looper % 1", "Thread 2", "Colour 2",
+    "Looper % 2", "Body", "Special"]];
+  OPS.forEach(function(op, i){
+    var s = opSplit(op);
+    rows.push([i + 1, op.name, op.machine, ncell(op.seamLength), ncell(op.mcThread),
+      ncell(op.seamQty), r4(s.consumption), op.thread1, op.colour1, ncell(op.pct1),
+      op.thread2, op.colour2, ncell(op.pct2), r4(s.body), r4(s.special)]);
+  });
+  return rows;
+}
+function buildConeSheet(){
+  var rows = [["Body colour / Thread and colour", "Qty (pcs)", "Thread per pc (m)",
+    "Total thread (m)", "Cone (m)", "Cones", "Cones to order"]];
+  CONES.forEach(function(r){
+    var qty = num(r.qty), perPc = num(r.perPc), totalM = qty * perPc;
+    var cone = coneLengthForQty(qty), cones = conesNeeded(totalM, cone);
+    rows.push([r.colour, ncell(r.qty), ncell(r.perPc), r4(totalM), cone, cones, cones]);
+  });
+  return rows;
+}
+function accRuleLabel(rule){
+  if(rule === "twill") return "Back twill tape";
+  if(rule === "elastic") return "Elastic tape";
+  if(rule === "waist") return "Waist belt elastic";
+  return "None";
+}
+function buildAccessoriesSheet(){
+  var rows = [["Item for sew process", "Allowance rule", "Seam length", "Seam allowance",
+    "Input unit", "Actual total (cm)", "Allowance %", "Per garment", "Order total"]];
+  ACCS.forEach(function(row){
+    var c = accCompute(row);
+    rows.push([row.item, accRuleLabel(c.rule), ncell(row.seamLength),
+      ncell(row.seamAllowance), row.unit, r4(c.cm), r4(c.pct),
+      r4(c.perGarment), r4(c.order)]);
+  });
+  return rows;
+}
+function buildStyleListSheet(){
+  var rows = [["SL", "BUYER", "STYLE", "ITEM", "SIZE", "MTR",
+    "BODY THREAD", "SPECIAL THREAD", "REMARKS"]];
+  listCache.forEach(function(it, i){
+    var d = it.data || {};
+    rows.push([i + 1, d.buyer || "", d.style || "", d.item || "", d.size || "",
+      r4(Number(d.totalM || 0)), r4(Number(d.bodyM || 0)),
+      r4(Number(d.specialM || 0)), d.status || ""]);
+  });
+  return rows;
+}
+function exportExcel(){
+  setStatus("Loading Excel writer...");
+  ensureXLSX(function(){
+    try{
+      var wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(buildStyleSheet()), "Style");
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(buildOperationsSheet()), "Operations");
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(buildConeSheet()), "Cone Requirement");
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(buildAccessoriesSheet()), "Accessories");
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(buildStyleListSheet()), "Style List");
+      var style = $("fStyle").value.trim().replace(/[\\\/\?\%\*\:\|\"<>]/g, "");
+      XLSX.writeFile(wb, (style || "Thread-Sheet") + "-Thread-Sheet.xlsx");
+      setStatus("Excel exported.");
+    }catch(err){
+      setStatus("Ready");
+      alert("The Excel file could not be created. Please try again.");
+    }
+  }, function(){
+    setStatus("Ready");
+    alert("The Excel writer could not be downloaded from any mirror.\n\nPlease check your network connection and try again.");
+  });
+}
+$("btnExportExcel").onclick = exportExcel;
+$("btnExportExcel2").onclick = exportExcel;
+$("btnExportPdf").onclick = function(){ window.print(); };
+$("btnExportPdf2").onclick = function(){ window.print(); };
+</script>
+</body>
+</html>
