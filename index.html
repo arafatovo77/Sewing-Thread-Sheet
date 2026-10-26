@@ -40,6 +40,7 @@
   table.ops-table th:nth-child(2),table.ops-table td:nth-child(2){min-width:240px}
   textarea{width:100%;min-height:110px;padding:10px;border:1px solid #C9D6E3;border-radius:10px;font-size:14px}
   .tot{font-size:16px;font-weight:700}
+  .fig-big{font-weight:700;font-size:16px}
   .tag{display:inline-block;background:#EAF2E4;color:#2E5A1E;border-radius:20px;padding:2px 10px;font-size:12px}
   .tag-pend{background:#FBEED3;color:#7A4A00}
   .item{border:1px solid #E2E8F0;border-radius:10px;padding:10px;margin-bottom:8px}
@@ -56,13 +57,15 @@
   .stat span{font-size:12px;color:#1B3A5F}
   @media(max-width:600px){.stats{grid-template-columns:repeat(2,1fr)}}
   @media(max-width:600px){.grid{grid-template-columns:1fr}header h1{font-size:17px}}
-  /* ================= Print: PDF looks almost the same as the on-screen sheet ================= */
+  /* ================= Print: every PDF fits ONE A4 landscape page (item 27) ================= */
+  @page{size:A4 landscape;margin:10mm}
   @media print{
     *{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
     body{ background:#fff; }
     nav.topnav, .subnav, .btn, #status, #pasteCard{ display:none !important; }
     main{ box-shadow:none; max-width:none; padding:0; }
-    .card{ box-shadow:none; page-break-inside:auto; }
+    .card{ box-shadow:none; page-break-inside:auto; margin:6px 0; padding:10px; }
+    h2{ font-size:15px; margin:6px 0; }
     tr{ page-break-inside:avoid; }
     .tbl-wrap{ overflow:visible; }
     table{ min-width:0; font-size:11px; }
@@ -74,12 +77,23 @@
   .subnav .btn{flex:1 1 140px}
   .mtr{background:#D9EAD3 !important;font-weight:700}
   .hide-allow .allow-col{display:none}
+  .summary-highlight{background:#FFF2CC !important;font-weight:700;padding:8px;border-radius:8px}
+  #tpgTable.summary-highlight td,#tpgTable.summary-highlight th{background:#FFE699;font-weight:700}
+  .no-style .colour-col{display:none}
+  .row-checked{box-shadow:inset 3px 0 0 #1E6B2F}
+  .hp-cell{background:#C9A0A0 !important}
+  .hp-cell input{background:transparent !important}
+  .print-only{display:none}
+  .no-style .colour-field{display:none}
   .folder{cursor:pointer}
   @media print{
     body.print-list-only .card{display:none !important}
     body.print-list-only #homeListPanel{display:block !important}
     body.print-list-only #pageHome{display:block !important}
     body.print-list-only #page1, body.print-list-only #page2{display:none !important}
+    body.print-list-only .no-print{display:none !important}
+    body.print-list-only .print-only{display:block !important}
+    body.print-list-only #homeListPanel th:nth-child(6), body.print-list-only #homeListPanel td:nth-child(6){display:none !important}
     body.print-machine-only .card{display:none !important}
     body.print-machine-only #machinePrintWrap{display:block !important}
     body.print-machine-only #page1{display:block !important}
@@ -92,10 +106,30 @@
   <div class="band1">GMS Composite Knitting Ind Ltd.</div>
   <div class="band2">Sewing Thread &amp; Accessories Consumption Reports</div>
 </header>
+<!-- ============ SECURE LOGIN ============ -->
+<div id="loginScreen" style="position:fixed;inset:0;z-index:9999;background:#EDF1F7;overflow:auto">
+  <div style="max-width:520px;margin:0 auto;padding:24px 16px">
+    <div class="band1">GMS COMPOSITE KNITTING KNITTING IND LTD.</div>
+    <div class="band2">Sewing Thread &amp; Accessories Consumption Reports</div>
+    <div class="card" style="margin-top:16px;text-align:center">
+      <div style="font-size:48px;line-height:1">🔒</div>
+      <h2 style="margin:8px 0">SECURE LOGIN</h2>
+      <p class="sub">Admin or approved team user name and password দিয়ে প্রবেশ করুন।</p>
+      <input class="fi" id="loginName" placeholder="Enter login name" style="margin-top:8px">
+      <input class="fi" id="loginPass" type="password" placeholder="Enter password" style="margin-top:8px">
+      <p class="mut" id="loginMsg" style="min-height:18px"></p>
+      <button class="btn btn-p" id="btnLogin" style="width:100%;margin-top:4px">LOGIN</button>
+      <p class="mut" style="margin-top:10px">New name? It will be registered as a team user and needs admin approval before login.</p>
+    </div>
+  </div>
+</div>
+
 <nav class="topnav">
   <button class="btn btn-p" id="navHome">Home</button>
   <button class="btn btn-o" id="navPage1">Admin Panel</button>
   <button class="btn btn-o" id="navPage2">Sheets</button>
+  <span class="mut" id="navUser" style="align-self:center"></span>
+  <button class="btn btn-o" id="btnLogout">Logout</button>
 </nav>
 
 <main>
@@ -111,68 +145,40 @@
       <input class="fi" id="homeUserName" placeholder="Your name / username" style="max-width:220px">
       <span class="mut" id="welcomeLine">Welcome to —</span>
     </div>
-    <div class="row" style="margin-top:10px">
-      <button class="btn btn-p" id="btnHomeStyleCheck">STYLE CHECK</button>
-      <button class="btn btn-o" id="btnHomeFolder">Style Check Folder</button>
-      <button class="btn btn-o" id="btnHomeBuyer">Buyer Wise Consumption</button>
-      <button class="btn btn-o" id="btnHomeList">Style list create</button>
-      <button class="btn btn-o" id="btnHomeDrafts">Saved Styles</button>
-    </div>
     <div class="row" style="margin-top:8px">
       <button class="btn btn-p" id="btnOpenReport">OPEN CONSUMPTION REPORT</button>
       <button class="btn btn-o" id="btnHomeLogout">Logout</button>
     </div>
   </section>
 
-  <!-- HOME: STYLE CHECK panel -->
-  <section class="card" id="homeStyleCheckPanel" style="display:none">
-    <h2>▼ STYLE CHECK <span class="tag tag-pend">DRAFT</span></h2>
-    <div class="grid">
-      <div><label>Team Leader / Checker name</label><select class="fi" id="homeChecker"></select></div>
-      <div><label>Check information</label><p class="sub" style="margin:0">You may submit for Style Check, or use FINAL SAVE from any signed-in ID.</p></div>
+  <!-- HOME: Dashboard counts -->
+  <section class="card">
+    <h2>Dashboard counts</h2>
+    <div class="stats">
+      <div class="stat"><b id="homeCountStyles">0</b><span>Styles saved</span></div>
+      <div class="stat"><b id="homeCountPending">0</b><span>Pending checks</span></div>
+      <div class="stat"><b id="homeCountChecked">0</b><span>Checked</span></div>
+      <div class="stat"><b id="homeCountStd">0</b><span>Standards</span></div>
+      <div class="stat"><b id="homeCountList">0</b><span>Style list</span></div>
     </div>
-    <div class="row" style="margin-top:10px">
-      <button class="btn btn-p" id="homeSubmitCheck">SUBMIT FOR CHECK</button>
-      <button class="btn btn-p" id="homeMarkChecked">MARK AS CHECKED</button>
-      <button class="btn btn-o" id="homeOpenFolder">STYLE CHECK FOLDER</button>
-      <button class="btn btn-o" data-hide-home="stylecheck">HIDE</button>
-    </div>
-  </section>
-
-  <!-- HOME: Style Check Folder panel -->
-  <section class="card" id="homeCheckFolderPanel" style="display:none">
-    <h2>Style check folder (latest 10)</h2>
-    <p class="sub">The latest 10 styles submitted for check are shown here. A pending style can be checked at any later time. This folder is separate from Buyer Standards.</p>
-    <div id="checkFolder"><p class="mut">No submissions yet.</p></div>
-    <div class="row" style="margin-top:8px"><button class="btn btn-o" data-hide-home="folder">HIDE</button></div>
-  </section>
-
-  <!-- HOME: All Buyer Folder panel -->
-  <section class="card" id="homeBuyerPanel" style="display:none">
-    <h2>All Buyer Folder — Buyer Standards</h2>
-    <p class="sub">Only FINAL SAVE standards appear here, buyer-wise, in the All Buyer Folder. Style Check styles are not shown here.</p>
-    <div class="row">
-      <input class="fi" id="stdSearch" placeholder="Search Style Name — Type style name…" style="max-width:320px">
-      <button class="btn btn-o" data-hide-home="buyer">HIDE ALL BUYER FOLDER</button>
-    </div>
-    <div id="stdFolder" style="margin-top:8px"><p class="mut">No final standards yet.</p></div>
   </section>
 
   <!-- HOME: Style list create panel -->
-  <section class="card" id="homeListPanel" style="display:none">
-    <h2>▼ Style list create <span id="listPanelBuyer" class="mut"></span></h2>
-    <p class="sub">Add the current completed style to the list. It shows Buyer, Style, Item, Size, Date, total meter, Body and Special Thread, following the Merchant list Excel demo format.</p>
-    <div class="row">
+  <section class="card" id="homeListPanel">
+    <h2 class="no-print">▼ Style list create <span id="listPanelBuyer" class="mut"></span></h2>
+    <p class="sub no-print">Add the current completed style to the list. It shows Buyer, Style, Item, Size, Date, total meter, Body and Special Thread, following the Merchant list Excel demo format.</p>
+    <div class="row no-print">
       <div><label>Buyer-wise style list</label><select class="fi" id="listBuyerSel" style="max-width:220px"></select></div>
       <div><label>Period</label><input class="fi" id="listPeriod" type="month" style="max-width:180px"></div>
       <div><label>Heading (automatic)</label><input class="fi" id="listHeading" readonly style="max-width:320px"></div>
     </div>
-    <div class="row" style="margin-top:8px">
+    <div class="row no-print" style="margin-top:8px">
       <button class="btn btn-o" id="btnListExcel">DOWNLOAD / SAVE LIST EXCEL</button>
       <button class="btn btn-p" id="btnListPdf">DOWNLOAD / SAVE LIST PDF</button>
       <button class="btn btn-d" id="btnClearList">CLEAR LIST</button>
-      <button class="btn btn-o" data-hide-home="list">HIDE</button>
     </div>
+    <div class="print-only" id="listPrintTitle" style="font-weight:700">GMS COMPOSITE KNITTING KNITTING IND LTD.</div>
+    <div class="print-only" id="listPrintHeading" style="font-weight:700"></div>
     <p class="sub" id="listConeNote" style="margin-top:8px"></p>
     <div class="tbl-wrap"><table>
       <thead><tr><th>SL</th><th>BUYER</th><th>STYLE</th><th>ITEM</th><th>SIZE</th><th>Date</th><th>MTR</th><th>BODY THREAD</th><th>SPECIAL THREAD</th><th>REMARKS</th></tr></thead>
@@ -180,13 +186,6 @@
     </table></div>
   </section>
 
-  <!-- HOME: Saved Styles (drafts kept in Firebase) panel -->
-  <section class="card" id="homeDraftsPanel" style="display:none">
-    <h2>▼ Saved Styles <span id="draftsPanelCount" class="mut"></span></h2>
-    <p class="sub">Styles you saved from the sheet stay stored in Firebase. Open any saved style to continue working on it, or export it to Excel / PDF from the sheet.</p>
-    <div id="draftsList" style="margin-top:8px"><p class="mut">No saved styles yet.</p></div>
-    <div class="row" style="margin-top:8px"><button class="btn btn-o" data-hide-home="drafts">HIDE</button></div>
-  </section>
   </div>
 
   <div id="page1" style="display:none">
@@ -214,10 +213,13 @@
 
 
   <!-- ============ ADMIN PANEL ============ -->
-  <section class="card">
+  <section class="card" id="adminPanelSection">
     <h2>Admin Panel</h2>
     <p class="sub">Manage machines, SPI, buyers, administrator password and team-user access</p>
     <p class="sub">Checker names and calculation rules (cone rule, allowance) are set from the Admin Panel. Changes here apply to all calculations across the app.</p>
+    <h3 style="margin:10px 0 6px;font-size:15px">Users (login accounts)</h3>
+    <p class="sub">Team users need admin approval before they can log in. Only the admin sees this section.</p>
+    <div id="userListBox" style="margin-top:8px"><p class="mut">No team users yet.</p></div>
     <h3 style="margin:10px 0 6px;font-size:15px">Checkers</h3>
     <div class="row">
       <input class="fi" id="newChecker" placeholder="Checker name" style="max-width:220px">
@@ -298,10 +300,7 @@
       <button class="btn btn-o" id="btnBackDashboard">← Dashboard</button>
       <button class="btn btn-o" id="btnExportExcel">DOWNLOAD / SAVE EXCEL</button>
       <button class="btn btn-p" id="btnExportPdf">DOWNLOAD / SAVE PDF</button>
-      <label class="mut">SAVE TO</label>
-      <select class="fi" id="saveToSel" style="max-width:200px"><option value="firebase">Firebase (online)</option><option value="device">Device (this browser)</option></select>
-      <button class="btn btn-p" id="btnSaveTo">Save</button>
-      <button class="btn btn-p" id="btnFinalSave">FINAL SAVE</button>
+      <button class="btn btn-o" id="btnSaveTo">DOWNLOAD SHEET JSON</button>
     </div>
     <div class="row" style="margin-top:8px">
       <button class="btn btn-o" id="btnNewSheet">New sheet</button>
@@ -317,20 +316,34 @@
     <h2>Style Header</h2>
     <div class="grid">
       <div><label>Buyer</label><select class="fi" id="fBuyer"></select><div class="row" id="fBuyerCustomWrap" style="display:none;margin-top:6px"><input class="fi" id="fBuyerCustom" placeholder="Type new buyer name" style="flex:1"><button class="btn btn-o btn-sm" id="btnSaveBuyerCustom">Save</button></div></div>
-      <div><label>Style</label><input class="fi" id="fStyle" placeholder="Style no."></div>
+      <div><label>Style</label><select class="fi" id="fStyleSel"></select><div class="row" id="fStyleCustomWrap" style="display:none;margin-top:6px"><input class="fi" id="fStyle" placeholder="Style no." style="flex:1"></div></div>
       <div><label>Item</label><select class="fi" id="fItem"></select><div class="row" id="fItemCustomWrap" style="display:none;margin-top:6px"><input class="fi" id="fItemCustom" placeholder="Type new item" style="flex:1"><button class="btn btn-o btn-sm" id="btnSaveItemCustom">Save</button></div></div>
       <div><label>Size</label><select class="fi" id="fSize"></select><div class="row" id="fSizeCustomWrap" style="display:none;margin-top:6px"><input class="fi" id="fSizeCustom" placeholder="Type new size" style="flex:1"><button class="btn btn-o btn-sm" id="btnSaveSizeCustom">Save</button></div></div>
       <div><label>Fit</label><select class="fi" id="fFit"><option value="">Select fit</option><option>Relaxed</option><option>Loose</option><option>Slim</option></select></div>
-      <div><label>Body thread name</label><input class="fi" id="fBodyThread" placeholder="e.g. 30/2"></div>
+      <div><label>Body thread name</label><select class="fi" id="fBodyThread"><option value="50/2">50/2</option><option value="20/2">20/2</option><option value="__custom">＋ Custom…</option></select><div class="row" id="fBodyThreadCustomWrap" style="display:none;margin-top:6px"><input class="fi" id="fBodyThreadCustom" placeholder="Type thread name" style="flex:1"></div></div>
       <div><label>Date</label><input class="fi" id="fDate" type="date"></div>
+      <div><label>Order qty (pcs)</label><input class="fi" id="fOrderQty" type="number" placeholder="e.g. 5000"></div>
       <div><label>Thread allowance %</label><input class="fi" id="fAllowPct" type="number" value="20"></div>
       <div><label>Cone size</label><select class="fi" id="fConeMode"><option value="auto">Auto</option><option value="manual">Manual</option></select></div>
       <div id="manualConeWrap" style="display:none"><label>Manual cone length (m)</label><input class="fi" id="fManualCone" type="number" value="4000"></div>
-      <div><label>Created by (username)</label><input class="fi" id="fCreatedBy" placeholder="Your name / username"></div>
+      <div><label>Prepared by</label><input class="fi" id="fPreparedBy" readonly placeholder="Login name"></div>
     </div>
     <datalist id="checkerList"></datalist>
+    <datalist id="machineDatalist"></datalist>
+    <datalist id="specialThreadList"><option value="Contrast"><option value="Body thread"><option value="Lurex"><option value="20/2 thread"><option value="Elastic thread"><option value="Filament"><option value="Other"></datalist>
   </section>
 
+
+  <!-- ============ STYLE CHECK (on the sheet) ============ -->
+  <section class="card" id="sheetCheckCard">
+    <div class="row" style="align-items:center">
+      <span class="mut">Style check:</span>
+      <b id="sheetCheckStatus">Draft</b>
+      <span class="mut" id="sheetCheckRemark"></span>
+      <button class="btn btn-p" id="btnSheetSubmitCheck">SUBMIT FOR CHECK</button>
+      <button class="btn btn-p" id="btnSheetMarkChecked">MARK AS CHECKED</button>
+    </div>
+  </section>
 
   <!-- ============ OPERATIONS ============ -->
   <section class="card">
@@ -344,8 +357,8 @@
     </div>
     <div class="row" style="margin-bottom:8px">
       <label class="mut">CONTRAST / SPECIAL:</label>
-      <select class="fi" id="csThread" style="max-width:150px"><option>Contrast</option><option>Filament</option><option>Other</option></select>
-      <input class="fi" id="csColour" placeholder="Thread colour" style="max-width:150px">
+      <select class="fi" id="csThread" style="max-width:150px"><option>Contrast</option><option>Body thread</option><option>Lurex</option><option>20/2 thread</option><option>Elastic thread</option><option>Filament</option><option>Other</option></select>
+      <input class="fi colour-field" id="csColour" placeholder="Thread colour" style="max-width:150px">
       <input class="fi num" id="csPct" type="number" value="20" style="max-width:90px">
       <button class="btn btn-p btn-sm" id="btnCsApply">APPLY</button>
       <button class="btn btn-d btn-sm" id="btnDeleteAllHp">DELETE ALL HP</button>
@@ -354,8 +367,8 @@
       <thead><tr>
         <th>SL</th><th>Operation description</th><th>M/C name</th><th>Seam length (in)</th>
         <th>Mc thread (in)</th><th>Seam qty</th><th>Consumption (in)</th>
-        <th>Thread 1</th><th>Colour 1</th><th>Looper % 1</th>
-        <th>Thread 2</th><th>Colour 2</th><th>Looper % 2</th>
+        <th>Thread 1</th><th class="colour-col">Colour 1</th><th>Looper % 1</th>
+        <th>Thread 2</th><th class="colour-col">Colour 2</th><th>Looper % 2</th>
         <th>Body (in)</th><th>Special (in)</th><th>Add / Del</th>
       </tr></thead>
       <tbody id="opsBody"></tbody>
@@ -368,7 +381,7 @@
 
 
   <!-- ============ PASTE FROM EXCEL ============ -->
-  <section class="card" id="pasteCard">
+  <section class="card" id="pasteCard" style="display:none">
     <h2>Paste operations from Excel</h2>
     <p class="sub">Copy from Excel and paste here. Accepted: SL, Process and Machine name only; the same with a seam length; or the complete process table (with or without its header row). Without a header the column order is SL (optional), Process, Machine, Seam length, Mc thread, Seam qty, Consumption. Empty numbers can be filled on the sheet later. SL is renumbered automatically.</p>
     <textarea id="pasteBox" placeholder="Paste rows copied from Excel here (tab-separated)…"></textarea>
@@ -382,13 +395,17 @@
   <!-- ============ TOTALS ============ -->
   <section class="card">
     <h2>Total per garment</h2>
-    <p class="tot">Consumption: <span id="totIn">0.00</span> in &nbsp;|&nbsp; Metres: <span id="totM">0.0000</span> m &nbsp;|&nbsp; Allowance: <span id="totAllow">20</span>% &nbsp;|&nbsp; Total per garment: <span id="totGrand">0.0000</span> m</p>
-    <p class="mut">Body thread: <span id="totBodyIn">0.00</span> in (<span id="totBodyM">0.0000</span> m) &nbsp;|&nbsp; Special thread: <span id="totSpecIn">0.00</span> in (<span id="totSpecM">0.0000</span> m)</p>
+    <p class="tot summary-highlight">Consumption: <span id="totIn">0.00</span> in &nbsp;|&nbsp; Total: <span id="totM">0.0000</span> <span class="tot-unit-label">m</span> &nbsp;|&nbsp; Allowance: <span id="totAllow">20</span>% &nbsp;|&nbsp; Total per garment: <span id="totGrand">0.0000</span> <span class="tot-unit-label">m</span></p>
+    <p class="mut">Body thread: <span id="totBodyIn">0.00</span> in (<span id="totBodyM">0.0000</span> <span class="tot-unit-label">m</span>) &nbsp;|&nbsp; Special thread: <span id="totSpecIn">0.00</span> in (<span id="totSpecM">0.0000</span> <span class="tot-unit-label">m</span>)</p>
+    <div class="row" style="margin-bottom:6px">
+      <label class="mut">Show totals in</label>
+      <select class="fi" id="totUnit" style="max-width:120px"><option value="m">m</option><option value="yards">yards</option><option value="in">in</option></select>
+    </div>
     <div class="row" style="margin-bottom:6px">
       <label><input type="checkbox" id="showAllowLines" checked> Show allowance lines (hiding does not change the cone calculation)</label>
     </div>
-    <div class="tbl-wrap"><table id="tpgTable" style="min-width:0">
-      <thead><tr><th>Thread</th><th>Consumption (inch)</th><th>Metres</th><th class="allow-col">Allowance %</th><th>Total metres</th></tr></thead>
+    <div class="tbl-wrap"><table id="tpgTable" class="summary-highlight" style="min-width:0">
+      <thead><tr><th>Thread</th><th>Consumption (inch)</th><th id="tpgMetresTh">Metres (m)</th><th class="allow-col">Allowance %</th><th id="tpgTotalTh">Total metres (m)</th></tr></thead>
       <tbody id="tpgBody"></tbody>
     </table></div>
   </section>
@@ -417,18 +434,31 @@
   <div id="subAccWrap" style="display:none">
 
 
+  <!-- ============ ACCESSORIES STYLE HEADER (mirrors the main Style Header) ============ -->
+  <section class="card" id="accHeaderCard">
+    <h2>Style Header</h2>
+    <div class="grid">
+      <div><label>Buyer</label><select class="fi" id="accBuyer"></select><div class="row" id="accBuyerCustomWrap" style="display:none;margin-top:6px"><input class="fi" id="accBuyerCustom" placeholder="Type new buyer name" style="flex:1"><button class="btn btn-o btn-sm" id="btnSaveAccBuyerCustom">Save</button></div></div>
+      <div><label>Style</label><select class="fi" id="accStyleSel"></select><div class="row" id="accStyleCustomWrap" style="display:none;margin-top:6px"><input class="fi" id="accStyle" placeholder="Style no." style="flex:1"></div></div>
+      <div><label>Item</label><select class="fi" id="accItem"></select><div class="row" id="accItemCustomWrap" style="display:none;margin-top:6px"><input class="fi" id="accItemCustom" placeholder="Type new item" style="flex:1"><button class="btn btn-o btn-sm" id="btnSaveAccItemCustom">Save</button></div></div>
+      <div><label>Size</label><select class="fi" id="accSize"></select><div class="row" id="accSizeCustomWrap" style="display:none;margin-top:6px"><input class="fi" id="accSizeCustom" placeholder="Type new size" style="flex:1"><button class="btn btn-o btn-sm" id="btnSaveAccSizeCustom">Save</button></div></div>
+      <div><label>Fit</label><select class="fi" id="accFit"><option value="">Select fit</option><option>Relaxed</option><option>Loose</option><option>Slim</option></select></div>
+      <div><label>Date</label><input class="fi" id="accDate" type="date"></div>
+      <div><label>Order qty (pcs)</label><input class="fi" id="accOrderQty" type="number" placeholder="e.g. 5000"></div>
+      <div><label>Prepared by</label><input class="fi" id="accPreparedBy" readonly placeholder="Login name"></div>
+    </div>
+  </section>
+
   <!-- ============ ACCESSORIES ============ -->
   <section class="card">
     <h2>Accessories consumption</h2>
     <div class="row" style="margin-bottom:8px">
-      <label class="mut">Style</label>
-      <input class="fi" id="accStyle" placeholder="Style no." style="max-width:220px">
       <span class="mut" id="accStyleCtx"></span>
     </div>
     <p class="sub" id="accRuleText">Allowance is added by type: back twill tape +7%, back tape elastic or other elastic tape +10%, waist belt elastic +7% and then another +7% wastage. Type the item name and the rule is picked automatically, or choose it yourself. Enter lengths in CM or inch for each row. Order totals use the total Body Colors quantity.</p>
     <div class="row" style="margin-bottom:8px">
       <label class="mut">Show totals in</label>
-      <select class="fi" id="accTotalsUnit" style="max-width:120px"><option value="CM">CM</option><option value="inch">inch</option></select>
+      <select class="fi" id="accTotalsUnit" style="max-width:120px"><option value="CM">CM</option><option value="inch">inch</option><option value="yards">yards</option></select>
     </div>
     <div class="tbl-wrap"><table>
       <thead><tr>
@@ -492,6 +522,8 @@ var stdCache = [];   /* standards snapshots */
 var listCache = [];  /* styleList snapshots */
 var stylesCache = [];/* styles (drafts) snapshots */
 var checkersCache = []; /* admin/checkers snapshots: {key, name} */
+var usersCache = []; /* login users snapshots: {key, name, role, approved} (never passwords) */
+var usersWatching = false;
 var buyersCache = [];   /* admin/buyers snapshots: {key, name} */
 var itemsCache = [];    /* admin/items snapshots: {key, name} */
 var sizesCache = [];    /* admin/sizes snapshots: {key, name} */
@@ -499,14 +531,20 @@ var machinesCache = []; /* admin/machines snapshots: {key, name, spi, needle, lo
 var specialDefaults = { contrast: 50, filament: 50, other: 50 };
 var undoStack = [];     /* JSON snapshots of OPS, for Undo */
 var expandedBuyer = ""; /* buyer folder currently expanded in All Buyer Folder */
-var stdSearchTerm = ""; /* style-name search filter for All Buyer Folder */
 var accTotalsUnit = "CM"; /* accessories totals display unit */
+var totUnit = "m"; /* main summary display unit: m | yards | in */
+var coneQtyMap = {}; /* cone qty overrides, keyed "body" / "grp:<key>" */
+var currentStyleKey = ""; /* selected saved-style key ("" = none) */
 var currentListBuyer = ""; /* "" = all buyers in Style list panel */
 var currentListPeriod = ""; /* "" = all periods in Style list panel (YYYY-MM) */
 /* Master-list seeds (shown when the Firebase lists are empty; written only on explicit add). */
 var SEED_BUYERS = ["CARNET A/S", "JJ ORIGINALS", "JJ PREMIUM", "JULES", "NAME IT", "PPP FASHION"];
-var SEED_ITEMS = ["T-SHIRT"];
-var SEED_SIZES = ["S", "M", "L", "XL", "S–XL"];
+/* Standard knit-factory item/size lists (item 20). The old tool's exact
+   lists were not recoverable, so these are standard lists for review.
+   Fallback defaults only: shown when Firebase is empty, never auto-written
+   to Firebase (a separate one-time seeding will do that after review). */
+var SEED_ITEMS = ["T-SHIRT", "POLO SHIRT", "SWEATSHIRT", "HOODIE", "FLEECE JACKET", "TANK TOP", "VEST", "SHORTS", "TROUSER", "SWEATPANT", "JOGGER", "JACKET", "SHIRT", "BLOUSE", "DRESS", "SKIRT", "LEGGING", "CARDIGAN", "PULLOVER", "TRACKSUIT TOP", "TRACKSUIT BOTTOM", "ROMPER", "BODYSUIT"];
+var SEED_SIZES = ["2XS", "XS", "S", "M", "L", "XL", "XXL", "2XL", "3XL", "4XL", "XS–XL", "S–XL", "S–XXL", "M–XXL"];
 /* Standard machine splits (Machine, SPI, Needle%, Looper%, Remarks) — the admin seed list. */
 var SEED_MACHINES = [
   ["4OL",23,20,80,""],["3OL",18,20,80,""],["SN",4,50,50,""],["2FL",12,40,60,""],
@@ -530,8 +568,9 @@ function findMachine(name){
 }
 function specialDefaultFor(typeName){
   var t = String(typeName || "").toLowerCase();
+  if(t.indexOf("body thread") !== -1) return 0;
   if(t.indexOf("filament") !== -1) return specialDefaults.filament;
-  if(t.indexOf("other") !== -1) return specialDefaults.other;
+  if(t.indexOf("other") !== -1 || t.indexOf("lurex") !== -1 || t.indexOf("elastic") !== -1 || t.indexOf("20/2") !== -1) return specialDefaults.other;
   return specialDefaults.contrast;
 }
 /* Admin settings (Firebase admin/settings overrides these defaults). */
@@ -541,6 +580,7 @@ function newOp(d){
   d = d || {};
   return { id: uid(), name: d.name || "", machine: d.machine || "",
     seamLength: d.seamLength == null ? "" : d.seamLength,
+    seamLengthRaw: d.seamLengthRaw || "", seamLengthExpr: d.seamLengthExpr || "",
     mcThread: d.mcThread == null ? "" : d.mcThread,
     mcAuto: !!d.mcAuto,
     seamQty: d.seamQty == null ? 1 : d.seamQty,
@@ -580,6 +620,45 @@ function totals(){
   return t;
 }
 function inToM(inches){ return inches * 0.0254; }
+/* Length units: 1 yard = 0.9144 m = 36 inch (exact). */
+function mToYards(m){ return m / 0.9144; }
+function mToUnit(m, unit){ if(unit === "yards") return mToYards(m); if(unit === "in") return m / 0.0254; return m; }
+function unitLabel(unit){ return unit === "yards" ? "yards" : unit === "in" ? "in" : "m"; }
+function orderQtyNum(){ var el = $("fOrderQty"); return el ? num(el.value) : 0; }
+function bodyThreadVal(){
+  var v = selVal("fBodyThread", "fBodyThreadCustom");
+  return v || "50/2";
+}
+function styleNameVal(){
+  var sel = $("fStyleSel");
+  if(!sel) return $("fStyle") ? $("fStyle").value.trim() : "";
+  if(sel.value === "__new") return $("fStyle") ? $("fStyle").value.trim() : "";
+  if(sel.value){
+    var it = stylesCache.filter(function(x){ return x.key === sel.value; })[0];
+    return (it && it.data) ? (it.data.style || "") : "";
+  }
+  return "";
+}
+function styleChosen(){
+  var sel = $("fStyleSel");
+  if(!sel) return true;
+  if(sel.value === "__new") return !!($("fStyle") && $("fStyle").value.trim());
+  return !!sel.value;
+}
+function applyStyleChosenClass(){
+  var w = $("subThreadWrap");
+  if(w) w.classList.toggle("no-style", !styleChosen());
+}
+/* Prepared by is the logged-in user's name (item 11, updated by item 17:
+   the login name is the source of truth; there is no separate dropdown). */
+var currentUser = null; /* {name, role} from the login session, or null */
+function preparedByVal(){ return currentUser ? currentUser.name : ""; }
+function refreshPreparedByDisplay(){
+  var v = preparedByVal();
+  var a = $("fPreparedBy"); if(a) a.value = v;
+  var b = $("accPreparedBy"); if(b) b.value = v;
+}
+function isAdmin(){ return !!(currentUser && currentUser.role === "admin"); }
 function coneModeVal(){ var el = $("fConeMode"); return el ? el.value : "auto"; }
 function manualConeVal(){ var el = $("fManualCone"); return el ? num(el.value) : 0; }
 function coneLengthForQty(qty){
@@ -588,7 +667,46 @@ function coneLengthForQty(qty){
 }
 function conesNeeded(totalM, coneLen){ return coneLen > 0 ? Math.ceil(totalM / coneLen) : 0; }
 function conesExact(totalM, coneLen){ return coneLen > 0 ? totalM / coneLen : 0; }
-function totalBodyQty(){ var q = 0; CONES.forEach(function(r){ q += num(r.qty); }); return q; }
+/* Order quantity for accessories: body cone qty first, then the header order
+   qty, then (for old saves) the sum of the custom cone rows. Body and contrast
+   rows describe the SAME order, so their quantities are never summed. */
+function totalBodyQty(){
+  var bq = coneQtyFor("body");
+  if(bq !== "" && num(bq) > 0) return num(bq);
+  var oq = orderQtyNum();
+  if(oq > 0) return oq;
+  var q = 0; CONES.forEach(function(r){ q += num(r.qty); }); return q;
+}
+function coneQtyFor(key){
+  if(Object.prototype.hasOwnProperty.call(coneQtyMap, key)) return coneQtyMap[key];
+  var oq = orderQtyNum();
+  return oq ? String(oq) : "";
+}
+/* Special-thread groups present in the operations: keyed by type + colour,
+   with their total special inches. Body thread slots are excluded. */
+function contrastGroups(){
+  var groups = {}, order = [];
+  OPS.forEach(function(op){
+    var c = opConsumption(op);
+    [[op.thread1, op.colour1, op.pct1], [op.thread2, op.colour2, op.pct2]].forEach(function(slot){
+      var th = String(slot[0] || "").trim(), col = String(slot[1] || "").trim(), pct = num(slot[2]);
+      if((!th && !col) || pct <= 0) return;
+      if(th.toLowerCase() === "body thread") return;
+      var inches = c * pct / 100;
+      if(inches <= 0) return;
+      var label = (th + " " + col).trim();
+      var key = label.toLowerCase();
+      if(!groups[key]){ groups[key] = { key: key, label: label, inches: 0 }; order.push(key); }
+      groups[key].inches += inches;
+    });
+  });
+  return order.map(function(k){ return groups[k]; });
+}
+function coneRowCalc(qty, perPc){
+  var totalM = num(qty) * num(perPc);
+  var cone = coneLengthForQty(num(qty));
+  return { totalM: totalM, cone: cone, exact: conesExact(totalM, cone), order: conesNeeded(totalM, cone) };
+}
 
 /* Accessories: allowance picked from the item name, or chosen manually. */
 function accRuleFor(item, manual){
@@ -651,6 +769,26 @@ function applyMachineToRow(op){
   }
 }
 
+/* Row colouring by special thread (item 13): one deterministic pastel shade
+   per special-thread identity (type + colour). Body-only rows stay plain. */
+var SPECIAL_ROW_COLOURS = ["#FDE8E8","#E8F5E9","#E3F2FD","#FFF3E0","#F3E5F5","#E0F2F1","#FFFDE7","#FCE4EC","#E8EAF6","#F1F8E9","#EFEBE9","#E0F7FA"];
+function specialRowColour(label){
+  var s = String(label || "").toLowerCase();
+  var h = 0;
+  for(var i = 0; i < s.length; i++){ h = (h * 31 + s.charCodeAt(i)) % 1000000007; }
+  return SPECIAL_ROW_COLOURS[h % SPECIAL_ROW_COLOURS.length];
+}
+function opSpecialLabel(op){
+  var slots = [[op.thread1, op.colour1, op.pct1], [op.thread2, op.colour2, op.pct2]];
+  for(var i = 0; i < slots.length; i++){
+    var th = String(slots[i][0] || "").trim(), col = String(slots[i][1] || "").trim(), pct = num(slots[i][2]);
+    if((!th && !col) || pct <= 0) continue;
+    if(th.toLowerCase() === "body thread") continue;
+    return (th + " " + col).trim();
+  }
+  return "";
+}
+
 /* ================= Render: operations ================= */
 function refreshFilters(){
   var ps = $("selProcess"), ms = $("selMachine");
@@ -664,6 +802,7 @@ function refreshFilters(){
   ms.innerHTML = '<option value="">ALL M/C</option>' + machs.map(function(m){ return '<option value="' + esc(m) + '">' + esc(m) + '</option>'; }).join("");
   ps.value = curP; ms.value = curM;
 }
+function isHpMachine(m){ return String(m || "").trim().toLowerCase() === "hp"; }
 function renderOps(){
   var keepId = null, keepF = null;
   var ae = document.activeElement;
@@ -672,6 +811,8 @@ function renderOps(){
     if(atr){ keepId = atr.getAttribute("data-id"); keepF = ae.getAttribute("data-f"); }
   }
   refreshFilters();
+  var dl = $("machineDatalist");
+  if(dl) dl.innerHTML = machineRows().map(function(m){ return '<option value="' + esc(m.name) + '">'; }).join("");
   var fp = $("selProcess").value, fm = $("selMachine").value;
   var html = "";
   var visible = 0;
@@ -680,26 +821,24 @@ function renderOps(){
     if(fm && op.machine !== fm) return;
     visible++;
     var s = opSplit(op);
-    var mopts = '<option value=""></option>' + machineRows().map(function(m){
-      return '<option value="' + esc(m.name) + '"' + (op.machine === m.name ? " selected" : "") + '>' + esc(m.name) + '</option>';
-    }).join("");
-    if(op.machine && !findMachine(op.machine)) mopts += '<option value="' + esc(op.machine) + '" selected>' + esc(op.machine) + '</option>';
-    html += '<tr data-id="' + op.id + '">'
+    var spLabel = opSpecialLabel(op);
+    var rowStyle = spLabel ? ' style="background:' + specialRowColour(spLabel) + '"' : "";
+    html += '<tr data-id="' + op.id + '"' + rowStyle + '>'
       + '<td>' + (i + 1) + '</td>'
       + '<td><input data-f="name" value="' + esc(op.name) + '"' + (op.name && op.name.trim() ? "" : " class=\"req-empty\"") + '></td>'
-      + '<td><select data-f="machine">' + mopts + '</select></td>'
-      + '<td><input class="num" data-f="seamLength" value="' + esc(op.seamLength) + '"></td>'
+      + '<td' + (isHpMachine(op.machine) ? ' class="hp-cell"' : '') + '><input data-f="machine" list="machineDatalist" value="' + esc(op.machine) + '"></td>'
+      + '<td><input class="num" data-f="seamLength" value="' + esc(op.seamLengthRaw ? op.seamLengthRaw : op.seamLength) + '"' + (op.seamLengthExpr ? ' title="' + esc(op.seamLengthExpr) + '"' : "") + '></td>'
       + '<td><input class="num" data-f="mcThread" value="' + esc(op.mcThread) + '"></td>'
       + '<td><input class="num' + (function(){ var q = num(op.seamQty); return q >= 10 ? " qty-red" : (q >= 2 ? " qty-warn" : ""); })() + '" data-f="seamQty" value="' + esc(op.seamQty) + '"></td>'
-      + '<td>' + s.consumption.toFixed(2) + '</td>'
-      + '<td><input data-f="thread1" value="' + esc(op.thread1) + '"></td>'
-      + '<td><input data-f="colour1" value="' + esc(op.colour1) + '"></td>'
+      + '<td class="fig-big">' + s.consumption.toFixed(2) + '</td>'
+      + '<td><input data-f="thread1" list="specialThreadList" value="' + esc(op.thread1) + '"></td>'
+      + '<td class="colour-col"><input data-f="colour1" value="' + esc(op.colour1) + '"></td>'
       + '<td><input class="num" data-f="pct1" value="' + esc(op.pct1) + '"></td>'
-      + '<td><input data-f="thread2" value="' + esc(op.thread2) + '"></td>'
-      + '<td><input data-f="colour2" value="' + esc(op.colour2) + '"></td>'
+      + '<td><input data-f="thread2" list="specialThreadList" value="' + esc(op.thread2) + '"></td>'
+      + '<td class="colour-col"><input data-f="colour2" value="' + esc(op.colour2) + '"></td>'
       + '<td><input class="num" data-f="pct2" value="' + esc(op.pct2) + '"></td>'
-      + '<td>' + s.body.toFixed(2) + '</td>'
-      + '<td>' + s.special.toFixed(2) + '</td>'
+      + '<td class="fig-big">' + s.body.toFixed(2) + '</td>'
+      + '<td class="fig-big">' + s.special.toFixed(2) + '</td>'
       + '<td style="white-space:nowrap"><button class="btn btn-p btn-sm" data-ins="' + op.id + '" title="Insert a row below">＋</button> <button class="btn btn-d btn-sm" data-del="' + op.id + '" title="Delete this row">−</button></td></tr>';
   });
   $("opsBody").innerHTML = html || '<tr><td colspan="16" class="mut">No operations yet. Add a row or paste from Excel.</td></tr>';
@@ -717,35 +856,53 @@ function allowPctVal(){ var el = $("fAllowPct"); return el ? num(el.value) : 20;
 function renderTotals(){
   var t = totals();
   var bodyM = inToM(t.body), totalM = inToM(t.consumption), allow = allowPctVal();
+  var u = totUnit, ul = unitLabel(u);
   $("totIn").textContent = t.consumption.toFixed(2);
-  $("totM").textContent = totalM.toFixed(4);
+  $("totM").textContent = mToUnit(totalM, u).toFixed(4);
   $("totAllow").textContent = allow;
-  $("totGrand").textContent = (totalM * (1 + allow / 100)).toFixed(4);
+  $("totGrand").textContent = mToUnit(totalM * (1 + allow / 100), u).toFixed(4);
   $("totBodyIn").textContent = t.body.toFixed(2);
-  $("totBodyM").textContent = bodyM.toFixed(4);
+  $("totBodyM").textContent = mToUnit(bodyM, u).toFixed(4);
   $("totSpecIn").textContent = t.special.toFixed(2);
-  $("totSpecM").textContent = inToM(t.special).toFixed(4);
-  var bodyName = ($("fBodyThread") && $("fBodyThread").value.trim()) || "Body thread";
-  $("tpgBody").innerHTML =
-    '<tr><td>' + esc(bodyName) + '</td><td>' + t.body.toFixed(2) + '</td><td>' + bodyM.toFixed(4) + '</td>'
-    + '<td class="allow-col">' + allow + '%</td><td>' + (bodyM * (1 + allow / 100)).toFixed(4) + '</td></tr>'
-    + '<tr><td>All threads</td><td>' + t.consumption.toFixed(2) + '</td><td>' + totalM.toFixed(4) + '</td>'
-    + '<td class="allow-col">' + allow + '%</td><td>' + (totalM * (1 + allow / 100)).toFixed(4) + '</td></tr>';
+  $("totSpecM").textContent = mToUnit(inToM(t.special), u).toFixed(4);
+  Array.prototype.forEach.call(document.querySelectorAll(".tot-unit-label"), function(el){ el.textContent = ul; });
+  var mTh = $("tpgMetresTh"), tTh = $("tpgTotalTh");
+  if(mTh) mTh.textContent = "Metres (" + ul + ")";
+  if(tTh) tTh.textContent = "Total metres (" + ul + ")";
+  var bodyName = bodyThreadVal();
+  var rows = '<tr><td>' + esc(bodyName) + '</td><td class="fig-big">' + t.body.toFixed(2) + '</td><td>' + mToUnit(bodyM, u).toFixed(4) + '</td>'
+    + '<td class="allow-col">' + allow + '%</td><td>' + mToUnit(bodyM * (1 + allow / 100), u).toFixed(4) + '</td></tr>';
+  contrastGroups().forEach(function(g){
+    var gm = inToM(g.inches);
+    rows += '<tr><td>' + esc(g.label) + '</td><td class="fig-big">' + g.inches.toFixed(2) + '</td><td>' + mToUnit(gm, u).toFixed(4) + '</td>'
+      + '<td class="allow-col">' + allow + '%</td><td>' + mToUnit(gm * (1 + allow / 100), u).toFixed(4) + '</td></tr>';
+  });
+  rows += '<tr><td>All threads</td><td class="fig-big">' + t.consumption.toFixed(2) + '</td><td>' + mToUnit(totalM, u).toFixed(4) + '</td>'
+    + '<td class="allow-col">' + allow + '%</td><td>' + mToUnit(totalM * (1 + allow / 100), u).toFixed(4) + '</td></tr>';
+  $("tpgBody").innerHTML = rows;
   renderCones();
   renderAccs();
+  saveLocalDraftIfChanged();
+  scheduleAutoSave();
 }
+$("totUnit").addEventListener("change", function(){ totUnit = $("totUnit").value; renderTotals(); });
 $("showAllowLines").addEventListener("change", function(){
   $("tpgTable").className = $("showAllowLines").checked ? "" : "hide-allow";
 });
 $("fAllowPct").addEventListener("input", renderTotals);
-$("fBodyThread").addEventListener("input", renderTotals);
+$("fBodyThread").addEventListener("change", function(){
+  setCustomVisible("fBodyThreadCustom", $("fBodyThread").value === "__custom");
+  renderTotals();
+});
+$("fBodyThreadCustom").addEventListener("input", renderTotals);
 $("opsBody").addEventListener("input", function(e){
   var inp = e.target, f = inp.getAttribute("data-f");
-  if(!f || f === "machine") return; /* machine selects are handled by the change listener below */
+  if(!f) return;
   var tr = inp.closest("tr"), id = tr.getAttribute("data-id");
   var op = OPS.filter(function(o){ return o.id === id; })[0];
   if(!op) return;
   if(f === "mcThread") op.mcAuto = false; /* hand-edited Mc thread is never auto-overwritten */
+  if(f === "seamLength"){ op.seamLengthRaw = inp.value; renderTotals(); return; /* numeric value updates on blur; raw text stays typable */ }
   op[f] = inp.value;
   renderTotals(); /* no full re-render while typing, so focus is kept (expressions like 2+1 stay typable) */
 });
@@ -755,16 +912,7 @@ $("opsBody").addEventListener("change", function(e){
   var tr = inp.closest("tr"), id = tr.getAttribute("data-id");
   var op = OPS.filter(function(o){ return o.id === id; })[0];
   if(!op) return;
-  if(f === "seamQty"){
-    var v = evalQtyExpr(inp.value);
-    if(v !== null && v >= 0) op.seamQty = v; /* "2+1" -> 3, "5-2" -> 3, "2*3" -> 6, "10/4" -> 2.5 */
-    renderOps();
-    return;
-  }
-  if(f === "machine"){
-    op.machine = inp.value;
-    applyMachineToRow(op);
-  }
+  commitOpField(op, f, inp.value);
   renderOps();
 });
 $("opsBody").addEventListener("click", function(e){
@@ -791,13 +939,77 @@ $("opsBody").addEventListener("click", function(e){
   OPS = OPS.filter(function(o){ return o.id !== delId; });
   renderOps();
 });
+/* Enter-key navigation: step one row in the given direction; -1 means "stay"
+   (already at the first/last row, never creates rows). */
+function opsStepRow(ri, dir, count){
+  var r = ri + dir;
+  if(r < 0 || r >= count) return -1;
+  return r;
+}
+/* Commit one operations-table field to the model. Shared by the change handler
+   and the Enter handler, so Enter evaluates arithmetic BEFORE moving. */
+function commitOpField(op, f, value){
+  if(f === "seamLength"){
+    var v = evalQtyExpr(value);
+    if(v !== null && v >= 0){
+      op.seamLength = v; op.seamLengthRaw = "";
+      op.seamLengthExpr = (/[+\-*/]/.test(value) ? value : "");
+    } else {
+      op.seamLengthRaw = value; /* invalid: keep the typed text, do not compute */
+      op.seamLengthExpr = value;
+    }
+    return;
+  }
+  if(f === "seamQty"){
+    var v2 = evalQtyExpr(value);
+    if(v2 !== null && v2 >= 0) op.seamQty = v2; /* "2+1" -> 3, "5-2" -> 3, "2*3" -> 6, "10/4" -> 2.5 */
+    return;
+  }
+  if(f === "machine"){
+    op.machine = value;
+    applyMachineToRow(op);
+    return;
+  }
+  op[f] = value;
+}
 /* Arrow-key navigation inside the operations table: Up/Down move rows (same column);
-   Left/Right at the start/end of a cell's text move to the next cell (any direction, any cell). */
+   Left/Right at the start/end of a cell's text move to the next cell (any direction, any cell).
+   Enter moves DOWN one row (same column), Shift+Enter moves UP; Enter first commits the
+   cell (evaluating seam-length/seam-qty arithmetic) and then moves. */
 $("opsBody").addEventListener("keydown", function(e){
-  if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].indexOf(e.key) === -1) return;
   var t = e.target;
   var tr = t.closest ? t.closest("tr") : null;
   if(!tr) return;
+  if(e.key === "Enter"){
+    if(t.tagName === "BUTTON" || t.tagName === "SELECT") return; /* native activation for buttons/selects */
+    var f0 = t.getAttribute ? t.getAttribute("data-f") : null;
+    if(!f0) return;
+    var id0 = tr.getAttribute("data-id");
+    var op0 = OPS.filter(function(o){ return o.id === id0; })[0];
+    if(op0){
+      commitOpField(op0, f0, t.value); /* evaluate arithmetic FIRST */
+      renderOps(); /* re-render; focus-preservation restores this cell */
+    }
+    /* Re-query the fresh rows (renderOps rebuilt the DOM) and find this cell. */
+    var rows0 = Array.prototype.slice.call($("opsBody").querySelectorAll("tr"));
+    var ri0 = -1, ci0 = -1;
+    rows0.forEach(function(r, k){ if(r.getAttribute("data-id") === id0) ri0 = k; });
+    if(ri0 === -1) return;
+    var cells0 = Array.prototype.slice.call(rows0[ri0].querySelectorAll("input,select,button"));
+    var fresh = rows0[ri0].querySelector('[data-f="' + f0 + '"]');
+    if(fresh) ci0 = cells0.indexOf(fresh);
+    if(ci0 === -1) return;
+    e.preventDefault();
+    var nr = opsStepRow(ri0, e.shiftKey ? -1 : 1, rows0.length);
+    if(nr === -1) return; /* first/last row: stay, do not create rows */
+    var rws = $("opsBody").querySelectorAll("tr");
+    var cs = rws[nr].querySelectorAll("input,select,button");
+    if(!cs.length) return;
+    var cc = ci0; if(cc >= cs.length) cc = cs.length - 1;
+    cs[cc].focus();
+    return;
+  }
+  if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].indexOf(e.key) === -1) return;
   var rows = Array.prototype.slice.call($("opsBody").querySelectorAll("tr"));
   var ri = rows.indexOf(tr);
   if(ri === -1) return;
@@ -841,6 +1053,15 @@ $("opsBody").addEventListener("keydown", function(e){
   }
 });
 $("selProcess").addEventListener("change", renderOps);
+/* Auto-save triggers: any edit inside the sheet wraps schedules a save;
+   the signature check in doAutoSave makes harmless clicks/navigation
+   no-ops, so no write happens unless the sheet actually changed. */
+["subThreadWrap", "subAccWrap"].forEach(function(wid){
+  var w = $(wid); if(!w) return;
+  w.addEventListener("input", function(){ saveLocalDraftIfChanged(); scheduleAutoSave(); });
+  w.addEventListener("change", function(){ saveLocalDraftIfChanged(); scheduleAutoSave(); });
+  w.addEventListener("click", function(){ saveLocalDraftIfChanged(); scheduleAutoSave(); });
+});
 $("selMachine").addEventListener("change", renderOps);
 $("btnAddOp").onclick = function(){ pushUndo(); OPS.push(newOp({})); renderOps(); };
 $("btnShowAll").onclick = function(){ $("selProcess").value = ""; $("selMachine").value = ""; renderOps(); };
@@ -898,6 +1119,10 @@ function pasteOps(){
     added++;
   });
   renderOps();
+  if(added){
+    $("pasteBox").value = "";
+    $("pasteCard").style.display = "none";
+  }
   setStatus(added ? added + " operation(s) pasted. SL renumbered automatically." : "No operations found in the pasted text.");
 }
 $("btnPaste").onclick = pasteOps;
@@ -905,47 +1130,124 @@ $("btnPasteClear").onclick = function(){ $("pasteBox").value = ""; };
 
 /* ================= Render: cone requirement ================= */
 function renderCones(){
-  var html = "";
+  var allow = allowPctVal();
+  var t = totals();
+  var bodyPerPc = inToM(t.body) * (1 + allow / 100);
+  var groups = contrastGroups();
   var sumM = 0, sumExact = 0, sumOrder = 0;
-  CONES.forEach(function(r){
-    var qty = num(r.qty), perPc = num(r.perPc);
-    var totalM = qty * perPc;
-    var cone = coneLengthForQty(qty);
-    var exact = conesExact(totalM, cone);
-    var order = conesNeeded(totalM, cone);
-    sumM += totalM; sumExact += exact; sumOrder += order;
-    html += '<tr data-id="' + r.id + '">'
-      + '<td><input data-f="colour" value="' + esc(r.colour) + '"></td>'
-      + '<td><input class="num" data-f="qty" value="' + esc(r.qty) + '"></td>'
-      + '<td><input class="num" data-f="perPc" value="' + esc(r.perPc) + '"></td>'
-      + '<td>' + totalM.toFixed(2) + '</td>'
-      + '<td>' + cone + '</td>'
-      + '<td>' + exact.toFixed(2) + '</td>'
-      + '<td>' + order + '</td>'
-      + '<td><button class="btn btn-d btn-sm" data-del="' + r.id + '">Delete</button></td></tr>';
-  });
-  if(CONES.length){
-    html += '<tr><td><b>Total</b></td><td></td><td></td><td><b>' + sumM.toFixed(2) + '</b></td><td></td>'
-      + '<td><b>' + sumExact.toFixed(2) + '</b></td><td><b>' + sumOrder + '</b></td><td></td></tr>';
+  function rowHtml(key, label, qtyVal, perPc, editableLabel, editablePerPc, delKey){
+    var calc = coneRowCalc(qtyVal, perPc);
+    sumM += calc.totalM; sumExact += calc.exact; sumOrder += calc.order;
+    return '<tr data-cone-key="' + esc(key) + '">'
+      + '<td>' + (editableLabel ? '<input data-f="colour" value="' + esc(label) + '">' : esc(label)) + '</td>'
+      + '<td><input class="num" data-f="qty" value="' + esc(qtyVal) + '"></td>'
+      + '<td>' + (editablePerPc ? '<input class="num" data-f="perPc" value="' + esc(perPc) + '">' : Number(perPc).toFixed(4)) + '</td>'
+      + '<td class="cone-total">' + calc.totalM.toFixed(2) + '</td>'
+      + '<td class="cone-len">' + calc.cone + '</td>'
+      + '<td class="cone-exact">' + calc.exact.toFixed(2) + '</td>'
+      + '<td class="cone-order">' + calc.order + '</td>'
+      + '<td>' + (delKey ? '<button class="btn btn-d btn-sm" data-del-cone="' + delKey + '">Delete</button>' : "") + '</td></tr>';
   }
-  $("coneBody").innerHTML = html || '<tr><td colspan="8" class="mut">No cone rows yet.</td></tr>';
+  var html = "";
+  html += rowHtml("body", bodyThreadVal(), coneQtyFor("body"), bodyPerPc, false, false, "");
+  if(styleChosen()){
+    groups.forEach(function(g){
+      var perPc = inToM(g.inches) * (1 + allow / 100);
+      html += rowHtml("grp:" + g.key, g.label, coneQtyFor("grp:" + g.key), perPc, false, false, "");
+    });
+    CONES.forEach(function(r){
+      html += rowHtml("custom:" + r.id, r.colour, r.qty, r.perPc, true, true, r.id);
+    });
+  } else {
+    html += '<tr><td colspan="8" class="mut">Select a style name first to add colour rows.</td></tr>';
+  }
+  html += '<tr id="coneTotalsRow"><td><b>Total</b></td><td></td><td></td><td class="cone-total"><b>' + sumM.toFixed(2) + '</b></td><td></td>'
+    + '<td class="cone-exact"><b>' + sumExact.toFixed(2) + '</b></td><td class="cone-order"><b>' + sumOrder + '</b></td><td></td></tr>';
+  $("coneBody").innerHTML = html;
+  var ab = $("btnAddCone");
+  if(ab) ab.disabled = !styleChosen();
 }
+/* Recompute one cone row's calculated cells in place (no full re-render,
+   so typing in a cone input never loses focus). */
+function refreshConeRow(tr){
+  var key = tr.getAttribute("data-cone-key");
+  var qtyInp = tr.querySelector('[data-f="qty"]');
+  if(!qtyInp) return;
+  var qty = qtyInp.value, perPc = "";
+  if(key === "body"){
+    perPc = inToM(totals().body) * (1 + allowPctVal() / 100);
+  } else if(key && key.indexOf("grp:") === 0){
+    var gk = key.slice(4);
+    var gs = contrastGroups().filter(function(g){ return g.key === gk; })[0];
+    perPc = gs ? inToM(gs.inches) * (1 + allowPctVal() / 100) : 0;
+  } else if(key && key.indexOf("custom:") === 0){
+    var r = CONES.filter(function(x){ return "custom:" + x.id === key; })[0];
+    var pp = tr.querySelector('[data-f="perPc"]');
+    perPc = r ? r.perPc : (pp ? pp.value : 0);
+  }
+  var calc = coneRowCalc(qty, perPc);
+  function setCell(cls, val){
+    var c = tr.querySelector("." + cls);
+    if(!c) return;
+    var b = c.querySelector("b");
+    if(b) b.textContent = val; else c.textContent = val;
+  }
+  setCell("cone-total", calc.totalM.toFixed(2));
+  setCell("cone-len", String(calc.cone));
+  setCell("cone-exact", calc.exact.toFixed(2));
+  setCell("cone-order", String(calc.order));
+  updateConeTotalsRow();
+}
+function updateConeTotalsRow(){
+  var trow = $("coneTotalsRow");
+  if(!trow) return;
+  var sumM = 0, sumExact = 0, sumOrder = 0;
+  var rows = $("coneBody").querySelectorAll("tr");
+  for(var i = 0; i < rows.length; i++){
+    var tr = rows[i];
+    if(tr === trow || !tr.getAttribute("data-cone-key")) continue;
+    var tc = tr.querySelector(".cone-total"), ec = tr.querySelector(".cone-exact"), oc = tr.querySelector(".cone-order");
+    if(tc) sumM += num(tc.textContent);
+    if(ec) sumExact += num(ec.textContent);
+    if(oc) sumOrder += num(oc.textContent);
+  }
+  function setCell(cls, val){
+    var c = trow.querySelector("." + cls);
+    if(!c) return;
+    var b = c.querySelector("b");
+    if(b) b.textContent = val; else c.textContent = val;
+  }
+  setCell("cone-total", sumM.toFixed(2));
+  setCell("cone-exact", sumExact.toFixed(2));
+  setCell("cone-order", String(sumOrder));
+}
+/* Cone typing fix: typing updates the model and the row's calculated cells
+   in place. No full re-render happens while typing, so focus is never lost.
+   (The old handler rebuilt the whole table on every keystroke.) */
 $("coneBody").addEventListener("input", function(e){
   var inp = e.target, f = inp.getAttribute("data-f");
   if(!f) return;
-  var id = inp.closest("tr").getAttribute("data-id");
-  var r = CONES.filter(function(x){ return x.id === id; })[0];
-  if(!r) return;
-  r[f] = inp.value;
-  renderCones(); renderAccs();
+  var tr = inp.closest("tr");
+  if(!tr) return;
+  var key = tr.getAttribute("data-cone-key");
+  if(!key) return;
+  if(key === "body" || key.indexOf("grp:") === 0){
+    if(f === "qty") coneQtyMap[key] = inp.value;
+  } else if(key.indexOf("custom:") === 0){
+    var r = CONES.filter(function(x){ return "custom:" + x.id === key; })[0];
+    if(!r) return;
+    r[f] = inp.value;
+  }
+  refreshConeRow(tr);
+  renderAccs(); /* accessories order totals follow the cone quantities */
 });
 $("coneBody").addEventListener("click", function(e){
-  var id = e.target.getAttribute("data-del");
+  var id = e.target.getAttribute("data-del-cone");
   if(!id) return;
   CONES = CONES.filter(function(x){ return x.id !== id; });
   renderCones(); renderAccs();
 });
-$("btnAddCone").onclick = function(){ CONES.push(newCone({ perPc: inToM(totals().body).toFixed(4) })); renderCones(); };
+$("btnAddCone").onclick = function(){ CONES.push(newCone({ perPc: inToM(totals().body).toFixed(4) })); renderCones(); scheduleAutoSave(); };
 $("btnConeFromBody").onclick = function(){
   var m = inToM(totals().body).toFixed(4);
   CONES.forEach(function(r){ r.perPc = m; });
@@ -953,13 +1255,27 @@ $("btnConeFromBody").onclick = function(){
 };
 
 /* ================= Render: accessories ================= */
+/* Item 26: the four computed cells of an accessory row, shared by the
+   full render and the in-place refresh used while typing. */
+function accDisplayVals(r){
+  var c = accCompute(r);
+  var pg = accTotalsUnit === "inch" ? c.perGarment / 2.54 : accTotalsUnit === "yards" ? c.perGarment / 91.44 : c.perGarment;
+  var od = accTotalsUnit === "inch" ? c.order / 2.54 : accTotalsUnit === "yards" ? c.order / 91.44 : c.order;
+  var unitLabel = accTotalsUnit === "inch" ? " inch" : accTotalsUnit === "yards" ? " yards" : " cm";
+  return { cm: c.cm.toFixed(2), pct: c.pct.toFixed(2) + "%", pg: pg.toFixed(2) + unitLabel, od: od.toFixed(2) + unitLabel };
+}
+function refreshAccRow(rowEl, r){
+  if(!rowEl) return;
+  var v = accDisplayVals(r);
+  var cm = rowEl.querySelector(".acc-cm"); if(cm) cm.textContent = v.cm;
+  var pc = rowEl.querySelector(".acc-pct"); if(pc) pc.textContent = v.pct;
+  var pg = rowEl.querySelector(".acc-pg"); if(pg) pg.textContent = v.pg;
+  var od = rowEl.querySelector(".acc-od"); if(od) od.textContent = v.od;
+}
 function renderAccs(){
   var html = "";
   ACCS.forEach(function(r){
-    var c = accCompute(r);
-    var pg = accTotalsUnit === "inch" ? c.perGarment / 2.54 : c.perGarment;
-    var od = accTotalsUnit === "inch" ? c.order / 2.54 : c.order;
-    var unitLabel = accTotalsUnit === "inch" ? " inch" : " cm";
+    var v = accDisplayVals(r);
     html += '<tr data-id="' + r.id + '">'
       + '<td><input data-f="item" value="' + esc(r.item) + '"></td>'
       + '<td><select data-f="rule">'
@@ -975,23 +1291,29 @@ function renderAccs(){
       + '<td><input class="num" data-f="seamLength" value="' + esc(r.seamLength) + '"></td>'
       + '<td><input class="num" data-f="seamAllowance" value="' + esc(r.seamAllowance) + '"></td>'
       + '<td><select data-f="unit"><option value="CM"' + (r.unit === "CM" ? " selected" : "") + '>CM</option><option value="inch"' + (r.unit === "inch" ? " selected" : "") + '>inch</option></select></td>'
-      + '<td>' + c.cm.toFixed(2) + '</td>'
-      + '<td>' + c.pct.toFixed(2) + '%</td>'
-      + '<td>' + pg.toFixed(2) + unitLabel + '</td>'
-      + '<td>' + od.toFixed(2) + unitLabel + '</td>'
+      + '<td class="acc-cm">' + v.cm + '</td>'
+      + '<td class="acc-pct">' + v.pct + '</td>'
+      + '<td class="acc-pg">' + v.pg + '</td>'
+      + '<td class="acc-od">' + v.od + '</td>'
       + '<td><button class="btn btn-d btn-sm" data-del="' + r.id + '">Delete</button></td></tr>';
   });
   $("accBody").innerHTML = html || '<tr><td colspan="10" class="mut">No accessory rows yet.</td></tr>';
-  syncAccStyle();
+  syncAccHeader();
 }
 $("accBody").addEventListener("input", function(e){
   var inp = e.target, f = inp.getAttribute("data-f");
   if(!f) return;
-  var id = inp.closest("tr").getAttribute("data-id");
+  var tr = inp.closest("tr"); if(!tr) return;
+  var id = tr.getAttribute("data-id");
   var r = ACCS.filter(function(x){ return x.id === id; })[0];
   if(!r) return;
   r[f] = inp.value;
-  renderAccs();
+  /* Typing fields update only the model + the row's computed cells, never
+     a full re-render (the old full re-render destroyed focus every
+     keystroke). Selects keep the full re-render; blur/Enter re-renders
+     via the change handler below. */
+  if(f === "item" || f === "seamLength" || f === "seamAllowance" || f === "customPct") refreshAccRow(tr, r);
+  else renderAccs();
 });
 $("accBody").addEventListener("change", function(e){
   var inp = e.target, f = inp.getAttribute("data-f");
@@ -1008,7 +1330,12 @@ $("accBody").addEventListener("click", function(e){
   ACCS = ACCS.filter(function(x){ return x.id !== id; });
   renderAccs();
 });
-$("btnAddAcc").onclick = function(){ ACCS.push(newAcc({})); renderAccs(); };
+$("btnAddAcc").onclick = function(){
+  var r = newAcc({});
+  ACCS.push(r); renderAccs(); scheduleAutoSave();
+  var row = $("accBody").querySelector('tr[data-id="' + r.id + '"]');
+  if(row){ var inp = row.querySelector('[data-f="item"]'); if(inp) inp.focus(); }
+};
 $("accTotalsUnit").addEventListener("change", function(){ accTotalsUnit = $("accTotalsUnit").value; renderAccs(); });
 /* Required fields show red while empty (Buyer, Style, operation names). */
 function markRequired(){
@@ -1016,25 +1343,144 @@ function markRequired(){
   var bEmpty = !selVal("fBuyer", "fBuyerCustom");
   if(bSel) bSel.classList.toggle("req-empty", bEmpty && bSel.value !== "__custom");
   if(bCus) bCus.classList.toggle("req-empty", bEmpty && bSel && bSel.value === "__custom");
-  var st = $("fStyle"), a = $("accStyle");
-  var sEmpty = !st || !st.value.trim();
+  var sEmpty = !styleNameVal();
+  var st = $("fStyleSel"), stx = $("fStyle"), a = $("accStyleSel"), ax = $("accStyle");
   if(st) st.classList.toggle("req-empty", sEmpty);
+  if(stx) stx.classList.toggle("req-empty", sEmpty && st && st.value === "__new");
   if(a) a.classList.toggle("req-empty", sEmpty);
+  if(ax) ax.classList.toggle("req-empty", sEmpty && a && a.value === "__new");
 }
-["fBuyer","fBuyerCustom","fStyle"].forEach(function(id){
+["fBuyer","fBuyerCustom","fStyle","fStyleSel","accStyle","accStyleSel"].forEach(function(id){
   var el = $(id);
   if(el){ el.addEventListener("input", markRequired); el.addEventListener("change", markRequired); }
 });
 markRequired();
-function syncAccStyle(){
-  var a = $("accStyle"), f = $("fStyle");
-  if(!a || !f) return;
-  if(document.activeElement !== a) a.value = f.value;
+/* Style select: pick a saved style to load it, or New style to type a name. */
+function onStyleSelectChange(changedSelId){
+  var sel = $(changedSelId);
+  if(!sel) return;
+  var otherSelId = changedSelId === "fStyleSel" ? "accStyleSel" : "fStyleSel";
+  var other = $(otherSelId);
+  var v = sel.value;
+  if(v === "__new"){
+    if(other) other.value = "__new";
+    setCustomVisible("fStyleCustom", true);
+    setCustomVisible("accStyleCustom", true);
+    var ti = changedSelId === "accStyleSel" ? $("accStyle") : $("fStyle");
+    if(ti && ti.focus) ti.focus();
+  } else if(v){
+    var it = stylesCache.filter(function(x){ return x.key === v; })[0];
+    if(it){
+      currentStyleKey = v;
+      if(other) other.value = v;
+      setCustomVisible("fStyleCustom", false);
+      setCustomVisible("accStyleCustom", false);
+      loadSheet(it.data);
+      syncAccHeader();
+    } else {
+      sel.value = "";
+      if(other) other.value = "";
+      setCustomVisible("fStyleCustom", false);
+      setCustomVisible("accStyleCustom", false);
+    }
+  } else {
+    if(other) other.value = "";
+    setCustomVisible("fStyleCustom", false);
+    setCustomVisible("accStyleCustom", false);
+  }
+  applyStyleChosenClass();
+  renderCones();
+}
+function refreshStyleSelects(){
+  var sorted = stylesCache.slice().sort(function(a, b){ return (b.data.updatedAt || 0) - (a.data.updatedAt || 0); });
+  ["fStyleSel", "accStyleSel"].forEach(function(id){
+    var sel = $(id); if(!sel) return;
+    var cur = sel.value;
+    var html = '<option value="">Select style name</option>';
+    sorted.forEach(function(it){
+      var d = it.data || {};
+      html += '<option value="' + esc(it.key) + '">' + esc(d.style || "") + (d.buyer ? " (" + esc(d.buyer) + ")" : "") + '</option>';
+    });
+    html += '<option value="__new">＋ New style…</option>';
+    sel.innerHTML = html;
+    if(cur === "__new") sel.value = "__new";
+    else if(sorted.some(function(it){ return it.key === cur; })) sel.value = cur;
+    else sel.value = "";
+    setCustomVisible(id === "fStyleSel" ? "fStyleCustom" : "accStyleCustom", sel.value === "__new");
+  });
+  applyStyleChosenClass();
+}
+/* Mirror the main Style Header into the Accessories header (both directions:
+   this function copies main -> accessories; accessory controls write back). */
+function syncAccHeader(){
+  renderSheetCheckStatus();
+  var ae = document.activeElement;
+  function setVal(id, val){
+    var el = $(id);
+    if(!el) return;
+    if(ae === el) return; /* never clobber the field being typed in */
+    el.value = val;
+  }
+  function setMasterMirror(selId, customId, mainSelId, mainCustomId){
+    var sel = $(selId); if(!sel) return;
+    if(ae === sel || ae === $(customId)) return;
+    var val = selVal(mainSelId, mainCustomId);
+    var opts = sel.options || [], found = false;
+    for(var i = 0; i < opts.length; i++) if(opts[i].value === val) found = true;
+    if(found && val){ sel.value = val; setCustomVisible(customId, false); }
+    else if(val){ sel.value = "__custom"; setCustomVisible(customId, true); var c = $(customId); if(c) c.value = val; }
+    else { sel.value = ""; setCustomVisible(customId, false); }
+  }
+  setMasterMirror("accBuyer", "accBuyerCustom", "fBuyer", "fBuyerCustom");
+  var asel = $("accStyleSel"), msel = $("fStyleSel");
+  if(asel && msel && ae !== asel && ae !== $("accStyle")){
+    if(msel.value === "__new"){ asel.value = "__new"; setCustomVisible("accStyleCustom", true); }
+    else { asel.value = msel.value; setCustomVisible("accStyleCustom", false); }
+  }
+  setVal("accStyle", $("fStyle") ? $("fStyle").value : "");
+  setMasterMirror("accItem", "accItemCustom", "fItem", "fItemCustom");
+  setMasterMirror("accSize", "accSizeCustom", "fSize", "fSizeCustom");
+  setVal("accFit", $("fFit") ? $("fFit").value : "");
+  setVal("accDate", $("fDate") ? $("fDate").value : "");
+  setVal("accOrderQty", $("fOrderQty") ? $("fOrderQty").value : "");
+  refreshPreparedByDisplay(); /* Prepared by always shows the logged-in user */
   var parts = [selVal("fBuyer", "fBuyerCustom"), selVal("fItem", "fItemCustom"), selVal("fSize", "fSizeCustom")].filter(Boolean);
   $("accStyleCtx").textContent = (parts.length ? parts.join("  •  ") + "  •  " : "") + "Order qty (pcs): " + totalBodyQty();
   markRequired();
 }
-$("accStyle").addEventListener("input", function(){ $("fStyle").value = $("accStyle").value; });
+/* Accessories header writes back to the main header. */
+function accMirrorToMain(accSelId, accCustomId, mainSelId, mainCustomId){
+  var sel = $(accSelId), ms = $(mainSelId);
+  if(!sel || !ms) return;
+  setCustomVisible(accCustomId, sel.value === "__custom");
+  if(sel.value === "__custom"){
+    ms.value = "__custom"; setCustomVisible(mainCustomId, true);
+    var mc = $(mainCustomId), ac = $(accCustomId);
+    if(mc && ac) mc.value = ac.value;
+  } else {
+    ms.value = sel.value; setCustomVisible(mainCustomId, false);
+  }
+}
+[["accBuyer","accBuyerCustom","fBuyer","fBuyerCustom"],["accItem","accItemCustom","fItem","fItemCustom"],["accSize","accSizeCustom","fSize","fSizeCustom"]].forEach(function(t){
+  $(t[0]).addEventListener("change", function(){ accMirrorToMain(t[0], t[1], t[2], t[3]); syncAccHeader(); });
+  $(t[1]).addEventListener("input", function(){ var mc = $(t[3]); if(mc) mc.value = $(t[1]).value; syncAccHeader(); });
+});
+$("accFit").addEventListener("change", function(){ $("fFit").value = $("accFit").value; syncAccHeader(); });
+$("accDate").addEventListener("change", function(){ $("fDate").value = $("accDate").value; syncAccHeader(); });
+$("accOrderQty").addEventListener("input", function(){ $("fOrderQty").value = $("accOrderQty").value; syncAccHeader(); renderCones(); });
+$("accStyleSel").addEventListener("change", function(){ onStyleSelectChange("accStyleSel"); });
+$("accStyle").addEventListener("input", function(){ $("fStyle").value = $("accStyle").value; applyStyleChosenClass(); renderCones(); syncAccHeader(); });
+$("btnSaveAccBuyerCustom").onclick = function(){ saveCustomName("accBuyer", "accBuyerCustom", "buyers"); };
+$("btnSaveAccItemCustom").onclick = function(){ saveCustomName("accItem", "accItemCustom", "items"); };
+$("btnSaveAccSizeCustom").onclick = function(){ saveCustomName("accSize", "accSizeCustom", "sizes"); };
+/* Main header changes mirror into the Accessories header. */
+["fBuyer","fItem","fSize"].forEach(function(id){ $(id).addEventListener("change", syncAccHeader); });
+["fBuyerCustom","fItemCustom","fSizeCustom"].forEach(function(id){ $(id).addEventListener("input", syncAccHeader); });
+$("fFit").addEventListener("change", syncAccHeader);
+$("fDate").addEventListener("change", syncAccHeader);
+$("fOrderQty").addEventListener("input", function(){ syncAccHeader(); renderCones(); });
+$("fStyleSel").addEventListener("change", function(){ onStyleSelectChange("fStyleSel"); });
+$("fStyle").addEventListener("input", function(){ applyStyleChosenClass(); renderCones(); syncAccHeader(); });
 
 function todayISO(){
   var d = new Date();
@@ -1070,14 +1516,14 @@ function setMasterSelect(selId, customId, val){
 function sheetData(){
   var t = totals();
   return {
-    buyer: selVal("fBuyer", "fBuyerCustom"), style: $("fStyle").value.trim(),
+    buyer: selVal("fBuyer", "fBuyerCustom"), style: styleNameVal(), styleKey: currentStyleKey,
     item: selVal("fItem", "fItemCustom"), size: selVal("fSize", "fSizeCustom"),
-    fit: $("fFit").value, bodyThread: $("fBodyThread").value.trim(),
-    date: $("fDate").value, allowPct: allowPctVal(),
+    fit: $("fFit").value, bodyThread: bodyThreadVal(),
+    date: $("fDate").value, orderQty: orderQtyNum(), allowPct: allowPctVal(),
     coneMode: coneModeVal(), manualCone: manualConeVal(),
-    createdBy: $("fCreatedBy").value.trim(),
-    checker: $("homeChecker") ? $("homeChecker").value : "",
-    ops: OPS, cones: CONES, accs: ACCS,
+    preparedBy: preparedByVal(), createdBy: preparedByVal(),
+    checker: preparedByVal(),
+    ops: OPS, cones: CONES, coneQtys: coneQtyMap, accs: ACCS,
     totalIn: t.consumption, totalM: inToM(t.consumption),
     bodyIn: t.body, bodyM: inToM(t.body), specialIn: t.special, specialM: inToM(t.special),
     bodyThreadName: $("fBodyThread").value.trim(),
@@ -1086,28 +1532,79 @@ function sheetData(){
   };
 }
 function loadSheet(d){
+  flushAutoSave();
+  loadingSheet = true;
+  var restoredLocal = false;
+  try{
+    var raw = null;
+    try{ raw = localStorage.getItem(localDraftKey(d.buyer, d.style)); }catch(e){}
+    if(raw){
+      var local = JSON.parse(raw);
+      if(local && local.updatedAt && local.updatedAt > (d.updatedAt || 0)){ d = local; restoredLocal = true; }
+    }
+  }catch(e){}
   setMasterSelect("fBuyer", "fBuyerCustom", d.buyer || "");
-  $("fStyle").value = d.style || "";
   setMasterSelect("fItem", "fItemCustom", d.item || "");
   setMasterSelect("fSize", "fSizeCustom", d.size || "");
   $("fFit").value = d.fit || "";
-  $("fBodyThread").value = d.bodyThread || d.bodyThreadName || "";
+  (function(){
+    var bt = d.bodyThread || d.bodyThreadName || "50/2";
+    if(bt === "50/2" || bt === "20/2"){ $("fBodyThread").value = bt; setCustomVisible("fBodyThreadCustom", false); }
+    else { $("fBodyThread").value = "__custom"; setCustomVisible("fBodyThreadCustom", true); $("fBodyThreadCustom").value = bt; }
+  })();
   $("fDate").value = d.date || todayISO();
+  $("fOrderQty").value = (d.orderQty != null ? d.orderQty : "");
   $("fAllowPct").value = (d.allowPct != null ? d.allowPct : 20);
   $("fConeMode").value = d.coneMode || "auto";
   $("fManualCone").value = (d.manualCone != null ? d.manualCone : 4000);
   $("manualConeWrap").style.display = ($("fConeMode").value === "manual") ? "" : "none";
-  $("fCreatedBy").value = d.createdBy || "";
-  if($("homeChecker")) $("homeChecker").value = d.checker || "";
+  refreshPreparedByDisplay(); /* Prepared by is always the logged-in user, not the stored name */
   OPS = (d.ops || []).map(function(o){ return newOp(o); });
   CONES = (d.cones || []).map(function(c){ return newCone(c); });
+  coneQtyMap = d.coneQtys || {};
   ACCS = (d.accs || []).map(function(a){ return newAcc(a); });
-  renderOps(); renderCones(); renderAccs();
+  var sk = d.styleKey || "";
+  if(!sk){
+    var m = stylesCache.filter(function(x){ return x.data && x.data.buyer === d.buyer && x.data.style === d.style; })[0];
+    if(m) sk = m.key;
+  }
+  currentStyleKey = sk || "";
+  var fs = $("fStyleSel"), as = $("accStyleSel");
+  if(sk){
+    [fs, as].forEach(function(sel2){
+      if(!sel2) return;
+      var has = false;
+      for(var i = 0; i < sel2.options.length; i++) if(sel2.options[i].value === sk) has = true;
+      if(!has){
+        var o = document.createElement("option");
+        o.value = sk; o.textContent = d.style || sk;
+        sel2.appendChild(o);
+      }
+      sel2.value = sk;
+    });
+    setCustomVisible("fStyleCustom", false); setCustomVisible("accStyleCustom", false);
+  } else {
+    if(fs) fs.value = "__new"; if(as) as.value = "__new";
+    setCustomVisible("fStyleCustom", true); setCustomVisible("accStyleCustom", true);
+  }
+  $("fStyle").value = d.style || "";
+  $("accStyle").value = d.style || "";
+  applyStyleChosenClass();
+  renderOps(); renderCones(); renderAccs(); syncAccHeader();
+  renderSheetCheckStatus();
+  loadingSheet = false;
+  lastLocalSig = sheetSignature();
+  if(restoredLocal){
+    setStatus("Unsaved work restored from this device (newer than cloud).");
+    scheduleAutoSave();
+  } else {
+    lastAutoSaveSig = sheetSignature();
+  }
   window.scrollTo(0, 0);
 }
 function validHeader(){
   markRequired();
-  if(!selVal("fBuyer", "fBuyerCustom") || !$("fStyle").value.trim()){
+  if(!selVal("fBuyer", "fBuyerCustom") || !styleNameVal()){
     alert("Please enter Buyer and Style first."); return false;
   }
   return true;
@@ -1118,22 +1615,6 @@ function fbPush(node, data, doneMsg){
     setStatus(doneMsg);
   }).catch(function(e){ alert("Save failed: " + e.message); });
 }
-function saveDraft(){
-  if(!validHeader()) return;
-  var d = sheetData(); d.status = "draft";
-  if(!FB_OK){ alert("Firebase is not connected (offline?). The sheet is kept only on this device for now."); return; }
-  var existing = null;
-  stylesCache.forEach(function(it){
-    if(it.data && it.data.buyer === d.buyer && it.data.style === d.style) existing = it;
-  });
-  if(existing){
-    fbDB.ref(SHEET + "/styles/" + existing.key).set(d).then(function(){
-      setStatus("Draft updated.");
-    }).catch(function(e){ alert("Save failed: " + e.message); });
-  } else {
-    fbPush("styles", d, "Draft saved.");
-  }
-}
 function saveToDevice(d){
   try{ localStorage.setItem("sewingSheetDevice", JSON.stringify(d)); }catch(e){}
   var blob = new Blob([JSON.stringify(d, null, 2)], { type: "application/json" });
@@ -1143,73 +1624,210 @@ function saveToDevice(d){
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
   setStatus("Sheet saved to this device + downloaded as JSON.");
 }
+/* ================= Auto-save (item 18) =================
+   The single save: every sheet edit schedules a debounced Firebase upsert
+   (same Buyer+Style upsert the old manual save used). Nothing is written
+   when the sheet did not actually change, when Buyer/Style are empty, or
+   when Firebase is offline (the local draft from item 22 still holds the
+   work). The signature guard also covers the race where the user edits
+   while a save is in flight: the saved signature is only recorded when
+   the sheet is unchanged since the save started. */
+var autoSaveTimer = null, lastAutoSaveSig = null, AUTO_SAVE_DELAY = 1500;
+function validHeaderSilent(){
+  return !!(selVal("fBuyer", "fBuyerCustom") && styleNameVal());
+}
+function sheetSignature(){
+  try{ var d = sheetData(); delete d.updatedAt; return JSON.stringify(d); }catch(e){ return ""; }
+}
+function scheduleAutoSave(){
+  if(autoSaveTimer) clearTimeout(autoSaveTimer);
+  autoSaveTimer = setTimeout(doAutoSave, AUTO_SAVE_DELAY);
+}
+function flushAutoSave(){
+  if(autoSaveTimer){ clearTimeout(autoSaveTimer); autoSaveTimer = null; doAutoSave(); }
+}
+function doAutoSave(){
+  autoSaveTimer = null;
+  if(!FB_OK) return "offline";
+  if(!validHeaderSilent()) return "noheader";
+  var sig = sheetSignature();
+  if(!sig || sig === lastAutoSaveSig) return "unchanged";
+  var d = sheetData(); d.status = "draft";
+  var existing = null;
+  stylesCache.forEach(function(it){
+    if(it.data && it.data.buyer === d.buyer && it.data.style === d.style) existing = it;
+  });
+  function ok(){ if(sheetSignature() === sig) lastAutoSaveSig = sig; setStatus("Auto-saved."); }
+  if(existing){
+    fbDB.ref(SHEET + "/styles/" + existing.key).set(d).then(ok).catch(function(){});
+  } else {
+    fbDB.ref(SHEET + "/styles").push(d).then(ok).catch(function(){});
+  }
+  return "saving";
+}
+/* ================= Sheet check -> main list (item 18) =================
+   Checking happens on the sheet. A checked style is upserted into the
+   main buyer-wise list (styleList) so it appears there directly — there
+   is no separate folder step and no separate saved-drafts list any more.
+   The check queue itself is untouched (bell count + sheet status still
+   read it), so no check history is lost. */
+function sheetCheckState(){
+  var b = selVal("fBuyer", "fBuyerCustom"), st = styleNameVal();
+  if(!b || !st) return { status: "Draft", remark: "" };
+  var ent = null;
+  checkCache.forEach(function(it){
+    if(it.data && it.data.buyer === b && it.data.style === st) ent = it;
+  });
+  if(ent && ent.data.status === "Checked") return { status: "Checked", remark: ent.data.remark || "" };
+  if(ent) return { status: "Pending", remark: ent.data.remark || "" };
+  return { status: "Draft", remark: "" };
+}
+function renderSheetCheckStatus(){
+  var st = sheetCheckState();
+  var sEl = $("sheetCheckStatus"), rEl = $("sheetCheckRemark");
+  if(sEl) sEl.textContent = st.status;
+  if(rEl) rEl.textContent = st.remark ? "Remark: " + st.remark : "";
+}
+function onCheckQueueChange(){
+  renderBell();
+  renderSheetCheckStatus();
+  renderStyleList();
+}
+function upsertListEntry(d){
+  var existing = null;
+  listCache.forEach(function(it){
+    if(it.data && it.data.buyer === d.buyer && it.data.style === d.style) existing = it;
+  });
+  if(existing){
+    var keep = d.remark || existing.data.remark || "";
+    var merged = d; merged.remark = keep;
+    fbDB.ref(SHEET + "/styleList/" + existing.key).set(merged);
+  } else {
+    fbDB.ref(SHEET + "/styleList").push(d);
+  }
+}
+function addCurrentToList(remark){
+  if(!validHeader()) return;
+  var d = sheetData(); d.status = "listed"; d.remark = remark || "";
+  if(!FB_OK){ alert("Firebase is not connected (offline?). The style is kept only on this device for now."); return; }
+  upsertListEntry(d);
+  setStatus("Added to the main list.");
+}
+function markCurrentChecked(){
+  if(!FB_OK){ alert("Firebase is not connected (offline?)."); return; }
+  if(!validHeader()) return;
+  var b = selVal("fBuyer", "fBuyerCustom"), st = styleNameVal();
+  var pending = null;
+  checkCache.forEach(function(it){
+    if(it.data && it.data.buyer === b && it.data.style === st && it.data.status !== "Checked") pending = it;
+  });
+  if(!pending){
+    var d0 = sheetData(); d0.status = "Checked";
+    upsertListEntry(d0);
+    setStatus("Marked Checked and added to the main list.");
+    renderSheetCheckStatus();
+    return;
+  }
+  var remark = prompt("Checker remark (optional):", "");
+  fbDB.ref(SHEET + "/checkQueue/" + pending.key).update({ status: "Checked", remark: remark || "", checkedAt: Date.now() })
+    .then(function(){
+      var d = sheetData(); d.status = "Checked"; d.remark = remark || "";
+      upsertListEntry(d);
+      setStatus("Marked Checked and added to the main list.");
+    })
+    .catch(function(err){ alert("Update failed: " + err.message); });
+}
+$("btnSheetSubmitCheck").onclick = submitForCheck;
+$("btnSheetMarkChecked").onclick = markCurrentChecked;
+/* ================= Power-cut safety (item 22) =================
+   Every edit ALSO writes synchronously to localStorage (this device),
+   keyed by Buyer+Style, so work survives a sudden power cut even if the
+   debounced cloud save never fired. The debounced Firebase auto-save
+   from item 18 still runs as well. Local drafts are never auto-deleted:
+   a stale local draft is simply ignored by the newer-wins rule below,
+   and stays as a backup if the cloud copy is ever lost. Edge accepted
+   deliberately: a local draft for a cloud-deleted style will restore it
+   (power-cut safety favours resurrection; delete again if unwanted). */
+var lastLocalSig = null, loadingSheet = false, localResumed = false;
+function localDraftKey(buyer, style){
+  if(!buyer && !style) return "sewingSheet.localDraft.__current";
+  return "sewingSheet.localDraft." + encodeURIComponent(buyer || "") + "||" + encodeURIComponent(style || "");
+}
+function saveLocalDraftIfChanged(){
+  if(loadingSheet) return "loading";
+  try{
+    var sig = sheetSignature();
+    if(!sig || sig === lastLocalSig) return "unchanged";
+    var d = sheetData(); d.updatedAt = Date.now();
+    var key = localDraftKey(selVal("fBuyer", "fBuyerCustom"), styleNameVal());
+    localStorage.setItem(key, JSON.stringify(d));
+    try{ localStorage.setItem("sewingSheet.lastLocalKey", key); }catch(e){}
+    lastLocalSig = sig;
+    return "saved";
+  }catch(e){ return "error"; }
+}
+function resumeLocalDraft(){
+  try{
+    var key = localStorage.getItem("sewingSheet.lastLocalKey");
+    if(!key || key === "sewingSheet.localDraft.__current") return;
+    var raw = localStorage.getItem(key);
+    if(!raw) return;
+    var local = JSON.parse(raw);
+    if(!local || !local.buyer || !local.style) return;
+    var cloud = null;
+    stylesCache.forEach(function(it){
+      if(it.data && it.data.buyer === local.buyer && it.data.style === local.style) cloud = it.data;
+    });
+    /* Only the recovery case auto-loads: local strictly newer than cloud.
+       Otherwise the app keeps its normal blank start (no hijacking). */
+    if(local.updatedAt && local.updatedAt > ((cloud && cloud.updatedAt) || 0)){
+      loadSheet(local);
+    }
+  }catch(e){}
+}
 function submitForCheck(){
   if(!validHeader()) return;
   var d = sheetData(); d.status = "Pending"; d.remark = "";
   fbPush("checkQueue", d, "Submitted for check.");
 }
 $("btnSaveTo").onclick = function(){
-  if($("saveToSel").value === "device"){
-    if(!validHeader()) return;
-    var d = sheetData(); d.status = "draft";
-    saveToDevice(d);
-  } else {
-    saveDraft();
-  }
-};
-$("homeSubmitCheck").onclick = submitForCheck;
-$("homeMarkChecked").onclick = function(){
-  var b = selVal("fBuyer", "fBuyerCustom"), st = $("fStyle").value.trim();
-  if(!b || !st){ alert("Open a sheet (Buyer + Style) first, or pick its pending check in the folder."); return; }
-  var it = null;
-  for(var i = 0; i < checkCache.length; i++){
-    var d = checkCache[i].data;
-    if(d.buyer === b && d.style === st && d.status !== "Checked"){ it = checkCache[i]; break; }
-  }
-  if(!it){ alert("No pending check found for this Buyer + Style."); return; }
-  var remark = prompt("Checker remark (optional):", "");
-  if(!FB_OK) return;
-  fbDB.ref(SHEET + "/checkQueue/" + it.key).update({ status: "Checked", remark: remark || "", checkedAt: Date.now() })
-    .then(function(){ setStatus("Marked Checked."); })
-    .catch(function(err){ alert("Update failed: " + err.message); });
-};
-$("homeOpenFolder").onclick = function(){ showHomePanel("folder"); };
-$("btnFinalSave").onclick = function(){
   if(!validHeader()) return;
-  var d = sheetData(); d.status = "standard";
-  fbPush("standards", d, "Final Save done. It now appears in All Buyer Folder.");
+  var d = sheetData(); d.status = "draft";
+  saveToDevice(d);
 };
-$("btnAddToList").onclick = function(){
-  if(!validHeader()) return;
-  var d = sheetData(); d.status = "listed";
-  fbPush("styleList", d, "Added to Style List.");
-};
+$("btnAddToList").onclick = function(){ addCurrentToList(""); };
 $("btnNewSheet").onclick = function(){
-  if(!confirm("Start a new sheet? Unsaved changes will be lost.")) return;
+  flushAutoSave();
+  if(!confirm("Start a new sheet? (The current sheet is saved automatically.)")) return;
   pushUndo();
   setMasterSelect("fBuyer", "fBuyerCustom", "");
-  $("fStyle").value = "";
+  $("fStyleSel").value = ""; $("accStyleSel").value = "";
+  setCustomVisible("fStyleCustom", false); setCustomVisible("accStyleCustom", false);
+  $("fStyle").value = ""; $("accStyle").value = "";
+  currentStyleKey = "";
   setMasterSelect("fItem", "fItemCustom", "");
   setMasterSelect("fSize", "fSizeCustom", "");
-  $("fFit").value = ""; $("fBodyThread").value = "";
-  $("fDate").value = todayISO(); $("fAllowPct").value = 20;
+  $("fFit").value = ""; $("fBodyThread").value = "50/2"; setCustomVisible("fBodyThreadCustom", false);
+  $("fDate").value = todayISO(); $("fOrderQty").value = ""; $("fAllowPct").value = 20;
   $("fConeMode").value = "auto"; $("manualConeWrap").style.display = "none";
-  OPS = []; CONES = []; ACCS = [];
-  renderOps(); renderCones(); renderAccs();
+  OPS = []; CONES = []; ACCS = []; coneQtyMap = {};
+  applyStyleChosenClass();
+  renderOps(); renderCones(); renderAccs(); syncAccHeader();
   setStatus("New sheet started.");
 };
 $("btnPasteGoto").onclick = function(){
   showPage(2); showSub("thread");
-  var el = $("pasteCard"); if(el && el.scrollIntoView) el.scrollIntoView();
+  var el = $("pasteCard"); if(el) el.style.display = "";
+  if(el && el.scrollIntoView) el.scrollIntoView();
   $("pasteBox").focus();
 };
 $("btnBackDashboard").onclick = function(){ showPage(1); };
 $("btnOpenReport").onclick = function(){ showPage(2); showSub("thread"); };
-$("btnHomeLogout").onclick = function(){ showHomePanel(""); window.scrollTo(0, 0); setStatus("Home view reset."); };
+$("btnHomeLogout").onclick = logout;
 $("homeUserName").addEventListener("input", function(){
   $("welcomeLine").textContent = "Welcome to " + ($("homeUserName").value.trim() || "—");
 });
-$("bellBtn").onclick = function(){ showPage("home"); showHomePanel("folder"); };
+$("bellBtn").onclick = function(){ showPage(2); showSub("thread"); };
 $("fConeMode").addEventListener("change", function(){
   $("manualConeWrap").style.display = ($("fConeMode").value === "manual") ? "" : "none";
   renderCones(); updateConeNote();
@@ -1222,58 +1840,6 @@ function renderBell(){
   checkCache.forEach(function(it){ if(it.data.status !== "Checked") pend++; });
   var b = $("bellCount"); if(b) b.textContent = pend;
 }
-function renderCheckFolder(){
-  renderBell();
-  var box = $("checkFolder");
-  if(!checkCache.length){ box.innerHTML = '<p class="mut">No submissions yet.</p>'; return; }
-  box.innerHTML = checkCache.slice(0, 10).map(function(it){
-    var d = it.data;
-    return '<div class="item" data-load="' + it.key + '" data-kind="check">'
-      + '<b>' + esc(d.buyer) + ' — ' + esc(d.style) + '</b> '
-      + '<span class="tag ' + (d.status === "Pending" ? "tag-pend" : "") + '">' + esc(d.status || "Pending") + '</span>'
-      + '<div class="mut">' + esc(d.item) + ' | Size ' + esc(d.size) + ' | Checker: ' + esc(d.checker || "-")
-      + (d.remark ? ' | Remark: ' + esc(d.remark) : '') + '</div>'
-      + '<div class="row" style="margin-top:6px">'
-      + '<button class="btn btn-o btn-sm" data-open="' + it.key + '">Open sheet</button>'
-      + (d.status === "Pending" ? '<button class="btn btn-p btn-sm" data-check="' + it.key + '">Mark Checked</button>' : '')
-      + '</div></div>';
-  }).join("");
-}
-function renderStdFolder(){
-  var box = $("stdFolder");
-  if(!stdCache.length){ box.innerHTML = '<p class="mut">No final standards yet.</p>'; return; }
-  var groups = {};
-  stdCache.forEach(function(it){
-    var b = it.data.buyer || "(No buyer)";
-    (groups[b] = groups[b] || []).push(it);
-  });
-  var term = stdSearchTerm.toLowerCase();
-  function markMatch(text, t){
-    if(!t) return esc(text);
-    var low = (text || "").toLowerCase(), i = low.indexOf(t);
-    if(i === -1) return esc(text);
-    return esc(text.slice(0, i)) + "<mark>" + esc(text.slice(i, i + t.length)) + "</mark>" + esc(text.slice(i + t.length));
-  }
-  var html = "";
-  Object.keys(groups).sort().forEach(function(b){
-    var items = groups[b].filter(function(it){
-      if(!term) return true;
-      return (it.data.style || "").toLowerCase().indexOf(term) !== -1 || b.toLowerCase().indexOf(term) !== -1;
-    });
-    if(!items.length) return;
-    var open = !!term || expandedBuyer === b;
-    html += '<div class="item folder" data-folder="' + esc(b) + '"><b>📁 ' + esc(b) + '</b> <span class="qty-badge">' + (term ? items.length + " matching" : "Style Qty: " + groups[b].length) + '</span></div>';
-    if(open){
-      items.forEach(function(it){
-        var d = it.data;
-        html += '<div class="item std-row"><b>' + markMatch(d.style || "", term) + '</b> <span class="mut">' + esc(d.item) + ' | Size ' + esc(d.size) + ' | Total ' + Number(d.totalM || 0).toFixed(4) + ' m</span> '
-          + '<button class="btn btn-o btn-sm" data-open-std="' + it.key + '">Open sheet</button></div>';
-      });
-    }
-  });
-  box.innerHTML = html || '<p class="mut">No matching standards.</p>';
-}
-$("stdSearch").addEventListener("input", function(){ stdSearchTerm = $("stdSearch").value.trim(); renderStdFolder(); });
 
 function entryMonth(d){
   if(d.date && /^\d{4}-\d{2}/.test(d.date)) return d.date.slice(0, 7);
@@ -1291,21 +1857,106 @@ function entryDate(d){
   }
   return "";
 }
-function listRowsForBuyer(buyer){
-  return listCache.filter(function(it){
-    var d = it.data || {};
-    if(buyer && (d.buyer || "") !== buyer) return false;
-    if(currentListPeriod && entryMonth(d) !== currentListPeriod) return false;
-    return true;
+/* Item 21 fold: the buyer-wise main list merges the style list AND the
+   old standards collection (formerly filled only by FINAL SAVE). Dedup by
+   Buyer+Style, newer updatedAt wins; each row keeps its source node so
+   CLEAR LIST deletes from the right place. The standards node itself is
+   never deleted — old final saves stay visible in the main list. */
+function listRowsForBuyer(buyer, skipPeriod){
+  var rows = [];
+  function addFrom(cache, src){
+    cache.forEach(function(it){
+      var d = it.data || {};
+      if(buyer && (d.buyer || "") !== buyer) return;
+      if(!skipPeriod && currentListPeriod && entryMonth(d) !== currentListPeriod) return;
+      rows.push({ key: it.key, data: d, src: src });
+    });
+  }
+  addFrom(listCache, "list");
+  addFrom(stdCache, "std");
+  var seen = {}, merged = [];
+  rows.sort(function(a, b){ return (b.data.updatedAt || 0) - (a.data.updatedAt || 0); });
+  rows.forEach(function(r){
+    var k = (r.data.buyer || "") + "||" + (r.data.style || "");
+    if(seen[k]) return;
+    seen[k] = true;
+    merged.push(r);
   });
+  merged.reverse();
+  return merged;
 }
 function updateListBuyerSel(){
   var lb = $("listBuyerSel");
   if(!lb) return;
   var all = [""].concat(masterNames(buyersCache, SEED_BUYERS));
   listCache.forEach(function(it){ var b = it.data.buyer; if(b && all.indexOf(b) === -1) all.push(b); });
+  stdCache.forEach(function(it){ var b = it.data.buyer; if(b && all.indexOf(b) === -1) all.push(b); });
   lb.innerHTML = all.map(function(b){ return '<option value="' + esc(b) + '">' + (b ? esc(b) : "All buyers") + '</option>'; }).join("");
   lb.value = currentListBuyer;
+}
+/* ================= List metres (item 19) =================
+   RESOLVED (evidence from the user's two screenshots of the same list):
+   the old list suffixes are METRES, not percentages — 187 + 5 = 192 and
+   164 + 5 = 169. So BODY THREAD--<body metres incl. allowance> and
+   Contrast <COLOUR>-<contrast metres incl. allowance>, and MTR is the
+   total metres incl. allowance, rounded to integers. The total is the sum
+   of the rounded parts, so the identity body + contrasts = total holds
+   exactly (at most 1 m away from rounding the unrounded total). */
+function contrastGroupsFor(ops){
+  var groups = {}, order = [];
+  (ops || []).forEach(function(op){
+    var c = opConsumption(op);
+    [[op.thread1, op.colour1, op.pct1], [op.thread2, op.colour2, op.pct2]].forEach(function(slot){
+      var th = String(slot[0] || "").trim(), col = String(slot[1] || "").trim(), pct = num(slot[2]);
+      if((!th && !col) || pct <= 0) return;
+      if(th.toLowerCase() === "body thread") return;
+      var inches = c * pct / 100;
+      if(inches <= 0) return;
+      var label = (th + " " + col).trim();
+      var key = label.toLowerCase();
+      if(!groups[key]){ groups[key] = { key: key, label: label, inches: 0 }; order.push(key); }
+      groups[key].inches += inches;
+    });
+  });
+  return order.map(function(k){ return groups[k]; });
+}
+function listRowMetres(d){
+  var allow = 1 + (num(d.allowPct != null ? d.allowPct : 20) / 100);
+  var ops = d.ops || [];
+  if(ops.length){
+    var bodyIn = 0;
+    ops.forEach(function(op){ bodyIn += opSplit(op).body; });
+    var groups = contrastGroupsFor(ops).map(function(g){
+      return { label: g.label, m: Math.round(inToM(g.inches) * allow) };
+    });
+    var bodyM = Math.round(inToM(bodyIn) * allow);
+    var total = bodyM;
+    groups.forEach(function(g){ total += g.m; });
+    return { total: total, body: bodyM, groups: groups };
+  }
+  /* Fallback for entries without operations (aggregates only, stored raw
+     without allowance): apply allowance, split special from the stored
+     special-thread string when it parses, else a single Special group. */
+  var body = Math.round(num(d.bodyM || 0) * allow);
+  var special = Math.round(num(d.specialM || 0) * allow);
+  var groups = [];
+  if(special > 0){
+    var m2 = String(d.specialThread || "").match(/^(.+?)\s+[\d.]+\s*%$/);
+    groups.push({ label: m2 ? m2[1] : "Special", m: special });
+  }
+  return { total: body + special, body: body, groups: groups };
+}
+function isStyleChecked(buyer, style){
+  if(!buyer || !style) return false;
+  for(var i = 0; i < checkCache.length; i++){
+    var d = checkCache[i].data || {};
+    if(d.buyer === buyer && d.style === style && d.status === "Checked") return true;
+  }
+  return false;
+}
+function listConeNoteText(){
+  return "Cone Rule: Color quantity below " + SETTINGS.coneThreshold + " pcs uses 2,000-meter cones; "
+    + SETTINGS.coneThreshold + " pcs or above uses 4,000-meter cones.";
 }
 function renderStyleList(){
   var buyer = currentListBuyer;
@@ -1315,16 +1966,19 @@ function renderStyleList(){
   var html = "";
   rows.forEach(function(it, i){
     var d = it.data || {};
-    var body = d.bodyThreadName || d.bodyThread || (d.bodyM != null ? Number(d.bodyM).toFixed(4) + " m" : "");
-    var spec = d.specialThread || (d.specialM != null ? Number(d.specialM).toFixed(4) + " m" : "");
-    html += '<tr><td>' + (i + 1) + '</td><td>' + esc(d.buyer) + '</td><td>' + esc(d.style) + '</td>'
+    var m = listRowMetres(d);
+    var body = "BODY THREAD--" + m.body;
+    var spec = m.groups.map(function(g){ return esc(g.label + "-" + g.m); }).join("<br>");
+    var checked = isStyleChecked(d.buyer, d.style);
+    html += '<tr' + (checked ? ' class="row-checked" title="Checked"' : '') + '><td>' + (i + 1) + '</td><td>' + esc(d.buyer) + '</td><td>' + esc(d.style) + '</td>'
       + '<td>' + esc(d.item) + '</td><td>' + esc(d.size) + '</td><td>' + esc(entryDate(d)) + '</td>'
-      + '<td class="mtr">' + Number(d.totalM || 0).toFixed(4) + '</td>'
+      + '<td class="mtr">' + m.total + '</td>'
       + '<td>' + esc(body) + '</td>'
-      + '<td>' + esc(spec) + '</td>'
-      + '<td>' + esc(d.status || "") + '</td></tr>';
+      + '<td>' + spec + '</td>'
+      + '<td>' + esc(d.remark || "") + '</td></tr>';
   });
   $("listBody").innerHTML = html || '<tr><td colspan="10" class="mut">Style list is empty.</td></tr>';
+  var ph = $("listPrintHeading"); if(ph) ph.textContent = $("listHeading").value;
   updateListBuyerSel();
 }
 $("listBuyerSel").addEventListener("change", function(){
@@ -1342,17 +1996,23 @@ $("btnClearList").onclick = function(){
   if(!rows.length){ alert("Nothing to clear for " + scope + "."); return; }
   if(!confirm("Clear " + rows.length + " list row(s) for " + scope + "?")) return;
   if(!FB_OK) return;
-  var jobs = rows.map(function(it){ return fbDB.ref(SHEET + "/styleList/" + it.key).remove(); });
+  var jobs = rows.map(function(it){ return fbDB.ref(SHEET + (it.src === "std" ? "/standards/" : "/styleList/") + it.key).remove(); });
   Promise.all(jobs).then(function(){ setStatus("List cleared for " + scope + "."); })
     .catch(function(e){ alert("Clear failed: " + e.message); });
 };
 function buildListSheetForBuyer(buyer){
-  var rows = [["SL", "BUYER", "STYLE", "ITEM", "SIZE", "DATE", "MTR", "BODY THREAD", "SPECIAL THREAD", "REMARKS"]];
+  var rows = [];
+  rows.push(["GMS COMPOSITE KNITTING KNITTING IND LTD."]);
+  rows.push([buyer ? buyer + " THREAD CONSUMPTION" : "ALL BUYERS THREAD CONSUMPTION"]);
+  rows.push([listConeNoteText()]);
+  rows.push(["SL", "BUYER", "STYLE", "ITEM", "SIZE", "MTR", "BODY THREAD", "SPECIAL THREAD", "REMARKS"]);
   listRowsForBuyer(buyer).forEach(function(it, i){
     var d = it.data || {};
-    rows.push([i + 1, d.buyer || "", d.style || "", d.item || "", d.size || "", entryDate(d),
-      r4(Number(d.totalM || 0)), d.bodyThreadName || d.bodyThread || r4(Number(d.bodyM || 0)),
-      d.specialThread || r4(Number(d.specialM || 0)), d.status || ""]);
+    var m = listRowMetres(d);
+    rows.push([i + 1, d.buyer || "", d.style || "", d.item || "", d.size || "", m.total,
+      "BODY THREAD--" + m.body,
+      m.groups.map(function(g){ return g.label + "-" + g.m; }).join("\n"),
+      d.remark || ""]);
   });
   return rows;
 }
@@ -1361,9 +2021,11 @@ $("btnListExcel").onclick = function(){
   ensureXLSX(function(){
     try{
       var wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(buildListSheetForBuyer(currentListBuyer)), "Style List");
+      var ws = XLSX.utils.aoa_to_sheet(buildListSheetForBuyer(currentListBuyer));
+      ws["!merges"] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 8 } }, { s: { r: 1, c: 0 }, e: { r: 1, c: 8 } }, { s: { r: 2, c: 0 }, e: { r: 2, c: 8 } }];
+      XLSX.utils.book_append_sheet(wb, ws, "Style List");
       var nm = (currentListBuyer ? currentListBuyer.replace(/[\\\/\?\%\*\:\|\"<>]/g, "") : "All-Buyers") + "-Style-List.xlsx";
-      XLSX.writeFile(wb, nm);
+      downloadXlsx(wb, nm, patchXlsxMtrGreen);
       setStatus("List Excel exported.");
     }catch(err){ setStatus("Ready"); alert("The Excel file could not be created. Please try again."); }
   }, function(){ setStatus("Ready"); alert("The Excel writer could not be downloaded from any mirror.\n\nPlease check your network connection and try again."); });
@@ -1373,7 +2035,7 @@ $("btnListPdf").onclick = function(){
   function done(){ document.body.classList.remove("print-list-only"); }
   var old = window.onafterprint;
   window.onafterprint = function(){ done(); window.onafterprint = old; };
-  window.print();
+  fitAndPrint($("homeListPanel"));
   setTimeout(done, 2000);
 };
 
@@ -1407,7 +2069,12 @@ function renderDashboard(){
   $("dashPending").textContent = pend;
   $("dashChecked").textContent = chk;
   $("dashStd").textContent = stdCache.length;
-  $("dashList").textContent = listCache.length;
+  $("dashList").textContent = listRowsForBuyer("", true).length;
+  $("homeCountStyles").textContent = stylesCache.length;
+  $("homeCountPending").textContent = pend;
+  $("homeCountChecked").textContent = chk;
+  $("homeCountStd").textContent = stdCache.length;
+  $("homeCountList").textContent = listRowsForBuyer("", true).length;
   /* Buyer-wise standards */
   var groups = {};
   stdCache.forEach(function(it){
@@ -1435,12 +2102,6 @@ function renderDashboard(){
 }
 function renderCheckers(){
   $("checkerList").innerHTML = checkersCache.map(function(c){ return '<option value="' + esc(c.name) + '">'; }).join("");
-  var hc = $("homeChecker");
-  if(hc){
-    var cur = hc.value;
-    hc.innerHTML = '<option value=""></option>' + checkersCache.map(function(c){ return '<option value="' + esc(c.name) + '">' + esc(c.name) + '</option>'; }).join("");
-    hc.value = cur;
-  }
   $("checkerListBox").innerHTML = checkersCache.length
     ? checkersCache.map(function(c){
         return '<div class="item"><b>' + esc(c.name) + '</b> '
@@ -1479,8 +2140,7 @@ function updateConeNote(){
   if(coneModeVal() === "manual") t += " (Manual cone length: " + manualConeVal() + " m.)";
   $("coneRuleText").textContent = t;
   var ln = $("listConeNote");
-  if(ln) ln.textContent = "Cone Rule: Color quantity below " + SETTINGS.coneThreshold + " pcs uses 2,000-meter cones; "
-    + SETTINGS.coneThreshold + " pcs or above uses 4,000-meter cones.";
+  if(ln) ln.textContent = listConeNoteText();
 }
 function watchSettings(){
   if(!FB_OK) return;
@@ -1524,6 +2184,7 @@ $("btnDashRefresh").onclick = function(){
   } else { setStatus("Dashboard refreshed (offline — Firebase not connected)."); }
 };
 $("btnAddChecker").onclick = function(){
+  if(!isAdmin()){ alert("Only the admin can do this."); return; }
   var name = $("newChecker").value.trim();
   if(!name){ alert("Enter a checker name first."); return; }
   if(!FB_OK){ alert("Firebase is not connected."); return; }
@@ -1532,6 +2193,7 @@ $("btnAddChecker").onclick = function(){
   }).catch(function(e){ alert("Save failed: " + e.message); });
 };
 $("btnSaveSettings").onclick = function(){
+  if(!isAdmin()){ alert("Only the admin can do this."); return; }
   if(!FB_OK){ alert("Firebase is not connected."); return; }
   var s = {
     coneThreshold: num($("sConeThreshold").value) || 2000,
@@ -1545,22 +2207,30 @@ $("btnSaveSettings").onclick = function(){
   }).catch(function(e){ alert("Save failed: " + e.message); });
 };
 document.addEventListener("click", function(e){
-  var ok = e.target.getAttribute("data-open");
-  var os = e.target.getAttribute("data-open-std");
-  var od = e.target.getAttribute("data-open-draft");
-  var dd = e.target.getAttribute("data-del-draft");
-  var ck = e.target.getAttribute("data-check");
   var dc = e.target.getAttribute("data-del-checker");
-  var hh = e.target.getAttribute("data-hide-home");
-  var foEl = e.target.closest ? e.target.closest("[data-folder]") : null;
-  var fo = foEl ? foEl.getAttribute("data-folder") : null;
   var db = e.target.getAttribute("data-del-buyers");
   var di = e.target.getAttribute("data-del-items");
   var ds = e.target.getAttribute("data-del-sizes");
   var ms = e.target.getAttribute("data-msave");
   var md = e.target.getAttribute("data-mdel");
-  if(hh){ showHomePanel(""); return; }
-  if(fo){ expandedBuyer = (expandedBuyer === fo) ? "" : fo; renderStdFolder(); return; }
+  var au = e.target.getAttribute("data-approve-user");
+  var ru = e.target.getAttribute("data-remove-user");
+  if((dc || db || di || ds || ms || md) && !isAdmin()) return; /* admin controls are admin-only */
+  if(au){
+    if(!isAdmin() || !FB_OK) return;
+    fbDB.ref(SHEET + "/users/" + au).update({ approved: true })
+      .then(function(){ setStatus("User approved."); })
+      .catch(function(err){ alert("Approve failed: " + err.message); });
+    return;
+  }
+  if(ru){
+    if(!isAdmin() || !FB_OK) return;
+    if(!confirm("Remove this user? They will not be able to log in again.")) return;
+    fbDB.ref(SHEET + "/users/" + ru).remove()
+      .then(function(){ setStatus("User removed."); })
+      .catch(function(err){ alert("Remove failed: " + err.message); });
+    return;
+  }
   if(db || di || ds){
     if(!FB_OK) return;
     if(!confirm("Delete this entry?")) return;
@@ -1619,28 +2289,6 @@ document.addEventListener("click", function(e){
       .catch(function(err){ alert("Delete failed: " + err.message); });
     return;
   }
-  if(ok){
-    var it = checkCache.filter(function(x){ return x.key === ok; })[0];
-    if(it){ loadSheet(it.data); showPage(2); showSub("thread"); }
-  } else if(os){
-    var it2 = stdCache.filter(function(x){ return x.key === os; })[0];
-    if(it2){ loadSheet(it2.data); showPage(2); showSub("thread"); }
-  } else if(od){
-    var it3 = stylesCache.filter(function(x){ return x.key === od; })[0];
-    if(it3){ loadSheet(it3.data); showPage(2); showSub("thread"); }
-  } else if(dd){
-    if(!FB_OK) return;
-    if(!confirm("Delete this saved style?")) return;
-    fbDB.ref(SHEET + "/styles/" + dd).remove()
-      .then(function(){ setStatus("Saved style deleted."); })
-      .catch(function(err){ alert("Delete failed: " + err.message); });
-  } else if(ck){
-    var remark = prompt("Checker remark (optional):", "");
-    if(!FB_OK) return;
-    fbDB.ref(SHEET + "/checkQueue/" + ck).update({ status: "Checked", remark: remark || "", checkedAt: Date.now() })
-      .then(function(){ setStatus("Marked Checked."); })
-      .catch(function(err){ alert("Update failed: " + err.message); });
-  }
 });
 
 /* ================= Master lists: buyers / items / sizes ================= */
@@ -1657,6 +2305,9 @@ function refreshMasterSelects(){
   fill("fBuyer", "fBuyerCustom", masterNames(buyersCache, SEED_BUYERS));
   fill("fItem", "fItemCustom", masterNames(itemsCache, SEED_ITEMS));
   fill("fSize", "fSizeCustom", masterNames(sizesCache, SEED_SIZES));
+  fill("accBuyer", "accBuyerCustom", masterNames(buyersCache, SEED_BUYERS));
+  fill("accItem", "accItemCustom", masterNames(itemsCache, SEED_ITEMS));
+  fill("accSize", "accSizeCustom", masterNames(sizesCache, SEED_SIZES));
 }
 /* Show/hide a Custom name input together with its Save button. */
 function setCustomVisible(customId, show){
@@ -1685,12 +2336,19 @@ function bindCustom(selId, customId, node){
     saveCustomName(selId, customId, node);
   });
 }
-function renderMasterBox(boxId, cache, delAttr, emptyText){
+function renderMasterBox(boxId, cache, delAttr, emptyText, seeds){
   var box = $(boxId);
-  box.innerHTML = cache.length
-    ? cache.map(function(c){ return '<div class="item"><b>' + esc(c.name) + '</b> '
-        + '<button class="btn btn-d btn-sm" data-' + delAttr + '="' + c.key + '">Delete</button></div>'; }).join("")
-    : '<p class="mut">' + emptyText + '</p>';
+  if(cache.length){
+    box.innerHTML = cache.map(function(c){ return '<div class="item"><b>' + esc(c.name) + '</b> '
+      + '<button class="btn btn-d btn-sm" data-' + delAttr + '="' + c.key + '">Delete</button></div>'; }).join("");
+    return;
+  }
+  if(seeds && seeds.length){
+    box.innerHTML = seeds.map(function(n){ return '<div class="item"><b>' + esc(n) + '</b> <span class="mut">(default)</span></div>'; }).join("")
+      + '<p class="mut">Defaults shown while Firebase is empty. Add your own below; after the one-time Firebase seeding these become editable entries.</p>';
+    return;
+  }
+  box.innerHTML = '<p class="mut">' + emptyText + '</p>';
 }
 function watchMaster(node){
   if(!FB_OK) return;
@@ -1701,11 +2359,13 @@ function watchMaster(node){
     if(node === "items") itemsCache = arr;
     if(node === "sizes") sizesCache = arr;
     renderMasterBox(node === "buyers" ? "buyerListBox" : node === "items" ? "itemListBox" : "sizeListBox",
-      arr, "del-" + node, "No " + node + " yet.");
+      arr, "del-" + node, "No " + node + " yet.",
+      node === "items" ? SEED_ITEMS : node === "sizes" ? SEED_SIZES : null);
     refreshMasterSelects();
   });
 }
 function addMaster(node, inputId){
+  if(!isAdmin()){ alert("Only the admin can do this."); return; }
   var name = $(inputId).value.trim();
   if(!name){ alert("Enter a name first."); return; }
   if(!FB_OK){ alert("Firebase is not connected."); return; }
@@ -1761,10 +2421,12 @@ function watchMachines(){
   });
 }
 $("btnAddMachine").onclick = function(){
+  if(!isAdmin()){ alert("Only the admin can do this."); return; }
   machineDrafts.push({ key: "", name: "", spi: "", needle: "", looper: "", remarks: "" });
   renderMachines();
 };
 $("btnApplyStdMachines").onclick = function(){
+  if(!isAdmin()){ alert("Only the admin can do this."); return; }
   if(!confirm("Reset the machine table to the standard splits? Custom machines will be replaced.")) return;
   if(!FB_OK){ machinesCache = SEED_MACHINES.map(function(m){ return { key: "", name: m[0], spi: m[1], needle: m[2], looper: m[3], remarks: m[4] }; }); renderMachines(); renderOps(); return; }
   var ref = fbDB.ref(SHEET + "/admin/machines");
@@ -1775,6 +2437,7 @@ $("btnApplyStdMachines").onclick = function(){
   .catch(function(e){ alert("Apply failed: " + e.message); });
 };
 $("btnSaveMachines").onclick = function(){
+  if(!isAdmin()){ alert("Only the admin can do this."); return; }
   var trs = document.querySelectorAll ? document.querySelectorAll("#machineBody tr[data-mid]") : [];
   var rows = [], keys = [];
   for(var i = 0; i < trs.length; i++){
@@ -1805,8 +2468,8 @@ $("btnMachineExcel").onclick = function(){
       var rows = [["Machine Name", "SPI", "Needle %", "Looper %", "Remarks"]];
       machineRows().forEach(function(r){ rows.push([r.name, r.spi, r.needle, r.looper, r.remarks]); });
       XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), "Machines");
-      XLSX.writeFile(wb, "Machine-List.xlsx");
-      setStatus("Machine list exported. (Use the browser print dialog for a printed copy.)");
+      downloadXlsx(wb, "Machine-List.xlsx");
+      setStatus("Machine list exported (A4, fits one page).");
     }catch(err){ setStatus("Ready"); alert("The Excel file could not be created. Please try again."); }
   }, function(){ setStatus("Ready"); alert("The Excel writer could not be downloaded from any mirror.\n\nPlease check your network connection and try again."); });
 };
@@ -1830,6 +2493,7 @@ function watchSpecialDefaults(){
   });
 }
 $("btnSaveSpecialDefaults").onclick = function(){
+  if(!isAdmin()){ alert("Only the admin can do this."); return; }
   if(!FB_OK){ alert("Firebase is not connected."); return; }
   var s = { contrast: num($("sdContrast").value), filament: num($("sdFilament").value), other: num($("sdOther").value) };
   fbDB.ref(SHEET + "/admin/specialDefaults").set(s).then(function(){ setStatus("Special defaults saved."); })
@@ -1837,62 +2501,210 @@ $("btnSaveSpecialDefaults").onclick = function(){
 };
 
 /* ================= Saved Styles (drafts in Firebase) ================= */
-function renderDrafts(){
-  var box = $("draftsList");
-  if(!stylesCache.length){
-    box.innerHTML = '<p class="mut">No saved styles yet.</p>';
-    $("draftsPanelCount").textContent = "";
-    return;
-  }
-  var sorted = stylesCache.slice().sort(function(a, b){ return (b.data.updatedAt || 0) - (a.data.updatedAt || 0); });
-  $("draftsPanelCount").textContent = "— " + sorted.length + " styles";
-  var html = "";
-  sorted.forEach(function(it){
-    var d = it.data || {};
-    html += '<div class="item"><b>' + esc(d.style) + '</b> <span class="mut">' + esc(d.buyer) + ' | ' + esc(d.item) + ' | Size ' + esc(d.size) + ' | ' + entryDate(d) + ' | Total ' + Number(d.totalM || 0).toFixed(4) + ' m</span> '
-      + '<button class="btn btn-o btn-sm" data-open-draft="' + it.key + '">Open</button> '
-      + '<button class="btn btn-d btn-sm" data-del-draft="' + it.key + '">Delete</button></div>';
-  });
-  box.innerHTML = html;
-}
-
 /* ================= Home navigation ================= */
-function showHomePanel(name){
-  var map = { stylecheck: "homeStyleCheckPanel", folder: "homeCheckFolderPanel", buyer: "homeBuyerPanel", list: "homeListPanel", drafts: "homeDraftsPanel" };
-  Object.keys(map).forEach(function(n){ $(map[n]).style.display = (n === name) ? "" : "none"; });
-  if(name === "folder") renderCheckFolder();
-  if(name === "buyer") renderStdFolder();
-  if(name === "list") renderStyleList();
-  if(name === "drafts") renderDrafts();
-}
-$("btnHomeStyleCheck").onclick = function(){ showHomePanel("stylecheck"); };
-$("btnHomeFolder").onclick = function(){ showHomePanel("folder"); };
-$("btnHomeBuyer").onclick = function(){ showHomePanel("buyer"); };
-$("btnHomeList").onclick = function(){ showHomePanel("list"); };
-$("btnHomeDrafts").onclick = function(){ showHomePanel("drafts"); };
 
 /* ================= Init ================= */
 if($("fDate")) $("fDate").value = todayISO();
 refreshMasterSelects();
+refreshStyleSelects();
+applyStyleChosenClass();
 renderMachines();
 applySpecialDefaultsToInputs();
 bindCustom("fBuyer", "fBuyerCustom", "buyers");
 bindCustom("fItem", "fItemCustom", "items");
 bindCustom("fSize", "fSizeCustom", "sizes");
 $("btnSaveBuyerCustom").onclick = function(){ saveCustomName("fBuyer", "fBuyerCustom", "buyers"); };
+/* Body thread dropdown (50/2 default, 20/2 option, custom allowed). */
+$("fBodyThread").addEventListener("change", function(){
+  setCustomVisible("fBodyThreadCustom", $("fBodyThread").value === "__custom");
+  renderTotals();
+});
+$("fBodyThreadCustom").addEventListener("input", renderTotals);
+/* Prepared by is the logged-in user's name; the header fields are read-only
+   displays, so there are no prepared-by listeners anymore. */
+/* Main summary unit (m / yards / in). */
+$("totUnit").addEventListener("change", function(){ totUnit = $("totUnit").value; renderTotals(); });
 $("btnSaveItemCustom").onclick = function(){ saveCustomName("fItem", "fItemCustom", "items"); };
 $("btnSaveSizeCustom").onclick = function(){ saveCustomName("fSize", "fSizeCustom", "sizes"); };
+/* ================= SECURE LOGIN (item 17) =================
+   User store: sewingSheet/users, each record {name, passHash, role, approved,
+   createdAt}. Passwords are stored ONLY as SHA-256 hashes, never plaintext,
+   and never displayed back. First user ever becomes admin (approved); later
+   registrants become team users with approved=false until the admin approves.
+   HONESTY NOTE: with the current open Firebase rules (anyone with the link
+   can read/write /sewingSheet/) this login is a UI-level gate only, the same
+   as the old Drive-shared tool — not cryptographic data security. Real
+   lockdown would need Firebase Auth plus rules changes, a separate step. */
+function sha256Hex(str){
+  var K = [0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2];
+  function rotr(x, n){ return (x >>> n) | (x << (32 - n)); }
+  var bytes = [];
+  for(var i = 0; i < str.length; i++){
+    var c = str.charCodeAt(i);
+    if(c < 0x80) bytes.push(c);
+    else if(c < 0x800){ bytes.push(0xC0 | (c >> 6), 0x80 | (c & 0x3F)); }
+    else if(c < 0xD800 || c >= 0xE000){ bytes.push(0xE0 | (c >> 12), 0x80 | ((c >> 6) & 0x3F), 0x80 | (c & 0x3F)); }
+    else {
+      i++;
+      var c2 = str.charCodeAt(i);
+      var cp = 0x10000 + (((c & 0x3FF) << 10) | (c2 & 0x3FF));
+      bytes.push(0xF0 | (cp >> 18), 0x80 | ((cp >> 12) & 0x3F), 0x80 | ((cp >> 6) & 0x3F), 0x80 | (cp & 0x3F));
+    }
+  }
+  var bitLen = bytes.length * 8;
+  bytes.push(0x80);
+  while((bytes.length % 64) !== 56) bytes.push(0);
+  bytes.push(0, 0, 0, 0, (bitLen >>> 24) & 0xFF, (bitLen >>> 16) & 0xFF, (bitLen >>> 8) & 0xFF, bitLen & 0xFF);
+  var H = [0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19];
+  for(var off = 0; off < bytes.length; off += 64){
+    var w = [];
+    for(var t = 0; t < 16; t++) w[t] = (bytes[off + t * 4] << 24) | (bytes[off + t * 4 + 1] << 16) | (bytes[off + t * 4 + 2] << 8) | bytes[off + t * 4 + 3];
+    for(var t2 = 16; t2 < 64; t2++){
+      var s0 = rotr(w[t2 - 15], 7) ^ rotr(w[t2 - 15], 18) ^ (w[t2 - 15] >>> 3);
+      var s1 = rotr(w[t2 - 2], 17) ^ rotr(w[t2 - 2], 19) ^ (w[t2 - 2] >>> 10);
+      w[t2] = (w[t2 - 16] + s0 + w[t2 - 7] + s1) | 0;
+    }
+    var a = H[0], b = H[1], cc = H[2], d = H[3], e = H[4], f = H[5], g = H[6], h = H[7];
+    for(var t3 = 0; t3 < 64; t3++){
+      var S1 = rotr(e, 6) ^ rotr(e, 11) ^ rotr(e, 25);
+      var ch = (e & f) ^ ((~e) & g);
+      var temp1 = (h + S1 + ch + K[t3] + w[t3]) | 0;
+      var S0 = rotr(a, 2) ^ rotr(a, 13) ^ rotr(a, 22);
+      var maj = (a & b) ^ (a & cc) ^ (b & cc);
+      var temp2 = (S0 + maj) | 0;
+      h = g; g = f; f = e; e = (d + temp1) | 0; d = cc; cc = b; b = a; a = (temp1 + temp2) | 0;
+    }
+    H[0] = (H[0] + a) | 0; H[1] = (H[1] + b) | 0; H[2] = (H[2] + cc) | 0; H[3] = (H[3] + d) | 0;
+    H[4] = (H[4] + e) | 0; H[5] = (H[5] + f) | 0; H[6] = (H[6] + g) | 0; H[7] = (H[7] + h) | 0;
+  }
+  var out = "";
+  for(var i2 = 0; i2 < 8; i2++) out += ("00000000" + (H[i2] >>> 0).toString(16)).slice(-8);
+  return out;
+}
+/* Pure login decision (no Firebase here, so it is unit-testable).
+   Returns {action:"enter",user} | {action:"pending"} | {action:"wrongpass"} |
+   {action:"register",asAdmin}. Name match is case-insensitive. */
+function decideLogin(users, name, passHash){
+  var found = null;
+  for(var i = 0; i < users.length; i++){
+    if(users[i].name && users[i].name.toLowerCase() === name.toLowerCase()){ found = users[i]; break; }
+  }
+  if(!users.length) return { action: "register", asAdmin: true };
+  if(!found) return { action: "register", asAdmin: false };
+  if(found.passHash !== passHash) return { action: "wrongpass" };
+  if(found.role === "admin") return { action: "enter", user: found };
+  if(found.approved) return { action: "enter", user: found };
+  return { action: "pending" };
+}
+function setLoginMsg(msg, isErr){
+  var el = $("loginMsg");
+  if(!el) return;
+  el.textContent = msg || "";
+  el.style.color = isErr ? "#B3261E" : "#1E6B2F";
+}
+function showLoginScreen(){ var ls = $("loginScreen"); if(ls) ls.style.display = ""; }
+function hideLoginScreen(){ var ls = $("loginScreen"); if(ls) ls.style.display = "none"; }
+function applyRoleUI(){
+  var admin = isAdmin();
+  var ap = $("adminPanelSection"); if(ap) ap.style.display = admin ? "" : "none";
+  var nav = $("navPage1"); if(nav) nav.textContent = admin ? "Admin Panel" : "Dashboard";
+  var nu = $("navUser"); if(nu) nu.textContent = currentUser ? (currentUser.name + (admin ? " (Admin)" : "")) : "";
+  var lo = $("btnLogout"); if(lo) lo.style.display = currentUser ? "" : "none";
+  if(currentUser){
+    if($("homeUserName")) $("homeUserName").value = currentUser.name;
+    if($("welcomeLine")) $("welcomeLine").textContent = "Welcome to " + currentUser.name;
+  }
+}
+function enterApp(user){
+  currentUser = { name: user.name, role: user.role };
+  try{ localStorage.setItem("sewingSheet.session", JSON.stringify(currentUser)); }catch(e){}
+  hideLoginScreen();
+  applyRoleUI();
+  refreshPreparedByDisplay();
+  watchUsers();
+  setStatus("Logged in as " + user.name + (user.role === "admin" ? " (Admin)." : "."));
+}
+function logout(msg){
+  currentUser = null;
+  try{ localStorage.removeItem("sewingSheet.session"); }catch(e){}
+  var ln = $("loginName"); if(ln) ln.value = "";
+  var lp = $("loginPass"); if(lp) lp.value = "";
+  setLoginMsg(msg || "");
+  showLoginScreen();
+  applyRoleUI();
+}
+function restoreSession(){
+  try{
+    var raw = localStorage.getItem("sewingSheet.session");
+    if(!raw) return;
+    var s = JSON.parse(raw);
+    if(s && s.name){ currentUser = { name: s.name, role: s.role === "admin" ? "admin" : "team" }; hideLoginScreen(); }
+  }catch(e){}
+}
+function renderUsers(){
+  var box = $("userListBox"); if(!box) return;
+  var teams = (usersCache || []).filter(function(u){ return u.role !== "admin"; });
+  box.innerHTML = teams.length ? teams.map(function(u){
+    return '<div class="item"><b>' + esc(u.name) + '</b> <span class="tag">' + (u.approved ? "Approved" : "Pending") + '</span> '
+      + (u.approved ? "" : '<button class="btn btn-p btn-sm" data-approve-user="' + u.key + '">Approve</button> ')
+      + '<button class="btn btn-d btn-sm" data-remove-user="' + u.key + '">Remove</button></div>';
+  }).join("") : '<p class="mut">No team users yet.</p>';
+}
+function watchUsers(){
+  if(!FB_OK || usersWatching) return;
+  usersWatching = true;
+  fbDB.ref(SHEET + "/users").on("value", function(snap){
+    var arr = [];
+    snap.forEach(function(ch){ var v = ch.val(); arr.push({ key: ch.key, name: (v && v.name) || "", role: (v && v.role) || "team", approved: !!(v && v.approved) }); });
+    usersCache = arr;
+    if(isAdmin()) renderUsers();
+    if(currentUser && !arr.some(function(u){ return u.name && u.name.toLowerCase() === currentUser.name.toLowerCase(); })){
+      logout("Your account was removed by the admin.");
+    }
+  });
+}
+$("btnLogin").onclick = function(){
+  var name = $("loginName").value.trim();
+  var pass = $("loginPass").value;
+  if(!name){ setLoginMsg("Enter your login name.", true); return; }
+  if(!pass){ setLoginMsg("Enter your password.", true); return; }
+  if(!FB_OK){ setLoginMsg("Firebase is not connected — check your connection and try again.", true); return; }
+  setLoginMsg("Checking…", false);
+  var hash = sha256Hex(pass);
+  fbDB.ref(SHEET + "/users").once("value").then(function(snap){
+    var users = [];
+    snap.forEach(function(ch){ var v = ch.val(); users.push({ key: ch.key, name: (v && v.name) || "", passHash: (v && v.passHash) || "", role: (v && v.role) || "team", approved: !!(v && v.approved) }); });
+    var d = decideLogin(users, name, hash);
+    if(d.action === "wrongpass"){ $("loginPass").value = ""; setLoginMsg("Wrong password. Try again.", true); return; }
+    if(d.action === "pending"){ $("loginPass").value = ""; setLoginMsg("Admin approval is pending for this account. Ask the admin to approve it, then log in again.", true); return; }
+    if(d.action === "register"){
+      var rec = { name: name, passHash: hash, role: d.asAdmin ? "admin" : "team", approved: d.asAdmin ? true : false, createdAt: Date.now() };
+      return fbDB.ref(SHEET + "/users").push(rec).then(function(){
+        if(d.asAdmin){ setLoginMsg("", false); enterApp(rec); }
+        else { $("loginPass").value = ""; setLoginMsg("Account created as a team user. Admin approval is pending — ask the admin to approve it, then log in again.", true); }
+      });
+    }
+    enterApp(d.user);
+  }).catch(function(e){ setLoginMsg("Login failed: " + e.message, true); });
+};
+$("loginPass").addEventListener("keydown", function(e){ if(e.key === "Enter") $("btnLogin").click(); });
+$("loginName").addEventListener("keydown", function(e){ if(e.key === "Enter") $("btnLogin").click(); });
+$("btnLogout").onclick = function(){ logout(""); };
+
 OPS.push(newOp({}));
 CONES.push(newCone({}));
 ACCS.push(newAcc({}));
 renderOps(); renderCones(); renderAccs();
 renderDashboard(); renderAdminUsers(); applySettingsToInputs();
+renderMasterBox("itemListBox", itemsCache, "del-items", "No items yet.", SEED_ITEMS);
+renderMasterBox("sizeListBox", sizesCache, "del-sizes", "No sizes yet.", SEED_SIZES);
+restoreSession(); applyRoleUI(); refreshPreparedByDisplay();
 if(FB_OK){
   setStatus("Connected to Firebase (thread-calculator-gms, data under /sewingSheet/).");
-  watch("checkQueue", "check", renderCheckFolder, 0);
-  watch("standards", "std", renderStdFolder, 0);
+  watch("checkQueue", "check", onCheckQueueChange, 0);
+  watch("standards", "std", renderDashboard, 0);
   watch("styleList", "list", renderStyleList, 0);
-  watch("styles", "styles", function(){ if($("homeDraftsPanel") && $("homeDraftsPanel").style.display !== "none") renderDrafts(); }, 0);
+  watch("styles", "styles", function(){ refreshStyleSelects(); if(!localResumed){ localResumed = true; resumeLocalDraft(); } }, 0);
   watchSettings();
   watchCheckers();
   watchMaster("buyers");
@@ -1900,6 +2712,7 @@ if(FB_OK){
   watchMaster("sizes");
   watchMachines();
   watchSpecialDefaults();
+  if(currentUser) watchUsers();
 } else {
   setStatus("Firebase could not connect — check your connection and reload. Editing still works on this device.");
 }
@@ -1918,7 +2731,7 @@ function showSub(s){
   $("subAccWrap").style.display = s === "acc" ? "" : "none";
   $("subThread").className = "btn " + (s === "thread" ? "btn-p" : "btn-o");
   $("subAcc").className = "btn " + (s === "acc" ? "btn-p" : "btn-o");
-  if(s === "acc") syncAccStyle();
+  if(s === "acc") syncAccHeader();
 }
 $("navHome").onclick = function(){ showPage("home"); };
 $("navPage1").onclick = function(){ showPage(1); };
@@ -1952,67 +2765,78 @@ function ensureXLSX(onReady, onFail){
 /* Blank inputs stay blank; every other number lands in the cell as a real number. */
 function ncell(v){ return (v === "" || v == null) ? null : num(v); }
 function r4(x){ return Math.round(x * 10000) / 10000; }
-function headerVals(){
-  return {
-    buyer: selVal("fBuyer", "fBuyerCustom"), style: $("fStyle").value.trim(),
-    item: selVal("fItem", "fItemCustom"), size: selVal("fSize", "fSizeCustom"),
-    createdBy: $("fCreatedBy").value.trim(),
-    checker: $("homeChecker") ? $("homeChecker").value : ""
-  };
-}
-function buildStyleSheet(){
-  var h = headerVals();
-  return [
-    ["Buyer", "Style", "Item", "Size", "Created by", "Checker"],
-    [h.buyer, h.style, h.item, h.size, h.createdBy, h.checker]
-  ];
-}
-function buildSummarySheet(){
-  var h = headerVals();
-  var t = totals();
-  var totalM = inToM(t.consumption);
-  var allow = allowPctVal();
-  var rows = [
-    ["Buyer", h.buyer],
-    ["Style", h.style],
-    ["Item", h.item],
-    ["Size", h.size],
-    ["Date", $("fDate").value || ""],
-    [],
-    ["Mark", "SL", "Process name", "M/C", "Consumption (m)"]
-  ];
-  OPS.forEach(function(op, i){
-    rows.push(["", i + 1, op.name, op.machine, r4(inToM(opSplit(op).consumption))]);
+/* Single-style export: ONE sheet matching the reference samples' layout
+   (title rows, header block, operations table, Total per garment table,
+   Colour-wise cones table). Prints on 1 page A4 landscape. */
+function singleSheetThreadLabel(op){
+  var parts = [];
+  [[op.thread1, op.colour1, op.pct1], [op.thread2, op.colour2, op.pct2]].forEach(function(slot){
+    var th = String(slot[0] || "").trim(), col = String(slot[1] || "").trim(), pct = num(slot[2]);
+    if((!th && !col) || pct <= 0) return;
+    parts.push(((th + " " + col).trim() + " " + pct + "%").trim());
   });
+  return parts.join(" + ");
+}
+function buildSingleStyleSheet(){
+  var buyer = selVal("fBuyer", "fBuyerCustom"), style = styleNameVal();
+  var item = selVal("fItem", "fItemCustom"), size = selVal("fSize", "fSizeCustom");
+  var fit = $("fFit").value, date = $("fDate").value || "", oq = orderQtyNum();
+  var btName = bodyThreadVal(), allow = allowPctVal();
+  var rows = [];
+  rows.push(["GMS COMPOSITE KNITTING KNITTING IND LTD."]);
+  rows.push(["Thread Consumption"]);
   rows.push([]);
-  rows.push(["", "", "Total metres", "", r4(totalM)]);
-  rows.push(["", "", "Allowance", "", allow + "%"]);
-  rows.push(["", "", "Total per garment (m)", "", r4(totalM * (1 + allow / 100))]);
-  return rows;
-}
-function buildOperationsSheet(){
-  var t = totals();
-  var rows = [["SL", "Operation", "M/C", "Seam length", "Mc thread", "Seam qty",
-    "Consumption", "Thread 1", "Colour 1", "Looper % 1", "Thread 2", "Colour 2",
-    "Looper % 2", "Body", "Special"]];
+  rows.push(["BUYER", buyer, "", "", "", "FIT:", fit]);
+  rows.push(["STYLE", style, "", "", "", "DATE:", date]);
+  rows.push(["ITEM", item, "", "", "", "ORDER QTY:", oq ? oq : null]);
+  rows.push(["SIZE", size, "", "", "", "PREPARED BY:", preparedByVal()]);
+  rows.push([]);
+  rows.push(["SL", "OPERATION DESCRIPTION", "M/C NAME", "Seam Length (Inch)", "Mc Thread (Inch)", "Seam Qty", "Consumption (Inch)", "Thread", "", "", "", "", "Body thread " + btName, "Special thread"]);
+  var opStart = rows.length + 1;
   OPS.forEach(function(op, i){
-    var s = opSplit(op);
-    rows.push([i + 1, op.name, op.machine, ncell(op.seamLength), ncell(op.mcThread),
-      ncell(op.seamQty), r4(s.consumption), op.thread1, op.colour1, ncell(op.pct1),
-      op.thread2, op.colour2, ncell(op.pct2), r4(s.body), r4(s.special)]);
+    var sp = num(op.pct1) + num(op.pct2);
+    var r = opStart + i;
+    rows.push([i + 1, op.name, op.machine, ncell(op.seamLength), ncell(op.mcThread), ncell(op.seamQty),
+      "=D" + r + "*E" + r + "*F" + r, singleSheetThreadLabel(op), "", "", "", "",
+      "=MAX(0,G" + r + "*(100-" + sp + ")/100)", "=G" + r + "*" + sp + "/100"]);
   });
-  rows.push(["", "TOTAL", "", "", "", "", r4(t.consumption), "", "", "", "", "", "", r4(t.body), r4(t.special)]);
+  var opEnd = opStart + OPS.length - 1;
+  rows.push([]);
+  rows.push(["Total per garment"]);
+  rows.push(["Thread", "Consumption (inch)", "Metres", "Allowance " + allow + "%", "Total metres"]);
+  var bodyRow = rows.length + 1;
+  var bodyCons = OPS.length ? "=SUM(M" + opStart + ":M" + opEnd + ")" : 0;
+  rows.push([btName, bodyCons, "=B" + bodyRow + "*0.0254", "=C" + bodyRow + "*" + allow + "/100", "=C" + bodyRow + "+D" + bodyRow]);
+  contrastGroups().forEach(function(g){
+    var gr = rows.length + 1;
+    rows.push([g.label, r4(g.inches), "=B" + gr + "*0.0254", "=C" + gr + "*" + allow + "/100", "=C" + gr + "+D" + gr]);
+  });
+  var allRow = rows.length + 1;
+  rows.push(["All threads", "=SUM(B" + bodyRow + ":B" + (allRow - 1) + ")", "=B" + allRow + "*0.0254", "=C" + allRow + "*" + allow + "/100", "=C" + allRow + "+D" + allRow]);
+  rows.push([]);
+  rows.push(["Colour-wise thread and cones (below 2000 pcs 2000 m cone, 2000 pcs or more 4000 m cone)"]);
+  rows.push(["", "Thread and colour", "Qty (pcs)", "Thread per pc (Mtr)", "Total thread (Mtr)", "Cone (Mtr)", "Cones", "Cones to order"]);
+  var cSumM = 0, cSumExact = 0, cSumOrder = 0;
+  function coneExportRow(label, qtyVal, perPc){
+    var calc = coneRowCalc(qtyVal, perPc);
+    cSumM += calc.totalM; cSumExact += calc.exact; cSumOrder += calc.order;
+    rows.push(["", label, ncell(qtyVal), ncell(perPc), r4(calc.totalM), calc.cone, r4(calc.exact), calc.order]);
+  }
+  var t2 = totals();
+  coneExportRow(btName, coneQtyFor("body"), inToM(t2.body) * (1 + allow / 100));
+  contrastGroups().forEach(function(g){
+    coneExportRow(g.label, coneQtyFor("grp:" + g.key), inToM(g.inches) * (1 + allow / 100));
+  });
+  CONES.forEach(function(r){
+    coneExportRow(r.colour, r.qty, r.perPc);
+  });
+  rows.push(["", "Total", "", "", r4(cSumM), "", r4(cSumExact), cSumOrder]);
   return rows;
 }
-function buildConeSheet(){
-  var rows = [["Body colour / Thread and colour", "Qty (pcs)", "Thread per pc (m)",
-    "Total thread (m)", "Cone (m)", "Cones", "Cones to order"]];
-  CONES.forEach(function(r){
-    var qty = num(r.qty), perPc = num(r.perPc), totalM = qty * perPc;
-    var cone = coneLengthForQty(qty);
-    rows.push([r.colour, ncell(r.qty), ncell(r.perPc), r4(totalM), cone, r4(conesExact(totalM, cone)), conesNeeded(totalM, cone)]);
-  });
-  return rows;
+function buildSingleStyleSheetMeta(){
+  return { merges: [{ s: { r: 0, c: 0 }, e: { r: 0, c: 14 } }, { s: { r: 1, c: 0 }, e: { r: 1, c: 14 } }],
+    cols: [{ wch: 6 }, { wch: 46 }, { wch: 14 }, { wch: 12 }, { wch: 12 }, { wch: 10 }, { wch: 16 }, { wch: 28 }, { wch: 3 }, { wch: 3 }, { wch: 3 }, { wch: 3 }, { wch: 3 }, { wch: 3 }, { wch: 3 }],
+    pageSetup: { orientation: "landscape", paperSize: 9, fitToPage: true, fitToWidth: 1, fitToHeight: 1 } };
 }
 function accRuleLabel(rule){
   if(rule === "twill") return "Back twill tape";
@@ -2043,19 +2867,280 @@ function buildStyleListSheet(){
   });
   return rows;
 }
+/* SheetJS Community Edition does not write page setup, so the Excel exports
+   patch the generated zip: pageSetUpPr + pageMargins + pageSetup (A4 landscape,
+   fit to 1 page) are injected into the sheet XML and the zip is rebuilt with
+   the sheet entry stored uncompressed. All other entries are copied
+   byte-for-byte, so the file stays valid. If anything unexpected is found,
+   the original bytes are returned untouched. */
+function crc32Bytes(bytes){
+  var table = crc32Bytes.table;
+  if(!table){
+    table = [];
+    for(var n = 0; n < 256; n++){
+      var c = n;
+      for(var k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+      table[n] = c >>> 0;
+    }
+    crc32Bytes.table = table;
+  }
+  var crc = 0xFFFFFFFF;
+  for(var i = 0; i < bytes.length; i++) crc = table[(crc ^ bytes[i]) & 0xFF] ^ (crc >>> 8);
+  return (crc ^ 0xFFFFFFFF) >>> 0;
+}
+function patchXlsxPageSetup(buf){
+  var bytes = buf instanceof Uint8Array ? buf : new Uint8Array(buf);
+  function u16(o){ return bytes[o] | (bytes[o + 1] << 8); }
+  function u32(o){ return (bytes[o] | (bytes[o + 1] << 8) | (bytes[o + 2] << 16) | (bytes[o + 3] << 24)) >>> 0; }
+  function strFromBytes(b){
+    var s = "";
+    for(var i = 0; i < b.length; i++) s += String.fromCharCode(b[i]);
+    return s;
+  }
+  function bytesFromStr(str){
+    var b = new Uint8Array(str.length);
+    for(var i = 0; i < str.length; i++) b[i] = str.charCodeAt(i) & 0xFF;
+    return b;
+  }
+  try{
+    var eocd = -1;
+    for(var p = bytes.length - 22; p >= 0; p--){ if(u32(p) === 0x06054b50){ eocd = p; break; } }
+    if(eocd === -1) return bytes;
+    var cdCount = u16(eocd + 10), cdOff = u32(eocd + 16);
+    var cdCommentLen = u16(eocd + 20);
+    var cdComment = bytes.slice(eocd + 22, eocd + 22 + cdCommentLen);
+    var entries = [], off = cdOff;
+    for(var e = 0; e < cdCount; e++){
+      if(u32(off) !== 0x02014b50) return bytes;
+      var nlen = u16(off + 28), elen = u16(off + 30), clen = u16(off + 32);
+      var nameBytes = bytes.slice(off + 46, off + 46 + nlen);
+      entries.push({
+        verMade: u16(off + 4), verNeed: u16(off + 6), flags: u16(off + 8), method: u16(off + 10),
+        time: u16(off + 12), date: u16(off + 14), crc: u32(off + 16), csize: u32(off + 20), usize: u32(off + 24),
+        diskStart: u16(off + 34), intAttr: u16(off + 36), extAttr: u32(off + 38), lho: u32(off + 42),
+        nameBytes: nameBytes, name: strFromBytes(nameBytes),
+        extra: bytes.slice(off + 46 + nlen, off + 46 + nlen + elen),
+        comment: bytes.slice(off + 46 + nlen + elen, off + 46 + nlen + elen + clen)
+      });
+      off += 46 + nlen + elen + clen;
+    }
+    var ti = -1;
+    for(var t = 0; t < entries.length; t++) if(entries[t].name === "xl/worksheets/sheet1.xml") ti = t;
+    if(ti === -1) return bytes;
+    var te = entries[ti];
+    var lh = te.lho;
+    if(u32(lh) !== 0x04034b50) return bytes;
+    var lVerNeed = u16(lh + 4), lFlags = u16(lh + 6), lTime = u16(lh + 8), lDate = u16(lh + 10);
+    var lNlen = u16(lh + 26), lElen = u16(lh + 28);
+    var dataStart = lh + 30 + lNlen + lElen;
+    if(te.method !== 0) return bytes; /* only stored entries can be patched without inflating */
+    var xml = strFromBytes(bytes.slice(dataStart, dataStart + te.csize));
+    var wsTag = xml.indexOf("<worksheet");
+    if(wsTag === -1) return bytes;
+    var gt = xml.indexOf(">", wsTag);
+    xml = xml.slice(0, gt + 1) + '<sheetPr><pageSetUpPr fitToPage="1"/></sheetPr>' + xml.slice(gt + 1);
+    var setup = '<pageMargins left="0.25" right="0.25" top="0.4" bottom="0.4" header="0.2" footer="0.2"/><pageSetup paperSize="9" orientation="landscape" fitToWidth="1" fitToHeight="1"/>';
+    var ie = xml.indexOf("<ignoredErrors");
+    if(ie !== -1) xml = xml.slice(0, ie) + setup + xml.slice(ie);
+    else {
+      var we = xml.lastIndexOf("</worksheet>");
+      if(we === -1) return bytes;
+      xml = xml.slice(0, we) + setup + xml.slice(we);
+    }
+    var newXml = bytesFromStr(xml);
+    var newCrc = crc32Bytes(newXml);
+    var parts = [], total = 0, newLhos = [];
+    function push(b){ parts.push(b); total += b.length; }
+    function hdr16(v){ var a = new Uint8Array(2); a[0] = v & 0xFF; a[1] = (v >> 8) & 0xFF; return a; }
+    function hdr32(v){ var a = new Uint8Array(4); a[0] = v & 0xFF; a[1] = (v >> 8) & 0xFF; a[2] = (v >> 16) & 0xFF; a[3] = (v >> 24) & 0xFF; return a; }
+    for(var i = 0; i < entries.length; i++){
+      var en = entries[i];
+      newLhos.push(total);
+      if(i === ti){
+        var h = new Uint8Array(30);
+        h.set(hdr32(0x04034b50), 0); h.set(hdr16(lVerNeed), 4); h.set(hdr16(lFlags), 6);
+        h.set(hdr16(lTime), 8); h.set(hdr16(lDate), 10); h.set(hdr32(newCrc), 14);
+        h.set(hdr32(newXml.length), 18); h.set(hdr32(newXml.length), 22);
+        h.set(hdr16(en.nameBytes.length), 26); h.set(hdr16(en.extra.length), 28);
+        push(h); push(en.nameBytes); push(en.extra); push(newXml);
+      } else {
+        var oLh = en.lho;
+        var oNlen = u16(oLh + 26), oElen = u16(oLh + 28);
+        var oDataStart = oLh + 30 + oNlen + oElen;
+        push(bytes.slice(oLh, oDataStart + en.csize));
+      }
+    }
+    var cdStart = total;
+    for(var j = 0; j < entries.length; j++){
+      var ej = entries[j];
+      var isT = (j === ti);
+      var ch = new Uint8Array(46);
+      ch.set(hdr32(0x02014b50), 0); ch.set(hdr16(ej.verMade), 4); ch.set(hdr16(ej.verNeed), 6);
+      ch.set(hdr16(ej.flags), 8); ch.set(hdr16(isT ? 0 : ej.method), 10);
+      ch.set(hdr16(ej.time), 12); ch.set(hdr16(ej.date), 14);
+      ch.set(hdr32(isT ? newCrc : ej.crc), 16);
+      ch.set(hdr32(isT ? newXml.length : ej.csize), 20);
+      ch.set(hdr32(isT ? newXml.length : ej.usize), 24);
+      ch.set(hdr16(ej.nameBytes.length), 28); ch.set(hdr16(ej.extra.length), 30); ch.set(hdr16(ej.comment.length), 32);
+      ch.set(hdr16(ej.diskStart), 34); ch.set(hdr16(ej.intAttr), 36); ch.set(hdr32(ej.extAttr), 38);
+      ch.set(hdr32(newLhos[j]), 42);
+      push(ch); push(ej.nameBytes); push(ej.extra); push(ej.comment);
+    }
+    var cdSize = total - cdStart;
+    var eo = new Uint8Array(22);
+    eo.set(hdr32(0x06054b50), 0); eo.set(hdr16(0), 4); eo.set(hdr16(0), 6);
+    eo.set(hdr16(entries.length), 8); eo.set(hdr16(entries.length), 10);
+    eo.set(hdr32(cdSize), 12); eo.set(hdr32(cdStart), 16); eo.set(hdr16(cdComment.length), 20);
+    push(eo); push(cdComment);
+    var out = new Uint8Array(total);
+    var at = 0;
+    for(var k = 0; k < parts.length; k++){ out.set(parts[k], at); at += parts[k].length; }
+    return out;
+  }catch(err){
+    return bytes;
+  }
+}
+/* Item 19/27: green MTR fill in the LIST Excel export only. SheetJS CE
+   cannot set cell styles, so this zip-level patch appends a solid #D9EAD3
+   fill + xf to the workbook's own styles.xml and tags the MTR data cells
+   (column F, rows 5+: title/heading/note/header occupy rows 1-4) with that
+   style. Any unexpected structure returns the input bytes untouched. */
+function patchXlsxMtrGreen(buf){
+  var bytes = buf instanceof Uint8Array ? buf : new Uint8Array(buf);
+  function u16(o){ return bytes[o] | (bytes[o + 1] << 8); }
+  function u32(o){ return (bytes[o] | (bytes[o + 1] << 8) | (bytes[o + 2] << 16) | (bytes[o + 3] << 24)) >>> 0; }
+  function strFromBytes(b){ var s = ""; for(var i = 0; i < b.length; i++) s += String.fromCharCode(b[i]); return s; }
+  function bytesFromStr(str){ var b = new Uint8Array(str.length); for(var i = 0; i < b.length; i++) b[i] = str.charCodeAt(i) & 0xFF; return b; }
+  try{
+    var eocd = -1;
+    for(var p = bytes.length - 22; p >= 0; p--){ if(u32(p) === 0x06054b50){ eocd = p; break; } }
+    if(eocd === -1) return bytes;
+    var cdCount = u16(eocd + 10), cdOff = u32(eocd + 16);
+    var cdCommentLen = u16(eocd + 20);
+    var cdComment = bytes.slice(eocd + 22, eocd + 22 + cdCommentLen);
+    var entries = [], off = cdOff;
+    for(var e = 0; e < cdCount; e++){
+      if(u32(off) !== 0x02014b50) return bytes;
+      var nlen = u16(off + 28), elen = u16(off + 30), clen = u16(off + 32);
+      var nameBytes = bytes.slice(off + 46, off + 46 + nlen);
+      entries.push({
+        verMade: u16(off + 4), verNeed: u16(off + 6), flags: u16(off + 8), method: u16(off + 10),
+        time: u16(off + 12), date: u16(off + 14), crc: u32(off + 16), csize: u32(off + 20), usize: u32(off + 24),
+        diskStart: u16(off + 34), intAttr: u16(off + 36), extAttr: u32(off + 38), lho: u32(off + 42),
+        nameBytes: nameBytes, name: strFromBytes(nameBytes),
+        extra: bytes.slice(off + 46 + nlen, off + 46 + nlen + elen),
+        comment: bytes.slice(off + 46 + nlen + elen, off + 46 + nlen + elen + clen)
+      });
+      off += 46 + nlen + elen + clen;
+    }
+    function entryXml(idx){
+      var en = entries[idx], lh = en.lho;
+      if(u32(lh) !== 0x04034b50) return null;
+      if(en.method !== 0) return null;
+      var nlen2 = u16(lh + 26), elen2 = u16(lh + 28);
+      var ds = lh + 30 + nlen2 + elen2;
+      return { header: { verNeed: u16(lh + 4), flags: u16(lh + 6), time: u16(lh + 8), date: u16(lh + 10) }, xml: strFromBytes(bytes.slice(ds, ds + en.csize)) };
+    }
+    var si = -1, ti = -1;
+    for(var t = 0; t < entries.length; t++){
+      if(entries[t].name === "xl/worksheets/sheet1.xml") ti = t;
+      if(entries[t].name === "xl/styles.xml") si = t;
+    }
+    if(ti === -1 || si === -1) return bytes;
+    var sheet = entryXml(ti), styles = entryXml(si);
+    if(!sheet || !styles) return bytes;
+    var sXml = styles.xml;
+    var fillsM = sXml.match(/<fills count="(\d+)">/);
+    var xfsM = sXml.match(/<cellXfs count="(\d+)">/);
+    if(!fillsM || !xfsM || sXml.indexOf("</fills>") === -1 || sXml.indexOf("</cellXfs>") === -1) return bytes;
+    var newFillId = parseInt(fillsM[1], 10);
+    var newXfId = parseInt(xfsM[1], 10);
+    sXml = sXml.replace(/<fills count="\d+">/, '<fills count="' + (newFillId + 1) + '">');
+    sXml = sXml.replace("</fills>", '<fill><patternFill patternType="solid"><fgColor rgb="FFD9EAD3"/><bgColor indexed="64"/></patternFill></fill></fills>');
+    sXml = sXml.replace(/<cellXfs count="\d+">/, '<cellXfs count="' + (newXfId + 1) + '">');
+    sXml = sXml.replace("</cellXfs>", '<xf numFmtId="0" fontId="0" fillId="' + newFillId + '" borderId="0" xfId="0" applyFill="1"/></cellXfs>');
+    var shXml = sheet.xml.replace(/<c r="F(\d+)"(?![^>]*\bs=)/g, function(m, row){
+      return (parseInt(row, 10) >= 5) ? '<c r="F' + row + '" s="' + newXfId + '"' : m;
+    });
+    if(shXml === sheet.xml) return bytes;
+    var mods = {};
+    mods[ti] = { bytes: bytesFromStr(shXml), header: sheet.header };
+    mods[si] = { bytes: bytesFromStr(sXml), header: styles.header };
+    var parts = [], total = 0, newLhos = [];
+    function push(b){ parts.push(b); total += b.length; }
+    function hdr16(v){ var a = new Uint8Array(2); a[0] = v & 0xFF; a[1] = (v >> 8) & 0xFF; return a; }
+    function hdr32(v){ var a = new Uint8Array(4); a[0] = v & 0xFF; a[1] = (v >> 8) & 0xFF; a[2] = (v >> 16) & 0xFF; a[3] = (v >> 24) & 0xFF; return a; }
+    for(var i = 0; i < entries.length; i++){
+      var en = entries[i];
+      newLhos.push(total);
+      if(mods[i]){
+        var nb = mods[i].bytes, h = new Uint8Array(30), ncrc = crc32Bytes(nb);
+        h.set(hdr32(0x04034b50), 0); h.set(hdr16(mods[i].header.verNeed), 4); h.set(hdr16(mods[i].header.flags), 6);
+        h.set(hdr16(mods[i].header.time), 8); h.set(hdr16(mods[i].header.date), 10); h.set(hdr32(ncrc), 14);
+        h.set(hdr32(nb.length), 18); h.set(hdr32(nb.length), 22);
+        h.set(hdr16(en.nameBytes.length), 26); h.set(hdr16(en.extra.length), 28);
+        push(h); push(en.nameBytes); push(en.extra); push(nb);
+      } else {
+        var oLh = en.lho;
+        var oNlen = u16(oLh + 26), oElen = u16(oLh + 28);
+        var oDataStart = oLh + 30 + oNlen + oElen;
+        push(bytes.slice(oLh, oDataStart + en.csize));
+      }
+    }
+    var cdStart = total;
+    for(var j = 0; j < entries.length; j++){
+      var ej = entries[j];
+      var mod = mods[j];
+      var nb2 = mod ? mod.bytes : null;
+      var ch = new Uint8Array(46);
+      ch.set(hdr32(0x02014b50), 0); ch.set(hdr16(ej.verMade), 4); ch.set(hdr16(ej.verNeed), 6);
+      ch.set(hdr16(ej.flags), 8); ch.set(hdr16(mod ? 0 : ej.method), 10);
+      ch.set(hdr16(ej.time), 12); ch.set(hdr16(ej.date), 14);
+      ch.set(hdr32(mod ? crc32Bytes(nb2) : ej.crc), 16);
+      ch.set(hdr32(mod ? nb2.length : ej.csize), 20);
+      ch.set(hdr32(mod ? nb2.length : ej.usize), 24);
+      ch.set(hdr16(ej.nameBytes.length), 28); ch.set(hdr16(ej.extra.length), 30); ch.set(hdr16(ej.comment.length), 32);
+      ch.set(hdr16(ej.diskStart), 34); ch.set(hdr16(ej.intAttr), 36); ch.set(hdr32(ej.extAttr), 38);
+      ch.set(hdr32(newLhos[j]), 42);
+      push(ch); push(ej.nameBytes); push(ej.extra); push(ej.comment);
+    }
+    var cdSize = total - cdStart;
+    var eo = new Uint8Array(22);
+    eo.set(hdr32(0x06054b50), 0); eo.set(hdr16(0), 4); eo.set(hdr16(0), 6);
+    eo.set(hdr16(entries.length), 8); eo.set(hdr16(entries.length), 10);
+    eo.set(hdr32(cdSize), 12); eo.set(hdr32(cdStart), 16); eo.set(hdr16(cdComment.length), 20);
+    push(eo); push(cdComment);
+    var out = new Uint8Array(total);
+    var at = 0;
+    for(var k = 0; k < parts.length; k++){ out.set(parts[k], at); at += parts[k].length; }
+    return out;
+  }catch(err){
+    return bytes;
+  }
+}
+function downloadXlsx(wb, filename, extraPatch){
+  var out = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+  var patched = patchXlsxPageSetup(out);
+  if(extraPatch) patched = extraPatch(patched);
+  var blob = new Blob([patched], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+  var a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+}
 function exportExcel(){
   setStatus("Loading Excel writer...");
   ensureXLSX(function(){
     try{
       var wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(buildSummarySheet()), "Summary");
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(buildStyleSheet()), "Style");
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(buildOperationsSheet()), "Operations");
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(buildConeSheet()), "Cone Requirement");
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(buildAccessoriesSheet()), "Accessories");
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(buildStyleListSheet()), "Style List");
-      var style = $("fStyle").value.trim().replace(/[\\\/\?\%\*\:\|\"<>]/g, "");
-      XLSX.writeFile(wb, (style || "Thread-Sheet") + "-Thread-Sheet.xlsx");
+      var ws = XLSX.utils.aoa_to_sheet(buildSingleStyleSheet());
+      var meta = buildSingleStyleSheetMeta();
+      ws["!merges"] = meta.merges;
+      ws["!cols"] = meta.cols;
+      ws["!pageSetup"] = meta.pageSetup;
+      XLSX.utils.book_append_sheet(wb, ws, "Thread consumption");
+      var style = styleNameVal().replace(/[\\\/\?\%\*\:\|\"<>]/g, "");
+      downloadXlsx(wb, (style || "Thread-Sheet") + "-Thread-Sheet.xlsx");
       setStatus("Excel exported.");
     }catch(err){
       setStatus("Ready");
@@ -2066,10 +3151,54 @@ function exportExcel(){
     alert("The Excel writer could not be downloaded from any mirror.\n\nPlease check your network connection and try again.");
   });
 }
+function exportAccessoriesExcel(){
+  setStatus("Loading Excel writer...");
+  ensureXLSX(function(){
+    try{
+      var wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(buildAccessoriesSheet()), "Accessories");
+      var style = styleNameVal().replace(/[\\\/\?\%\*\:\|\"<>]/g, "");
+      downloadXlsx(wb, (style || "Thread-Sheet") + "-Accessories.xlsx");
+      setStatus("Accessories Excel exported.");
+    }catch(err){
+      setStatus("Ready");
+      alert("The Excel file could not be created. Please try again.");
+    }
+  }, function(){
+    setStatus("Ready");
+    alert("The Excel writer could not be downloaded from any mirror.\n\nPlease check your network connection and try again.");
+  });
+}
 $("btnExportExcel").onclick = exportExcel;
-$("btnExportExcel2").onclick = exportExcel;
-$("btnExportPdf").onclick = function(){ window.print(); };
-$("btnExportPdf2").onclick = function(){ window.print(); };
+$("btnExportExcel2").onclick = exportAccessoriesExcel;
+/* Item 27: scale long print content down so it stays on one A4 page.
+   Chrome honours the zoom property in print; other browsers ignore it
+   and degrade gracefully to multi-page. Screen measurement overestimates
+   print height slightly (print CSS hides buttons/nav), which is the safe
+   direction: slightly smaller, still fits. Printable height of A4
+   landscape at 96dpi with 10mm margins is about 718px. */
+function printZoom(contentH, pageH){
+  if(!contentH || !pageH || contentH <= 0 || pageH <= 0) return 1;
+  return Math.min(1, pageH / contentH);
+}
+function fitAndPrint(containerEl){
+  var el = containerEl, prevZoom = null;
+  try{
+    if(el && el.scrollHeight){
+      var z = printZoom(el.scrollHeight, 718);
+      if(z < 1){ prevZoom = el.style.zoom || ""; el.style.zoom = z; }
+    }
+  }catch(e){}
+  function restore(){
+    try{ if(el && prevZoom !== null) el.style.zoom = prevZoom; }catch(e){}
+  }
+  var old = window.onafterprint;
+  window.onafterprint = function(){ restore(); window.onafterprint = old; if(old) old(); };
+  window.print();
+  setTimeout(restore, 2000);
+}
+$("btnExportPdf").onclick = function(){ fitAndPrint($("page2")); };
+$("btnExportPdf2").onclick = function(){ fitAndPrint($("page2")); };
 </script>
 </body>
 </html>
