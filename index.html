@@ -2505,6 +2505,8 @@ $("btnSaveSpecialDefaults").onclick = function(){
 
 /* ================= Init ================= */
 if($("fDate")) $("fDate").value = todayISO();
+/* Style list create Period defaults to the running month (YYYY-MM). */
+if($("listPeriod") && !$("listPeriod").value){ var _pd = new Date(); var _pym = _pd.getFullYear() + "-" + ("0" + (_pd.getMonth() + 1)).slice(-2); $("listPeriod").value = _pym; currentListPeriod = _pym; }
 refreshMasterSelects();
 refreshStyleSelects();
 applyStyleChosenClass();
