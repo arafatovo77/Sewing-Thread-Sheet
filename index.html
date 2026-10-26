@@ -37,7 +37,12 @@
   .req-empty{border-color:#B3261E !important;background:#FDECEA !important}
   .qty-warn{background:#FFF3CD !important;border-color:#D9A400 !important}
   .qty-red{background:#F8D7DA !important;border-color:#B3261E !important;color:#B3261E;font-weight:700}
-  table.ops-table th:nth-child(2),table.ops-table td:nth-child(2){min-width:240px}
+  table.ops-table th:nth-child(2),table.ops-table td:nth-child(2){min-width:360px}
+  table.ops-table th:nth-child(3),table.ops-table td:nth-child(3){width:120px;max-width:120px}
+  table.ops-table th:nth-child(1),table.ops-table td:nth-child(1){width:44px}
+  table.ops-table th:nth-child(7),table.ops-table td:nth-child(7),table.ops-table th:nth-child(14),table.ops-table td:nth-child(14),table.ops-table th:nth-child(15),table.ops-table td:nth-child(15){width:84px}
+  table.ops-table th:nth-child(8),table.ops-table td:nth-child(8),table.ops-table th:nth-child(11),table.ops-table td:nth-child(11){width:110px;max-width:110px}
+  table.ops-table th:nth-child(9),table.ops-table td:nth-child(9),table.ops-table th:nth-child(12),table.ops-table td:nth-child(12){width:90px;max-width:90px}
   textarea{width:100%;min-height:110px;padding:10px;border:1px solid #C9D6E3;border-radius:10px;font-size:14px}
   .tot{font-size:16px;font-weight:700}
   .fig-big{font-weight:700;font-size:16px}
@@ -77,8 +82,16 @@
   .subnav .btn{flex:1 1 140px}
   .mtr{background:#D9EAD3 !important;font-weight:700}
   .hide-allow .allow-col{display:none}
-  .summary-highlight{background:#FFF2CC !important;font-weight:700;padding:8px;border-radius:8px}
-  #tpgTable.summary-highlight td,#tpgTable.summary-highlight th{background:#FFE699;font-weight:700}
+  .summary-highlight{font-weight:700;padding:8px;border-radius:8px}
+  #tpgTable th{background:#B8C4DC;font-weight:700}
+  #tpgTable td{font-weight:400}
+  #tpgTable td.tot-big{background:#92D050;font-weight:700;font-size:16px}
+  #tpgBody tr:last-child td{font-weight:700}
+  #totGrand{color:#3B7D23;font-size:16px}
+  #styleHeaderSection{padding:10px}
+  #styleHeaderSection .grid{grid-template-columns:repeat(4,1fr);gap:6px}
+  #styleHeaderSection .fi{padding:8px 10px;font-size:14px}
+  @media(max-width:600px){#styleHeaderSection .grid{grid-template-columns:1fr}}
   .no-style .colour-col{display:none}
   .row-checked{box-shadow:inset 3px 0 0 #1E6B2F}
   .hp-cell{background:#C9A0A0 !important}
@@ -312,7 +325,7 @@
   </section>
 
   <!-- ============ STYLE HEADER ============ -->
-  <section class="card">
+  <section class="card" id="styleHeaderSection">
     <h2>Style Header</h2>
     <div class="grid">
       <div><label>Buyer</label><select class="fi" id="fBuyer"></select><div class="row" id="fBuyerCustomWrap" style="display:none;margin-top:6px"><input class="fi" id="fBuyerCustom" placeholder="Type new buyer name" style="flex:1"><button class="btn btn-o btn-sm" id="btnSaveBuyerCustom">Save</button></div></div>
@@ -329,7 +342,6 @@
       <div><label>Prepared by</label><input class="fi" id="fPreparedBy" readonly placeholder="Login name"></div>
     </div>
     <datalist id="checkerList"></datalist>
-    <datalist id="machineDatalist"></datalist>
     <datalist id="specialThreadList"><option value="Contrast"><option value="Body thread"><option value="Lurex"><option value="20/2 thread"><option value="Elastic thread"><option value="Filament"><option value="Other"></datalist>
   </section>
 
@@ -578,7 +590,7 @@ var SETTINGS = { coneThreshold: 2000, twill: 7, elastic: 10, waist1: 7, waist2: 
 
 function newOp(d){
   d = d || {};
-  return { id: uid(), name: d.name || "", machine: d.machine || "",
+  return { id: uid(), name: d.name || "", machine: d.machine || "", machineCustom: !!d.machineCustom,
     seamLength: d.seamLength == null ? "" : d.seamLength,
     seamLengthRaw: d.seamLengthRaw || "", seamLengthExpr: d.seamLengthExpr || "",
     mcThread: d.mcThread == null ? "" : d.mcThread,
@@ -606,10 +618,23 @@ function opConsumption(op){
   /* Consumption = seam length × Mc thread × seam qty */
   return num(op.seamLength) * num(op.mcThread) * num(op.seamQty);
 }
+/* Special-thread % of one operation: sum of the two slots EXCEPT Body-thread
+   slots (body thread is the remainder, never special) and empty slots, using
+   exactly the same skip rules as contrastGroups, so the colour-wise groups
+   always add up to the special total. */
+function opSpecialPct(op){
+  var sp = 0;
+  [[op.thread1, op.colour1, op.pct1], [op.thread2, op.colour2, op.pct2]].forEach(function(slot){
+    var th = String(slot[0] || "").trim(), col = String(slot[1] || "").trim();
+    if(!th && !col) return;
+    if(th.toLowerCase() === "body thread") return;
+    sp += num(slot[2]);
+  });
+  return sp;
+}
 function opSplit(op){
   var c = opConsumption(op);
-  var p1 = num(op.pct1), p2 = num(op.pct2);
-  var special = c * (p1 + p2) / 100;
+  var special = c * opSpecialPct(op) / 100;
   var body = c - special;
   if(body < 0) body = 0;
   return { consumption: c, body: body, special: special };
@@ -803,6 +828,15 @@ function refreshFilters(){
   ps.value = curP; ms.value = curM;
 }
 function isHpMachine(m){ return String(m || "").trim().toLowerCase() === "hp"; }
+/* Machine dropdown value for a row: a saved machine name, "__custom" when the
+   row's machine is typed by hand (e.g. HP) or Custom was picked, else "". */
+function machineSelValue(op){
+  var names = machineRows().map(function(m){ return m.name; });
+  if(op.machineCustom) return "__custom";
+  if(op.machine && names.indexOf(op.machine) !== -1) return op.machine;
+  if(op.machine) return "__custom";
+  return "";
+}
 function renderOps(){
   var keepId = null, keepF = null;
   var ae = document.activeElement;
@@ -811,8 +845,6 @@ function renderOps(){
     if(atr){ keepId = atr.getAttribute("data-id"); keepF = ae.getAttribute("data-f"); }
   }
   refreshFilters();
-  var dl = $("machineDatalist");
-  if(dl) dl.innerHTML = machineRows().map(function(m){ return '<option value="' + esc(m.name) + '">'; }).join("");
   var fp = $("selProcess").value, fm = $("selMachine").value;
   var html = "";
   var visible = 0;
@@ -823,13 +855,15 @@ function renderOps(){
     var s = opSplit(op);
     var spLabel = opSpecialLabel(op);
     var rowStyle = spLabel ? ' style="background:' + specialRowColour(spLabel) + '"' : "";
+    var msv = machineSelValue(op);
+    var mOpts = '<option value=""></option>' + machineRows().map(function(m){ return '<option value="' + esc(m.name) + '"' + (m.name === msv ? ' selected' : '') + '>' + esc(m.name) + '</option>'; }).join("") + '<option value="__custom"' + (msv === "__custom" ? ' selected' : '') + '>Custom…</option>';
     html += '<tr data-id="' + op.id + '"' + rowStyle + '>'
       + '<td>' + (i + 1) + '</td>'
       + '<td><input data-f="name" value="' + esc(op.name) + '"' + (op.name && op.name.trim() ? "" : " class=\"req-empty\"") + '></td>'
-      + '<td' + (isHpMachine(op.machine) ? ' class="hp-cell"' : '') + '><input data-f="machine" list="machineDatalist" value="' + esc(op.machine) + '"></td>'
-      + '<td><input class="num" data-f="seamLength" value="' + esc(op.seamLengthRaw ? op.seamLengthRaw : op.seamLength) + '"' + (op.seamLengthExpr ? ' title="' + esc(op.seamLengthExpr) + '"' : "") + '></td>'
-      + '<td><input class="num" data-f="mcThread" value="' + esc(op.mcThread) + '"></td>'
-      + '<td><input class="num' + (function(){ var q = num(op.seamQty); return q >= 10 ? " qty-red" : (q >= 2 ? " qty-warn" : ""); })() + '" data-f="seamQty" value="' + esc(op.seamQty) + '"></td>'
+      + '<td' + (isHpMachine(op.machine) ? ' class="hp-cell"' : '') + '><select data-f="machineSel"' + (op.machine ? '' : ' class="req-empty"') + '>' + mOpts + '</select>' + (msv === "__custom" ? '<input data-f="machine" value="' + esc(op.machine) + '" style="margin-top:4px"' + (op.machine ? '' : ' class="req-empty"') + '>' : '') + '</td>'
+      + '<td><input class="num' + ((op.seamLengthRaw ? op.seamLengthRaw : op.seamLength) === "" ? " req-empty" : "") + '" data-f="seamLength" value="' + esc(op.seamLengthRaw ? op.seamLengthRaw : op.seamLength) + '"' + (op.seamLengthExpr ? ' title="' + esc(op.seamLengthExpr) + '"' : "") + '></td>'
+      + '<td><input class="num' + (op.mcThread === "" || op.mcThread == null ? " req-empty" : "") + '" data-f="mcThread" value="' + esc(op.mcThread) + '"></td>'
+      + '<td><input class="num' + (function(){ var q = num(op.seamQty); return q >= 10 ? " qty-red" : (q >= 2 ? " qty-warn" : ""); })() + (op.seamQty === "" || op.seamQty == null ? " req-empty" : "") + '" data-f="seamQty" value="' + esc(op.seamQty) + '"></td>'
       + '<td class="fig-big">' + s.consumption.toFixed(2) + '</td>'
       + '<td><input data-f="thread1" list="specialThreadList" value="' + esc(op.thread1) + '"></td>'
       + '<td class="colour-col"><input data-f="colour1" value="' + esc(op.colour1) + '"></td>'
@@ -847,7 +881,9 @@ function renderOps(){
   if(keepId && keepF){
     var krow = $("opsBody").querySelector('tr[data-id="' + keepId + '"]');
     if(krow){
-      var kel = krow.querySelector('[data-f="' + keepF + '"]');
+      var kel = null;
+      if(keepF === "machineSel") kel = krow.querySelector('[data-f="machine"]');
+      if(!kel) kel = krow.querySelector('[data-f="' + keepF + '"]');
       if(kel) kel.focus();
     }
   }
@@ -870,15 +906,15 @@ function renderTotals(){
   if(mTh) mTh.textContent = "Metres (" + ul + ")";
   if(tTh) tTh.textContent = "Total metres (" + ul + ")";
   var bodyName = bodyThreadVal();
-  var rows = '<tr><td>' + esc(bodyName) + '</td><td class="fig-big">' + t.body.toFixed(2) + '</td><td>' + mToUnit(bodyM, u).toFixed(4) + '</td>'
-    + '<td class="allow-col">' + allow + '%</td><td>' + mToUnit(bodyM * (1 + allow / 100), u).toFixed(4) + '</td></tr>';
+  var rows = '<tr><td>' + esc(bodyName) + '</td><td>' + t.body.toFixed(2) + '</td><td>' + mToUnit(bodyM, u).toFixed(4) + '</td>'
+    + '<td class="allow-col">' + allow + '%</td><td class="tot-big">' + mToUnit(bodyM * (1 + allow / 100), u).toFixed(4) + '</td></tr>';
   contrastGroups().forEach(function(g){
     var gm = inToM(g.inches);
-    rows += '<tr><td>' + esc(g.label) + '</td><td class="fig-big">' + g.inches.toFixed(2) + '</td><td>' + mToUnit(gm, u).toFixed(4) + '</td>'
-      + '<td class="allow-col">' + allow + '%</td><td>' + mToUnit(gm * (1 + allow / 100), u).toFixed(4) + '</td></tr>';
+    rows += '<tr><td>' + esc(g.label) + '</td><td>' + g.inches.toFixed(2) + '</td><td>' + mToUnit(gm, u).toFixed(4) + '</td>'
+      + '<td class="allow-col">' + allow + '%</td><td class="tot-big">' + mToUnit(gm * (1 + allow / 100), u).toFixed(4) + '</td></tr>';
   });
-  rows += '<tr><td>All threads</td><td class="fig-big">' + t.consumption.toFixed(2) + '</td><td>' + mToUnit(totalM, u).toFixed(4) + '</td>'
-    + '<td class="allow-col">' + allow + '%</td><td>' + mToUnit(totalM * (1 + allow / 100), u).toFixed(4) + '</td></tr>';
+  rows += '<tr><td>All threads</td><td>' + t.consumption.toFixed(2) + '</td><td>' + mToUnit(totalM, u).toFixed(4) + '</td>'
+    + '<td class="allow-col">' + allow + '%</td><td class="tot-big">' + mToUnit(totalM * (1 + allow / 100), u).toFixed(4) + '</td></tr>';
   $("tpgBody").innerHTML = rows;
   renderCones();
   renderAccs();
@@ -902,7 +938,8 @@ $("opsBody").addEventListener("input", function(e){
   var op = OPS.filter(function(o){ return o.id === id; })[0];
   if(!op) return;
   if(f === "mcThread") op.mcAuto = false; /* hand-edited Mc thread is never auto-overwritten */
-  if(f === "seamLength"){ op.seamLengthRaw = inp.value; renderTotals(); return; /* numeric value updates on blur; raw text stays typable */ }
+  if(f === "machineSel") return; /* dropdown commits on change, not on input */
+  if(f === "seamLength") { op.seamLengthRaw = inp.value; renderTotals(); return; /* numeric value updates on blur; raw text stays typable */ }
   op[f] = inp.value;
   renderTotals(); /* no full re-render while typing, so focus is kept (expressions like 2+1 stay typable) */
 });
@@ -965,9 +1002,23 @@ function commitOpField(op, f, value){
     if(v2 !== null && v2 >= 0) op.seamQty = v2; /* "2+1" -> 3, "5-2" -> 3, "2*3" -> 6, "10/4" -> 2.5 */
     return;
   }
+  if(f === "pct1" || f === "pct2"){
+    var v3 = evalQtyExpr(value);
+    if(v3 !== null && v3 >= 0) op[f] = v3; /* "20+20" -> 40, like seam qty */
+    else op[f] = value; /* invalid: keep typed text; num() treats it as 0 in sums */
+    return;
+  }
   if(f === "machine"){
     op.machine = value;
+    if(machineRows().some(function(m){ return m.name === value; })) op.machineCustom = false;
     applyMachineToRow(op);
+    return;
+  }
+  if(f === "machineSel"){
+    if(value === "__custom"){ op.machineCustom = true; return; }
+    op.machine = value;
+    op.machineCustom = false;
+    if(value) applyMachineToRow(op);
     return;
   }
   op[f] = value;
@@ -1321,7 +1372,10 @@ $("accBody").addEventListener("change", function(e){
   var id = inp.closest("tr").getAttribute("data-id");
   var r = ACCS.filter(function(x){ return x.id === id; })[0];
   if(!r) return;
-  r[f] = inp.value;
+  if(f === "seamLength" || f === "seamAllowance" || f === "customPct"){
+    var av = evalQtyExpr(inp.value);
+    r[f] = (av !== null && av >= 0) ? av : inp.value;
+  } else r[f] = inp.value;
   renderAccs();
 });
 $("accBody").addEventListener("click", function(e){
@@ -2023,6 +2077,13 @@ $("btnListExcel").onclick = function(){
       var wb = XLSX.utils.book_new();
       var ws = XLSX.utils.aoa_to_sheet(buildListSheetForBuyer(currentListBuyer));
       ws["!merges"] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 8 } }, { s: { r: 1, c: 0 }, e: { r: 1, c: 8 } }, { s: { r: 2, c: 0 }, e: { r: 2, c: 8 } }];
+      ws["!cols"] = [{ wch: 5 }, { wch: 16 }, { wch: 28 }, { wch: 14 }, { wch: 10 }, { wch: 12 }, { wch: 20 }, { wch: 28 }, { wch: 18 }];
+      var listRowHeights = [{}, {}, {}, {}];
+      listRowsForBuyer(currentListBuyer).forEach(function(it){
+        var g = listRowMetres(it.data || {}).groups.length;
+        listRowHeights.push({ hpt: 15 * Math.max(1, g) });
+      });
+      ws["!rows"] = listRowHeights;
       XLSX.utils.book_append_sheet(wb, ws, "Style List");
       var nm = (currentListBuyer ? currentListBuyer.replace(/[\\\/\?\%\*\:\|\"<>]/g, "") : "All-Buyers") + "-Style-List.xlsx";
       downloadXlsx(wb, nm, patchXlsxMtrGreen);
@@ -2292,7 +2353,14 @@ document.addEventListener("click", function(e){
 });
 
 /* ================= Master lists: buyers / items / sizes ================= */
-function masterNames(cache, seeds){ return cache.length ? cache.map(function(c){ return c.name; }) : seeds.slice(); }
+function masterNames(cache, seeds){
+  var out = (seeds || []).slice();
+  (cache || []).forEach(function(c){
+    var n = String(c.name || "").trim();
+    if(n && !out.some(function(o){ return o.toLowerCase() === n.toLowerCase(); })) out.push(n);
+  });
+  return out;
+}
 function refreshMasterSelects(){
   function fill(selId, customId, names){
     var sel = $(selId); if(!sel) return;
@@ -2316,6 +2384,23 @@ function setCustomVisible(customId, show){
   var c = $(customId);
   if(c) c.style.display = show ? "" : "none";
 }
+/* One-time convergence: when a Buyer/Item/Size is added, first push any
+   default (seed) names still missing from Firebase, so old defaults never
+   disappear behind a new entry. Session-guarded so a double tap cannot
+   push the same seed twice before the cache refreshes. */
+var mergedSeeds = { buyers: {}, items: {}, sizes: {} };
+function seedMissingMasters(node){
+  if(!FB_OK) return;
+  var seeds = node === "buyers" ? SEED_BUYERS : node === "items" ? SEED_ITEMS : SEED_SIZES;
+  var cache = node === "buyers" ? buyersCache : node === "items" ? itemsCache : sizesCache;
+  var ref = fbDB.ref(SHEET + "/admin/" + node);
+  seeds.forEach(function(s){
+    if(mergedSeeds[node][s]) return;
+    if(cache.some(function(c){ return String(c.name || "").toLowerCase() === s.toLowerCase(); })) return;
+    mergedSeeds[node][s] = true;
+    ref.push({ name: s, createdAt: Date.now() });
+  });
+}
 /* Save a new Buyer/Item/Size name to the admin master list (used by the Save button and by blur). */
 function saveCustomName(selId, customId, node){
   var custom = $(customId);
@@ -2323,7 +2408,9 @@ function saveCustomName(selId, customId, node){
   if(!v) return false;
   if(!FB_OK){ alert("Firebase is not connected. The new name is kept only on this device for now."); return false; }
   var cache = node === "buyers" ? buyersCache : node === "items" ? itemsCache : sizesCache;
-  if(cache.some(function(c){ return c.name === v; })){ setStatus(v + " is already saved."); return true; }
+  var seeds = node === "buyers" ? SEED_BUYERS : node === "items" ? SEED_ITEMS : SEED_SIZES;
+  if(masterNames(cache, seeds).some(function(n){ return n.toLowerCase() === v.toLowerCase(); })){ setStatus(v + " is already saved."); return true; }
+  seedMissingMasters(node);
   fbDB.ref(SHEET + "/admin/" + node).push({ name: v, createdAt: Date.now() });
   setStatus(v + " saved.");
   return true;
@@ -2338,17 +2425,18 @@ function bindCustom(selId, customId, node){
 }
 function renderMasterBox(boxId, cache, delAttr, emptyText, seeds){
   var box = $(boxId);
-  if(cache.length){
-    box.innerHTML = cache.map(function(c){ return '<div class="item"><b>' + esc(c.name) + '</b> '
-      + '<button class="btn btn-d btn-sm" data-' + delAttr + '="' + c.key + '">Delete</button></div>'; }).join("");
-    return;
-  }
-  if(seeds && seeds.length){
-    box.innerHTML = seeds.map(function(n){ return '<div class="item"><b>' + esc(n) + '</b> <span class="mut">(default)</span></div>'; }).join("")
-      + '<p class="mut">Defaults shown while Firebase is empty. Add your own below; after the one-time Firebase seeding these become editable entries.</p>';
-    return;
-  }
-  box.innerHTML = '<p class="mut">' + emptyText + '</p>';
+  var rows = [];
+  (cache || []).forEach(function(c){
+    rows.push('<div class="item"><b>' + esc(c.name) + '</b> '
+      + '<button class="btn btn-d btn-sm" data-' + delAttr + '="' + c.key + '">Delete</button></div>');
+  });
+  (seeds || []).forEach(function(n){
+    if(cache && cache.some(function(c){ return String(c.name || "").toLowerCase() === n.toLowerCase(); })) return;
+    rows.push('<div class="item"><b>' + esc(n) + '</b> <span class="mut">(default)</span></div>');
+  });
+  if(!rows.length){ box.innerHTML = '<p class="mut">' + emptyText + '</p>'; return; }
+  box.innerHTML = rows.join("")
+    + ((seeds && seeds.length && !cache.length) ? '<p class="mut">Defaults shown while Firebase is empty. Add your own below; after the one-time Firebase seeding these become editable entries.</p>' : '');
 }
 function watchMaster(node){
   if(!FB_OK) return;
@@ -2360,7 +2448,7 @@ function watchMaster(node){
     if(node === "sizes") sizesCache = arr;
     renderMasterBox(node === "buyers" ? "buyerListBox" : node === "items" ? "itemListBox" : "sizeListBox",
       arr, "del-" + node, "No " + node + " yet.",
-      node === "items" ? SEED_ITEMS : node === "sizes" ? SEED_SIZES : null);
+      node === "items" ? SEED_ITEMS : node === "sizes" ? SEED_SIZES : SEED_BUYERS);
     refreshMasterSelects();
   });
 }
@@ -2369,6 +2457,10 @@ function addMaster(node, inputId){
   var name = $(inputId).value.trim();
   if(!name){ alert("Enter a name first."); return; }
   if(!FB_OK){ alert("Firebase is not connected."); return; }
+  var cacheA = node === "buyers" ? buyersCache : node === "items" ? itemsCache : sizesCache;
+  var seedsA = node === "buyers" ? SEED_BUYERS : node === "items" ? SEED_ITEMS : SEED_SIZES;
+  if(masterNames(cacheA, seedsA).some(function(n){ return n.toLowerCase() === name.toLowerCase(); })){ alert(name + " is already saved."); return; }
+  seedMissingMasters(node);
   fbDB.ref(SHEET + "/admin/" + node).push({ name: name, createdAt: Date.now() }).then(function(){
     $(inputId).value = ""; setStatus("Added.");
   }).catch(function(e){ alert("Save failed: " + e.message); });
@@ -2467,8 +2559,10 @@ $("btnMachineExcel").onclick = function(){
       var wb = XLSX.utils.book_new();
       var rows = [["Machine Name", "SPI", "Needle %", "Looper %", "Remarks"]];
       machineRows().forEach(function(r){ rows.push([r.name, r.spi, r.needle, r.looper, r.remarks]); });
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), "Machines");
-      downloadXlsx(wb, "Machine-List.xlsx");
+      var mcWs = XLSX.utils.aoa_to_sheet(rows);
+      mcWs["!cols"] = [{ wch: 20 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 24 }];
+      XLSX.utils.book_append_sheet(wb, mcWs, "Machines");
+      downloadXlsx(wb, "Machine-List.xlsx", patchXlsxHeaderColors);
       setStatus("Machine list exported (A4, fits one page).");
     }catch(err){ setStatus("Ready"); alert("The Excel file could not be created. Please try again."); }
   }, function(){ setStatus("Ready"); alert("The Excel writer could not be downloaded from any mirror.\n\nPlease check your network connection and try again."); });
@@ -2769,7 +2863,7 @@ function ncell(v){ return (v === "" || v == null) ? null : num(v); }
 function r4(x){ return Math.round(x * 10000) / 10000; }
 /* Single-style export: ONE sheet matching the reference samples' layout
    (title rows, header block, operations table, Total per garment table,
-   Colour-wise cones table). Prints on 1 page A4 landscape. */
+   Colour-wise cones table). Prints on 1 page A4 portrait. */
 function singleSheetThreadLabel(op){
   var parts = [];
   [[op.thread1, op.colour1, op.pct1], [op.thread2, op.colour2, op.pct2]].forEach(function(slot){
@@ -2796,7 +2890,7 @@ function buildSingleStyleSheet(){
   rows.push(["SL", "OPERATION DESCRIPTION", "M/C NAME", "Seam Length (Inch)", "Mc Thread (Inch)", "Seam Qty", "Consumption (Inch)", "Thread", "", "", "", "", "Body thread " + btName, "Special thread"]);
   var opStart = rows.length + 1;
   OPS.forEach(function(op, i){
-    var sp = num(op.pct1) + num(op.pct2);
+    var sp = opSpecialPct(op);
     var r = opStart + i;
     rows.push([i + 1, op.name, op.machine, ncell(op.seamLength), ncell(op.mcThread), ncell(op.seamQty),
       "=D" + r + "*E" + r + "*F" + r, singleSheetThreadLabel(op), "", "", "", "",
@@ -2837,8 +2931,8 @@ function buildSingleStyleSheet(){
 }
 function buildSingleStyleSheetMeta(){
   return { merges: [{ s: { r: 0, c: 0 }, e: { r: 0, c: 14 } }, { s: { r: 1, c: 0 }, e: { r: 1, c: 14 } }],
-    cols: [{ wch: 6 }, { wch: 46 }, { wch: 14 }, { wch: 12 }, { wch: 12 }, { wch: 10 }, { wch: 16 }, { wch: 28 }, { wch: 3 }, { wch: 3 }, { wch: 3 }, { wch: 3 }, { wch: 3 }, { wch: 3 }, { wch: 3 }],
-    pageSetup: { orientation: "landscape", paperSize: 9, fitToPage: true, fitToWidth: 1, fitToHeight: 1 } };
+    cols: [{ wch: 6 }, { wch: 46 }, { wch: 14 }, { wch: 12 }, { wch: 12 }, { wch: 10 }, { wch: 16 }, { wch: 28 }, { wch: 3 }, { wch: 3 }, { wch: 3 }, { wch: 3 }, { wch: 3 }, { wch: 3, hidden: true }, { wch: 3, hidden: true }, { wch: 3, hidden: true }],
+    pageSetup: { orientation: "portrait", paperSize: 9, fitToPage: true, fitToWidth: 1, fitToHeight: 1 } };
 }
 function accRuleLabel(rule){
   if(rule === "twill") return "Back twill tape";
@@ -2870,8 +2964,8 @@ function buildStyleListSheet(){
   return rows;
 }
 /* SheetJS Community Edition does not write page setup, so the Excel exports
-   patch the generated zip: pageSetUpPr + pageMargins + pageSetup (A4 landscape,
-   fit to 1 page) are injected into the sheet XML and the zip is rebuilt with
+   patch the generated zip: pageSetUpPr + pageMargins + pageSetup (A4 portrait,
+   sample margins, fit to 1 page) are injected into the sheet XML and the zip is rebuilt with
    the sheet entry stored uncompressed. All other entries are copied
    byte-for-byte, so the file stays valid. If anything unexpected is found,
    the original bytes are returned untouched. */
@@ -2941,7 +3035,7 @@ function patchXlsxPageSetup(buf){
     if(wsTag === -1) return bytes;
     var gt = xml.indexOf(">", wsTag);
     xml = xml.slice(0, gt + 1) + '<sheetPr><pageSetUpPr fitToPage="1"/></sheetPr>' + xml.slice(gt + 1);
-    var setup = '<pageMargins left="0.25" right="0.25" top="0.4" bottom="0.4" header="0.2" footer="0.2"/><pageSetup paperSize="9" orientation="landscape" fitToWidth="1" fitToHeight="1"/>';
+    var setup = '<pageMargins left="0.25" right="0.25" top="0.3" bottom="0.3" header="0.15" footer="0.15"/><pageSetup paperSize="9" orientation="portrait" fitToWidth="1" fitToHeight="1"/>';
     var ie = xml.indexOf("<ignoredErrors");
     if(ie !== -1) xml = xml.slice(0, ie) + setup + xml.slice(ie);
     else {
@@ -3057,12 +3151,398 @@ function patchXlsxMtrGreen(buf){
     if(!fillsM || !xfsM || sXml.indexOf("</fills>") === -1 || sXml.indexOf("</cellXfs>") === -1) return bytes;
     var newFillId = parseInt(fillsM[1], 10);
     var newXfId = parseInt(xfsM[1], 10);
-    sXml = sXml.replace(/<fills count="\d+">/, '<fills count="' + (newFillId + 1) + '">');
-    sXml = sXml.replace("</fills>", '<fill><patternFill patternType="solid"><fgColor rgb="FFD9EAD3"/><bgColor indexed="64"/></patternFill></fill></fills>');
-    sXml = sXml.replace(/<cellXfs count="\d+">/, '<cellXfs count="' + (newXfId + 1) + '">');
-    sXml = sXml.replace("</cellXfs>", '<xf numFmtId="0" fontId="0" fillId="' + newFillId + '" borderId="0" xfId="0" applyFill="1"/></cellXfs>');
+    var fontsM = sXml.match(/<fonts count="(\d+)">/);
+    var bordersM = sXml.match(/<borders count="(\d+)">/);
+    if(!fontsM || !bordersM || sXml.indexOf("</fonts>") === -1 || sXml.indexOf("</borders>") === -1) return bytes;
+    var newFontId = parseInt(fontsM[1], 10);
+    var newBorderId = parseInt(bordersM[1], 10);
+    var greenXfId = newXfId, hdrXfId = newXfId + 1, boldXfId = newXfId + 2, boldCXfId = newXfId + 3, plainLXfId = newXfId + 4, plainCXfId = newXfId + 5, wrapLXfId = newXfId + 6;
+    sXml = sXml.replace(/<borders count="\d+">/, '<borders count="' + (newBorderId + 1) + '">');
+    sXml = sXml.replace("</borders>", '<border><left style="thin"><color rgb="FF8C97AB"/></left><right style="thin"><color rgb="FF8C97AB"/></right><top style="thin"><color rgb="FF8C97AB"/></top><bottom style="thin"><color rgb="FF8C97AB"/></bottom><diagonal/></border></borders>');
+    sXml = sXml.replace(/<fills count="\d+">/, '<fills count="' + (newFillId + 2) + '">');
+    sXml = sXml.replace("</fills>", '<fill><patternFill patternType="solid"><fgColor rgb="FFD9EAD3"/><bgColor indexed="64"/></patternFill></fill>'
+      + '<fill><patternFill patternType="solid"><fgColor rgb="FFB8C4DC"/><bgColor indexed="64"/></patternFill></fill></fills>');
+    sXml = sXml.replace(/<fonts count="\d+">/, '<fonts count="' + (newFontId + 2) + '">');
+    sXml = sXml.replace("</fonts>", '<font><b/><sz val="10"/><name val="Arial"/><family val="2"/></font>'
+      + '<font><sz val="10"/><name val="Arial"/><family val="2"/></font></fonts>');
+    function lxf(font, fill, border, align){
+      var s = '<xf numFmtId="0" fontId="' + font + '" fillId="' + fill + '" borderId="' + border + '" xfId="0" applyFont="1"';
+      if(fill) s += ' applyFill="1"';
+      if(align) return s + ' applyAlignment="1"><alignment ' + align + '/></xf>';
+      return s + '/>';
+    }
+    var L_CC = 'horizontal="center" vertical="center"';
+    var L_VC = 'vertical="center"';
+    var L_VCW = 'vertical="center" wrapText="1"';
+    sXml = sXml.replace(/<cellXfs count="\d+">/, '<cellXfs count="' + (newXfId + 7) + '">');
+    sXml = sXml.replace("</cellXfs>", lxf(newFontId, newFillId, newBorderId, L_CC)
+      + lxf(newFontId, newFillId + 1, newBorderId, L_CC)
+      + lxf(newFontId, 0, 0, "")
+      + lxf(newFontId, 0, 0, L_CC)
+      + lxf(newFontId + 1, 0, newBorderId, L_VC)
+      + lxf(newFontId + 1, 0, newBorderId, L_CC)
+      + lxf(newFontId + 1, 0, newBorderId, L_VCW) + "</cellXfs>");
     var shXml = sheet.xml.replace(/<c r="F(\d+)"(?![^>]*\bs=)/g, function(m, row){
-      return (parseInt(row, 10) >= 5) ? '<c r="F' + row + '" s="' + newXfId + '"' : m;
+      return (parseInt(row, 10) >= 5) ? '<c r="F' + row + '" s="' + greenXfId + '"' : m;
+    });
+    shXml = shXml.replace(/<c r="([A-I])4"(?![^>]*\bs=)/g, function(m, col){
+      return '<c r="' + col + '4" s="' + hdrXfId + '"';
+    });
+    shXml = shXml.replace(/<c r="A([12])"(?![^>]*\bs=)/g, function(m, row){
+      return '<c r="A' + row + '" s="' + boldCXfId + '"';
+    });
+    shXml = shXml.replace(/<c r="A3"(?![^>]*\bs=)/g, '<c r="A3" s="' + boldXfId + '"');
+    shXml = shXml.replace(/<c r="A(\d+)"(?![^>]*\bs=)/g, function(m, row){
+      return (parseInt(row, 10) >= 5) ? '<c r="A' + row + '" s="' + plainCXfId + '"' : m;
+    });
+    shXml = shXml.replace(/<c r="([BCDEGI])(\d+)"(?![^>]*\bs=)/g, function(m, col, row){
+      return (parseInt(row, 10) >= 5) ? '<c r="' + col + row + '" s="' + plainLXfId + '"' : m;
+    });
+    shXml = shXml.replace(/<c r="H(\d+)"(?![^>]*\bs=)/g, function(m, row){
+      return (parseInt(row, 10) >= 5) ? '<c r="H' + row + '" s="' + wrapLXfId + '"' : m;
+    });
+    if(shXml === sheet.xml) return bytes;
+    var mods = {};
+    mods[ti] = { bytes: bytesFromStr(shXml), header: sheet.header };
+    mods[si] = { bytes: bytesFromStr(sXml), header: styles.header };
+    var parts = [], total = 0, newLhos = [];
+    function push(b){ parts.push(b); total += b.length; }
+    function hdr16(v){ var a = new Uint8Array(2); a[0] = v & 0xFF; a[1] = (v >> 8) & 0xFF; return a; }
+    function hdr32(v){ var a = new Uint8Array(4); a[0] = v & 0xFF; a[1] = (v >> 8) & 0xFF; a[2] = (v >> 16) & 0xFF; a[3] = (v >> 24) & 0xFF; return a; }
+    for(var i = 0; i < entries.length; i++){
+      var en = entries[i];
+      newLhos.push(total);
+      if(mods[i]){
+        var nb = mods[i].bytes, h = new Uint8Array(30), ncrc = crc32Bytes(nb);
+        h.set(hdr32(0x04034b50), 0); h.set(hdr16(mods[i].header.verNeed), 4); h.set(hdr16(mods[i].header.flags), 6);
+        h.set(hdr16(mods[i].header.time), 8); h.set(hdr16(mods[i].header.date), 10); h.set(hdr32(ncrc), 14);
+        h.set(hdr32(nb.length), 18); h.set(hdr32(nb.length), 22);
+        h.set(hdr16(en.nameBytes.length), 26); h.set(hdr16(en.extra.length), 28);
+        push(h); push(en.nameBytes); push(en.extra); push(nb);
+      } else {
+        var oLh = en.lho;
+        var oNlen = u16(oLh + 26), oElen = u16(oLh + 28);
+        var oDataStart = oLh + 30 + oNlen + oElen;
+        push(bytes.slice(oLh, oDataStart + en.csize));
+      }
+    }
+    var cdStart = total;
+    for(var j = 0; j < entries.length; j++){
+      var ej = entries[j];
+      var mod = mods[j];
+      var nb2 = mod ? mod.bytes : null;
+      var ch = new Uint8Array(46);
+      ch.set(hdr32(0x02014b50), 0); ch.set(hdr16(ej.verMade), 4); ch.set(hdr16(ej.verNeed), 6);
+      ch.set(hdr16(ej.flags), 8); ch.set(hdr16(mod ? 0 : ej.method), 10);
+      ch.set(hdr16(ej.time), 12); ch.set(hdr16(ej.date), 14);
+      ch.set(hdr32(mod ? crc32Bytes(nb2) : ej.crc), 16);
+      ch.set(hdr32(mod ? nb2.length : ej.csize), 20);
+      ch.set(hdr32(mod ? nb2.length : ej.usize), 24);
+      ch.set(hdr16(ej.nameBytes.length), 28); ch.set(hdr16(ej.extra.length), 30); ch.set(hdr16(ej.comment.length), 32);
+      ch.set(hdr16(ej.diskStart), 34); ch.set(hdr16(ej.intAttr), 36); ch.set(hdr32(ej.extAttr), 38);
+      ch.set(hdr32(newLhos[j]), 42);
+      push(ch); push(ej.nameBytes); push(ej.extra); push(ej.comment);
+    }
+    var cdSize = total - cdStart;
+    var eo = new Uint8Array(22);
+    eo.set(hdr32(0x06054b50), 0); eo.set(hdr16(0), 4); eo.set(hdr16(0), 6);
+    eo.set(hdr16(entries.length), 8); eo.set(hdr16(entries.length), 10);
+    eo.set(hdr32(cdSize), 12); eo.set(hdr32(cdStart), 16); eo.set(hdr16(cdComment.length), 20);
+    push(eo); push(cdComment);
+    var out = new Uint8Array(total);
+    var at = 0;
+    for(var k = 0; k < parts.length; k++){ out.set(parts[k], at); at += parts[k].length; }
+    return out;
+  }catch(err){
+    return bytes;
+  }
+}
+/* Single-style Excel colours, sample types (see buildSingleStyleSheet layout):
+   title grey + blue 16, subtitle light-blue + green 14, header labels bold,
+   ops header blue-grey bold (Mc Thread header yellow, Special thread header
+   peach), seam qty > 1 light-blue bold, totals header blue-grey bold,
+   Total metres column green + bold 12, contrast rows in their screen pastel
+   (singlePatchRowFills: excelRow -> "#RRGGBB", set by exportExcel).
+   Row numbers come from singlePatchN (ops), singlePatchK (contrasts),
+   singlePatchC (extra cone rows). Same zip-patch pattern as the MTR patch:
+   if anything unexpected is found, the original bytes return untouched. */
+var singlePatchN = 0, singlePatchK = 0, singlePatchC = 0, singlePatchRowFills = {};
+function patchXlsxSingleStyleColors(buf){
+  var bytes = buf instanceof Uint8Array ? buf : new Uint8Array(buf);
+  function u16(o){ return bytes[o] | (bytes[o + 1] << 8); }
+  function u32(o){ return (bytes[o] | (bytes[o + 1] << 8) | (bytes[o + 2] << 16) | (bytes[o + 3] << 24)) >>> 0; }
+  function strFromBytes(b){ var s = ""; for(var i = 0; i < b.length; i++) s += String.fromCharCode(b[i]); return s; }
+  function bytesFromStr(str){ var b = new Uint8Array(str.length); for(var i = 0; i < b.length; i++) b[i] = str.charCodeAt(i) & 0xFF; return b; }
+  try{
+    var eocd = -1;
+    for(var p = bytes.length - 22; p >= 0; p--){ if(u32(p) === 0x06054b50){ eocd = p; break; } }
+    if(eocd === -1) return bytes;
+    var cdCount = u16(eocd + 10), cdOff = u32(eocd + 16);
+    var cdCommentLen = u16(eocd + 20);
+    var cdComment = bytes.slice(eocd + 22, eocd + 22 + cdCommentLen);
+    var entries = [], off = cdOff;
+    for(var e = 0; e < cdCount; e++){
+      if(u32(off) !== 0x02014b50) return bytes;
+      var nlen = u16(off + 28), elen = u16(off + 30), clen = u16(off + 32);
+      var nameBytes = bytes.slice(off + 46, off + 46 + nlen);
+      entries.push({
+        verMade: u16(off + 4), verNeed: u16(off + 6), flags: u16(off + 8), method: u16(off + 10),
+        time: u16(off + 12), date: u16(off + 14), crc: u32(off + 16), csize: u32(off + 20), usize: u32(off + 24),
+        diskStart: u16(off + 34), intAttr: u16(off + 36), extAttr: u32(off + 38), lho: u32(off + 42),
+        nameBytes: nameBytes, name: strFromBytes(nameBytes),
+        extra: bytes.slice(off + 46 + nlen, off + 46 + nlen + elen),
+        comment: bytes.slice(off + 46 + nlen + elen, off + 46 + nlen + elen + clen)
+      });
+      off += 46 + nlen + elen + clen;
+    }
+    function entryXml(idx){
+      var en = entries[idx], lh = en.lho;
+      if(u32(lh) !== 0x04034b50) return null;
+      if(en.method !== 0) return null;
+      var nlen2 = u16(lh + 26), elen2 = u16(lh + 28);
+      var ds = lh + 30 + nlen2 + elen2;
+      return { header: { verNeed: u16(lh + 4), flags: u16(lh + 6), time: u16(lh + 8), date: u16(lh + 10) }, xml: strFromBytes(bytes.slice(ds, ds + en.csize)) };
+    }
+    var si = -1, ti = -1;
+    for(var t = 0; t < entries.length; t++){
+      if(entries[t].name === "xl/worksheets/sheet1.xml") ti = t;
+      if(entries[t].name === "xl/styles.xml") si = t;
+    }
+    if(ti === -1 || si === -1) return bytes;
+    var sheet = entryXml(ti), styles = entryXml(si);
+    if(!sheet || !styles) return bytes;
+    var sXml = styles.xml;
+    var fillsM = sXml.match(/<fills count="(\d+)">/);
+    var fontsM = sXml.match(/<fonts count="(\d+)">/);
+    var xfsM = sXml.match(/<cellXfs count="(\d+)">/);
+    if(!fillsM || !fontsM || !xfsM || sXml.indexOf("</fills>") === -1 || sXml.indexOf("</fonts>") === -1 || sXml.indexOf("</cellXfs>") === -1) return bytes;
+    var newFillId = parseInt(fillsM[1], 10);
+    var newFontId = parseInt(fontsM[1], 10);
+    var newXfId = parseInt(xfsM[1], 10);
+    function fillXml(rgb){ return '<fill><patternFill patternType="solid"><fgColor rgb="' + rgb + '"/><bgColor indexed="64"/></patternFill></fill>'; }
+    var pastelFill = {}, pastelXfL = {}, pastelXfC = {}, pastelList = [];
+    Object.keys(singlePatchRowFills).forEach(function(rn){
+      var col = String(singlePatchRowFills[rn] || "").replace("#", "");
+      if(!col || pastelFill[col] !== undefined) return;
+      pastelFill[col] = newFillId + 8 + pastelList.length;
+      pastelXfL[col] = newXfId + 14 + 2 * pastelList.length;
+      pastelXfC[col] = newXfId + 15 + 2 * pastelList.length;
+      pastelList.push(col);
+    });
+    var F_HDR = newFillId, F_YEL = newFillId + 1, F_GRN = newFillId + 2, F_QTY = newFillId + 3, F_GREY = newFillId + 4, F_LBLUE = newFillId + 5, F_PEACH = newFillId + 6, F_CPEACH = newFillId + 7;
+    var bordersM = sXml.match(/<borders count="(\d+)">/);
+    if(!bordersM || sXml.indexOf("</borders>") === -1) return bytes;
+    var newBorderId = parseInt(bordersM[1], 10);
+    sXml = sXml.replace(/<borders count="\d+">/, '<borders count="' + (newBorderId + 1) + '">');
+    sXml = sXml.replace("</borders>", '<border><left style="thin"><color rgb="FF8C97AB"/></left><right style="thin"><color rgb="FF8C97AB"/></right><top style="thin"><color rgb="FF8C97AB"/></top><bottom style="thin"><color rgb="FF8C97AB"/></bottom><diagonal/></border></borders>');
+    sXml = sXml.replace(/<fills count="\d+">/, '<fills count="' + (newFillId + 8 + pastelList.length) + '">');
+    var fillsAdd = fillXml("FFB8C4DC") + fillXml("FFFFFF00") + fillXml("FF92D050") + fillXml("FFBDD7EE") + fillXml("FFC8C8C8") + fillXml("FFDDEBF7") + fillXml("FFF4B183") + fillXml("FFFCE4D6");
+    pastelList.forEach(function(col){ fillsAdd += fillXml("FF" + col); });
+    sXml = sXml.replace("</fills>", fillsAdd + "</fills>");
+    var FT_B10 = newFontId, FT_BLUE16 = newFontId + 1, FT_GRN14 = newFontId + 2, FT_B12 = newFontId + 3, FT_P10 = newFontId + 4;
+    sXml = sXml.replace(/<fonts count="\d+">/, '<fonts count="' + (newFontId + 5) + '">');
+    sXml = sXml.replace("</fonts>", '<font><b/><sz val="10"/><name val="Arial"/><family val="2"/></font>'
+      + '<font><b/><sz val="16"/><color rgb="FF0B8FC9"/><name val="Arial"/><family val="2"/></font>'
+      + '<font><b/><sz val="14"/><color rgb="FF3B7D23"/><name val="Cambria"/><family val="2"/></font>'
+      + '<font><b/><sz val="12"/><name val="Arial"/><family val="2"/></font>'
+      + '<font><sz val="10"/><name val="Arial"/><family val="2"/></font>' + "</fonts>");
+    function xf(font, fill, border, align){
+      var s = '<xf numFmtId="0" fontId="' + font + '" fillId="' + fill + '" borderId="' + border + '" xfId="0" applyFont="1"';
+      if(fill) s += ' applyFill="1"';
+      if(align) return s + ' applyAlignment="1"><alignment ' + align + '/></xf>';
+      return s + '/>';
+    }
+    var AL_CC = 'horizontal="center" vertical="center"';
+    var AL_CCW = 'horizontal="center" vertical="center" wrapText="1"';
+    var AL_VC = 'vertical="center"';
+    var X_TITLE = newXfId, X_SUB = newXfId + 1, X_BOLD = newXfId + 2, X_HDR = newXfId + 3, X_MCH = newXfId + 4, X_SPH = newXfId + 5, X_QTY = newXfId + 6, X_TOTM = newXfId + 7,
+      X_PLAIN_L = newXfId + 8, X_PLAIN_C = newXfId + 9, X_BOLD_L = newXfId + 10, X_BOLD_C = newXfId + 11, X_CONE_L = newXfId + 12, X_CONE_C = newXfId + 13;
+    sXml = sXml.replace(/<cellXfs count="\d+">/, '<cellXfs count="' + (newXfId + 14 + 2 * pastelList.length) + '">');
+    var xfsAdd = xf(FT_BLUE16, F_GREY, 0, AL_CC) + xf(FT_GRN14, F_LBLUE, 0, AL_CC) + xf(FT_B10, 0, 0, "") + xf(FT_B10, F_HDR, newBorderId, AL_CCW) + xf(FT_B10, F_YEL, newBorderId, AL_CC) + xf(FT_B10, F_PEACH, newBorderId, AL_CCW) + xf(FT_B10, F_QTY, newBorderId, AL_CC) + xf(FT_B12, F_GRN, newBorderId, AL_CC)
+      + xf(FT_P10, 0, newBorderId, AL_VC) + xf(FT_P10, 0, newBorderId, AL_CC) + xf(FT_B10, 0, newBorderId, AL_VC) + xf(FT_B10, 0, newBorderId, AL_CC) + xf(FT_P10, F_CPEACH, newBorderId, AL_VC) + xf(FT_P10, F_CPEACH, newBorderId, AL_CC);
+    pastelList.forEach(function(col){ xfsAdd += xf(FT_P10, pastelFill[col], newBorderId, AL_VC) + xf(FT_P10, pastelFill[col], newBorderId, AL_CC); });
+    sXml = sXml.replace("</cellXfs>", xfsAdd + "</cellXfs>");
+    var sh = sheet.xml;
+    function tag(ref, xfId){
+      var re = new RegExp('<c r="' + ref + '"(?![^>]*\\bs=)');
+      sh = sh.replace(re, '<c r="' + ref + '" s="' + xfId + '"');
+    }
+    function tagRow(row, cols, xfId){ cols.forEach(function(cc){ tag(cc + row, xfId); }); }
+    var n = singlePatchN, k = singlePatchK;
+    tag("A1", X_TITLE);
+    tag("A2", X_SUB);
+    [4, 5, 6, 7].forEach(function(r){ tag("A" + r, X_BOLD); tag("F" + r, X_BOLD); });
+    tagRow(9, ["A", "B", "C", "D", "F", "G", "H", "M"], X_HDR);
+    tag("E9", X_MCH); tag("N9", X_SPH);
+    for(var i = 0; i < n; i++){
+      var rr = 10 + i;
+      tag("E" + rr, X_MCH);
+      var fm = sh.match(new RegExp('<c r="F' + rr + '"(?![^>]*\\bs=)[^>]*><v>([\\d.]+)</v>'));
+      if(fm && parseFloat(fm[1]) > 1) tag("F" + rr, X_QTY);
+    }
+    Object.keys(singlePatchRowFills).forEach(function(rn){
+      var col = String(singlePatchRowFills[rn] || "").replace("#", "");
+      if(!col || pastelXfL[col] === undefined) return;
+      tagRow(rn, ["B", "H"], pastelXfL[col]);
+      tagRow(rn, ["A", "C", "D", "F", "G", "M", "N"], pastelXfC[col]);
+    });
+    for(var pi = 0; pi < n; pi++){
+      var pr = 10 + pi;
+      tagRow(pr, ["B", "H"], X_PLAIN_L);
+      tagRow(pr, ["A", "C", "D", "F", "G", "M", "N"], X_PLAIN_C);
+    }
+    var labelRow = 11 + n, totHdr = 12 + n, bodyRow = 13 + n, allRow = 14 + n + k;
+    tag("A" + labelRow, X_BOLD);
+    tagRow(totHdr, ["A", "B", "C", "D", "E"], X_HDR);
+    tag("A" + bodyRow, X_PLAIN_L); tagRow(bodyRow, ["B", "C", "D"], X_PLAIN_C); tag("E" + bodyRow, X_TOTM);
+    for(var j = 0; j < k; j++){
+      var cr = 14 + n + j;
+      tag("A" + cr, X_PLAIN_L); tagRow(cr, ["B", "C", "D"], X_PLAIN_C); tag("E" + cr, X_TOTM);
+    }
+    tag("A" + allRow, X_BOLD_L); tagRow(allRow, ["B", "C", "D"], X_BOLD_C); tag("E" + allRow, X_TOTM);
+    var coneNote = 16 + n + k, coneHdr = 17 + n + k, coneTot = 19 + n + 2 * k + singlePatchC;
+    tag("A" + coneNote, X_BOLD);
+    tagRow(coneHdr, ["B", "C", "D", "E", "F", "G", "H"], X_HDR);
+    for(var ci = 0; ci < 1 + k + singlePatchC; ci++){
+      var cdr = 18 + n + k + ci;
+      tag("B" + cdr, X_CONE_L); tagRow(cdr, ["C", "D", "E", "F", "G", "H"], X_CONE_C);
+    }
+    tag("B" + coneTot, X_BOLD_L); tagRow(coneTot, ["C", "D", "F", "G", "H"], X_BOLD_C); tag("E" + coneTot, X_TOTM);
+    sh = sh.replace(/<row r="1"(?=[\s>])(?![^>]*\bht=)/, '<row r="1" ht="26" customHeight="1"');
+    sh = sh.replace(/<row r="9"(?=[\s>])(?![^>]*\bht=)/, '<row r="9" ht="32" customHeight="1"');
+    sh = sh.replace(/<col min="(13|14|15)" max="\1"([^>]*?)\/>/g, function(m, mm, rest){
+      return rest.indexOf("hidden") !== -1 ? m : '<col min="' + mm + '" max="' + mm + '"' + rest + ' hidden="1"/>';
+    });
+    if(sh === sheet.xml) return bytes;
+    var mods = {};
+    mods[ti] = { bytes: bytesFromStr(sh), header: sheet.header };
+    mods[si] = { bytes: bytesFromStr(sXml), header: styles.header };
+    var parts = [], total = 0, newLhos = [];
+    function push(b){ parts.push(b); total += b.length; }
+    function hdr16(v){ var a = new Uint8Array(2); a[0] = v & 0xFF; a[1] = (v >> 8) & 0xFF; return a; }
+    function hdr32(v){ var a = new Uint8Array(4); a[0] = v & 0xFF; a[1] = (v >> 8) & 0xFF; a[2] = (v >> 16) & 0xFF; a[3] = (v >> 24) & 0xFF; return a; }
+    for(var i2 = 0; i2 < entries.length; i2++){
+      var en = entries[i2];
+      newLhos.push(total);
+      if(mods[i2]){
+        var nb = mods[i2].bytes, h = new Uint8Array(30), ncrc = crc32Bytes(nb);
+        h.set(hdr32(0x04034b50), 0); h.set(hdr16(mods[i2].header.verNeed), 4); h.set(hdr16(mods[i2].header.flags), 6);
+        h.set(hdr16(mods[i2].header.time), 8); h.set(hdr16(mods[i2].header.date), 10); h.set(hdr32(ncrc), 14);
+        h.set(hdr32(nb.length), 18); h.set(hdr32(nb.length), 22);
+        h.set(hdr16(en.nameBytes.length), 26); h.set(hdr16(en.extra.length), 28);
+        push(h); push(en.nameBytes); push(en.extra); push(nb);
+      } else {
+        var oLh = en.lho;
+        var oNlen = u16(oLh + 26), oElen = u16(oLh + 28);
+        var oDataStart = oLh + 30 + oNlen + oElen;
+        push(bytes.slice(oLh, oDataStart + en.csize));
+      }
+    }
+    var cdStart = total;
+    for(var j2 = 0; j2 < entries.length; j2++){
+      var ej = entries[j2];
+      var mod = mods[j2];
+      var nb2 = mod ? mod.bytes : null;
+      var ch = new Uint8Array(46);
+      ch.set(hdr32(0x02014b50), 0); ch.set(hdr16(ej.verMade), 4); ch.set(hdr16(ej.verNeed), 6);
+      ch.set(hdr16(ej.flags), 8); ch.set(hdr16(mod ? 0 : ej.method), 10);
+      ch.set(hdr16(ej.time), 12); ch.set(hdr16(ej.date), 14);
+      ch.set(hdr32(mod ? crc32Bytes(nb2) : ej.crc), 16);
+      ch.set(hdr32(mod ? nb2.length : ej.csize), 20);
+      ch.set(hdr32(mod ? nb2.length : ej.usize), 24);
+      ch.set(hdr16(ej.nameBytes.length), 28); ch.set(hdr16(ej.extra.length), 30); ch.set(hdr16(ej.comment.length), 32);
+      ch.set(hdr16(ej.diskStart), 34); ch.set(hdr16(ej.intAttr), 36); ch.set(hdr32(ej.extAttr), 38);
+      ch.set(hdr32(newLhos[j2]), 42);
+      push(ch); push(ej.nameBytes); push(ej.extra); push(ej.comment);
+    }
+    var cdSize = total - cdStart;
+    var eo = new Uint8Array(22);
+    eo.set(hdr32(0x06054b50), 0); eo.set(hdr16(0), 4); eo.set(hdr16(0), 6);
+    eo.set(hdr16(entries.length), 8); eo.set(hdr16(entries.length), 10);
+    eo.set(hdr32(cdSize), 12); eo.set(hdr32(cdStart), 16); eo.set(hdr16(cdComment.length), 20);
+    push(eo); push(cdComment);
+    var out = new Uint8Array(total);
+    var at = 0;
+    for(var kk = 0; kk < parts.length; kk++){ out.set(parts[kk], at); at += parts[kk].length; }
+    return out;
+  }catch(err){
+    return bytes;
+  }
+}
+/* Header-row colours for the Accessories and Machine List Excel exports
+   (same sample header: blue-grey fill + bold). Tags every cell in row 1.
+   Same zip-patch pattern as the MTR patch. */
+function patchXlsxHeaderColors(buf){
+  var bytes = buf instanceof Uint8Array ? buf : new Uint8Array(buf);
+  function u16(o){ return bytes[o] | (bytes[o + 1] << 8); }
+  function u32(o){ return (bytes[o] | (bytes[o + 1] << 8) | (bytes[o + 2] << 16) | (bytes[o + 3] << 24)) >>> 0; }
+  function strFromBytes(b){ var s = ""; for(var i = 0; i < b.length; i++) s += String.fromCharCode(b[i]); return s; }
+  function bytesFromStr(str){ var b = new Uint8Array(str.length); for(var i = 0; i < b.length; i++) b[i] = str.charCodeAt(i) & 0xFF; return b; }
+  try{
+    var eocd = -1;
+    for(var p = bytes.length - 22; p >= 0; p--){ if(u32(p) === 0x06054b50){ eocd = p; break; } }
+    if(eocd === -1) return bytes;
+    var cdCount = u16(eocd + 10), cdOff = u32(eocd + 16);
+    var cdCommentLen = u16(eocd + 20);
+    var cdComment = bytes.slice(eocd + 22, eocd + 22 + cdCommentLen);
+    var entries = [], off = cdOff;
+    for(var e = 0; e < cdCount; e++){
+      if(u32(off) !== 0x02014b50) return bytes;
+      var nlen = u16(off + 28), elen = u16(off + 30), clen = u16(off + 32);
+      var nameBytes = bytes.slice(off + 46, off + 46 + nlen);
+      entries.push({
+        verMade: u16(off + 4), verNeed: u16(off + 6), flags: u16(off + 8), method: u16(off + 10),
+        time: u16(off + 12), date: u16(off + 14), crc: u32(off + 16), csize: u32(off + 20), usize: u32(off + 24),
+        diskStart: u16(off + 34), intAttr: u16(off + 36), extAttr: u32(off + 38), lho: u32(off + 42),
+        nameBytes: nameBytes, name: strFromBytes(nameBytes),
+        extra: bytes.slice(off + 46 + nlen, off + 46 + nlen + elen),
+        comment: bytes.slice(off + 46 + nlen + elen, off + 46 + nlen + elen + clen)
+      });
+      off += 46 + nlen + elen + clen;
+    }
+    function entryXml(idx){
+      var en = entries[idx], lh = en.lho;
+      if(u32(lh) !== 0x04034b50) return null;
+      if(en.method !== 0) return null;
+      var nlen2 = u16(lh + 26), elen2 = u16(lh + 28);
+      var ds = lh + 30 + nlen2 + elen2;
+      return { header: { verNeed: u16(lh + 4), flags: u16(lh + 6), time: u16(lh + 8), date: u16(lh + 10) }, xml: strFromBytes(bytes.slice(ds, ds + en.csize)) };
+    }
+    var si = -1, ti = -1;
+    for(var t = 0; t < entries.length; t++){
+      if(entries[t].name === "xl/worksheets/sheet1.xml") ti = t;
+      if(entries[t].name === "xl/styles.xml") si = t;
+    }
+    if(ti === -1 || si === -1) return bytes;
+    var sheet = entryXml(ti), styles = entryXml(si);
+    if(!sheet || !styles) return bytes;
+    var sXml = styles.xml;
+    var fillsM = sXml.match(/<fills count="(\d+)">/);
+    var fontsM = sXml.match(/<fonts count="(\d+)">/);
+    var xfsM = sXml.match(/<cellXfs count="(\d+)">/);
+    if(!fillsM || !fontsM || !xfsM || sXml.indexOf("</fills>") === -1 || sXml.indexOf("</fonts>") === -1 || sXml.indexOf("</cellXfs>") === -1) return bytes;
+    var newFillId = parseInt(fillsM[1], 10);
+    var newFontId = parseInt(fontsM[1], 10);
+    var newXfId = parseInt(xfsM[1], 10);
+    var bordersM = sXml.match(/<borders count="(\d+)">/);
+    if(!bordersM || sXml.indexOf("</borders>") === -1) return bytes;
+    var newBorderId = parseInt(bordersM[1], 10);
+    var plainXfId = newXfId + 1;
+    sXml = sXml.replace(/<borders count="\d+">/, '<borders count="' + (newBorderId + 1) + '">');
+    sXml = sXml.replace("</borders>", '<border><left style="thin"><color rgb="FF8C97AB"/></left><right style="thin"><color rgb="FF8C97AB"/></right><top style="thin"><color rgb="FF8C97AB"/></top><bottom style="thin"><color rgb="FF8C97AB"/></bottom><diagonal/></border></borders>');
+    sXml = sXml.replace(/<fills count="\d+">/, '<fills count="' + (newFillId + 1) + '">');
+    sXml = sXml.replace("</fills>", '<fill><patternFill patternType="solid"><fgColor rgb="FFB8C4DC"/><bgColor indexed="64"/></patternFill></fill></fills>');
+    sXml = sXml.replace(/<fonts count="\d+">/, '<fonts count="' + (newFontId + 2) + '">');
+    sXml = sXml.replace("</fonts>", '<font><b/><sz val="10"/><name val="Arial"/><family val="2"/></font>'
+      + '<font><sz val="10"/><name val="Arial"/><family val="2"/></font></fonts>');
+    sXml = sXml.replace(/<cellXfs count="\d+">/, '<cellXfs count="' + (newXfId + 2) + '">');
+    sXml = sXml.replace("</cellXfs>", '<xf numFmtId="0" fontId="' + newFontId + '" fillId="' + newFillId + '" borderId="' + newBorderId + '" xfId="0" applyFont="1" applyFill="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
+      + '<xf numFmtId="0" fontId="' + (newFontId + 1) + '" fillId="0" borderId="' + newBorderId + '" xfId="0" applyFont="1"/></cellXfs>');
+    var shXml = sheet.xml.replace(/<c r="([A-Z]+)1"(?![^>]*\bs=)/g, function(m, col){
+      return '<c r="' + col + '1" s="' + newXfId + '"';
+    });
+    shXml = shXml.replace(/<c r="([A-Z]+)(\d+)"(?![^>]*\bs=)/g, function(m, col, row){
+      return (parseInt(row, 10) >= 2) ? '<c r="' + col + row + '" s="' + plainXfId + '"' : m;
     });
     if(shXml === sheet.xml) return bytes;
     var mods = {};
@@ -3142,7 +3622,10 @@ function exportExcel(){
       ws["!pageSetup"] = meta.pageSetup;
       XLSX.utils.book_append_sheet(wb, ws, "Thread consumption");
       var style = styleNameVal().replace(/[\\\/\?\%\*\:\|\"<>]/g, "");
-      downloadXlsx(wb, (style || "Thread-Sheet") + "-Thread-Sheet.xlsx");
+      singlePatchN = OPS.length; singlePatchK = contrastGroups().length; singlePatchC = CONES.length;
+      singlePatchRowFills = {};
+      OPS.forEach(function(op, i){ var lab = opSpecialLabel(op); if(lab) singlePatchRowFills[10 + i] = specialRowColour(lab); });
+      downloadXlsx(wb, (style || "Thread-Sheet") + "-Thread-Sheet.xlsx", patchXlsxSingleStyleColors);
       setStatus("Excel exported.");
     }catch(err){
       setStatus("Ready");
@@ -3158,9 +3641,11 @@ function exportAccessoriesExcel(){
   ensureXLSX(function(){
     try{
       var wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(buildAccessoriesSheet()), "Accessories");
+      var accWs = XLSX.utils.aoa_to_sheet(buildAccessoriesSheet());
+      accWs["!cols"] = [{ wch: 28 }, { wch: 20 }, { wch: 12 }, { wch: 14 }, { wch: 10 }, { wch: 14 }, { wch: 12 }, { wch: 14 }, { wch: 14 }];
+      XLSX.utils.book_append_sheet(wb, accWs, "Accessories");
       var style = styleNameVal().replace(/[\\\/\?\%\*\:\|\"<>]/g, "");
-      downloadXlsx(wb, (style || "Thread-Sheet") + "-Accessories.xlsx");
+      downloadXlsx(wb, (style || "Thread-Sheet") + "-Accessories.xlsx", patchXlsxHeaderColors);
       setStatus("Accessories Excel exported.");
     }catch(err){
       setStatus("Ready");
