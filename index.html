@@ -1203,6 +1203,22 @@ $("opsBody").addEventListener("keydown", function(e){
     var nr = opsStepRow(ri0, e.shiftKey ? -1 : 1, rows0.length);
     if(nr === -1) return; /* first/last row: stay, do not create rows */
     focusAt(nr, ci0); /* skips locked cells, e.g. Looper % on a body-thread row */
+    /* Enter-down fast entry: landing on a Seam length / Seam qty cell
+       selects its text, so the typed number replaces it cleanly; an empty
+       seam cell first becomes 0 (same as 0 in the maths), then typing
+       replaces it. Filled values are never cleared without typing. */
+    var ae2 = document.activeElement;
+    if(ae2 && (ae2.getAttribute("data-f") === "seamLength" || ae2.getAttribute("data-f") === "seamQty")){
+      var tr2 = ae2.closest ? ae2.closest("tr") : null;
+      var id2 = tr2 ? tr2.getAttribute("data-id") : null;
+      var op2 = id2 ? OPS.filter(function(o){ return o.id === id2; })[0] : null;
+      if(op2 && ae2.value === ""){
+        commitOpField(op2, ae2.getAttribute("data-f"), "0");
+        ae2.value = "0";
+        renderTotals(); /* refresh figures + auto-save, without rebuilding rows */
+      }
+      try{ ae2.select(); }catch(err){}
+    }
     return;
   }
   if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].indexOf(e.key) === -1) return;
