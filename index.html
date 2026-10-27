@@ -98,6 +98,14 @@
   .hp-cell{background:#C9A0A0 !important}
   .hp-cell input{background:transparent !important}
   .hp-cell select{background:transparent !important}
+  /* Compact main sheet: tighter cells so the sheet fits full computer width; left columns squeezed */
+  table.ops-table th,table.ops-table td{padding:4px}
+  table.ops-table input,table.ops-table select{padding:5px}
+  table.ops-table th:nth-child(2),table.ops-table td:nth-child(2){min-width:280px}
+  table.ops-table th:nth-child(3),table.ops-table td:nth-child(3){width:110px;max-width:110px}
+  table.ops-table th:nth-child(7),table.ops-table td:nth-child(7),table.ops-table th:nth-child(14),table.ops-table td:nth-child(14),table.ops-table th:nth-child(15),table.ops-table td:nth-child(15){width:76px}
+  table.ops-table th:nth-child(8),table.ops-table td:nth-child(8),table.ops-table th:nth-child(11),table.ops-table td:nth-child(11){width:100px;max-width:100px}
+  table.ops-table th:nth-child(9),table.ops-table td:nth-child(9),table.ops-table th:nth-child(12),table.ops-table td:nth-child(12){width:84px;max-width:84px}
   .print-only{display:none}
   .no-style .colour-field{display:none}
   .folder{cursor:pointer}
@@ -155,7 +163,8 @@
   <!-- ============ HOME ============ -->
   <section class="card">
     <h2>Home</h2>
-    <div class="row">
+    <div class="row"><span class="mut">📅 Today: <b id="homeTodayDate" style="color:#1B3A5F"></b></span></div>
+    <div class="row" style="margin-top:8px">
       <label class="mut">Your name:</label>
       <input class="fi" id="homeUserName" placeholder="Your name / username" style="max-width:220px">
       <span class="mut" id="welcomeLine">Welcome to —</span>
@@ -178,6 +187,13 @@
     </div>
   </section>
 
+  <!-- HOME: Buyer folders -->
+  <section class="card" id="homeFolders">
+    <h2>📁 Buyer folders</h2>
+    <p class="sub">Buyer folder-e tap korle oi buyer-er style list dekhabe. Notun style auto oi buyer-er folder-e joma hobe.</p>
+    <div class="row" id="folderButtons"></div>
+  </section>
+
   <!-- HOME: Style list create panel -->
   <section class="card" id="homeListPanel">
     <h2 class="no-print">▼ Style list create <span id="listPanelBuyer" class="mut"></span></h2>
@@ -185,7 +201,7 @@
     <div class="row no-print">
       <div><label>Buyer-wise style list</label><select class="fi" id="listBuyerSel" style="max-width:220px"></select></div>
       <div><label>Period</label><input class="fi" id="listPeriod" type="month" style="max-width:180px"></div>
-      <div><label>Search styles</label><input class="fi" id="listSearch" placeholder="Style, buyer, item, size..." style="max-width:220px"></div>
+
       <div><label>Heading (automatic)</label><input class="fi" id="listHeading" readonly style="max-width:320px"></div>
     </div>
     <div class="row no-print" style="margin-top:8px">
@@ -313,6 +329,7 @@
   <!-- ============ SHEET TOP BAR ============ -->
   <section class="card">
     <div class="row">
+      <button class="btn btn-p" id="btnSaveSheet">SAVE</button>
       <button class="btn btn-o" id="btnBackDashboard">← Dashboard</button>
       <button class="btn btn-o" id="btnExportExcel">DOWNLOAD / SAVE EXCEL</button>
       <button class="btn btn-p" id="btnExportPdf">DOWNLOAD / SAVE PDF</button>
@@ -346,6 +363,7 @@
     </div>
     <datalist id="checkerList"></datalist>
     <datalist id="specialThreadList"><option value="Contrast"><option value="Body thread"><option value="Lurex"><option value="20/2 thread"><option value="Elastic thread"><option value="Filament"><option value="Other"></datalist>
+    <datalist id="colourDatalist"></datalist>
   </section>
 
 
@@ -751,6 +769,8 @@ function renderSpecialThreadList(){
     if(!seen[k]){ seen[k] = true; html += '<option value="' + esc(g.label) + '">'; }
   });
   dl.innerHTML = html;
+  var cdl = $("colourDatalist");
+  if(cdl){ cdl.innerHTML = styleColours().map(function(cl){ return '<option value="' + esc(cl) + '">'; }).join(""); }
 }
 function coneRowCalc(qty, perPc){
   var totalM = num(qty) * num(perPc);
@@ -821,7 +841,7 @@ function applyMachineToRow(op){
 
 /* Row colouring by special thread (item 13): one deterministic pastel shade
    per special-thread identity (type + colour). Body-only rows stay plain. */
-var SPECIAL_ROW_COLOURS = ["#E8EDF3","#E9EAF2","#E7EFF2","#ECEEF0","#E8EAF0","#EBEDEF","#E9F0F1","#EDEEF2","#E6ECF1","#EFF0F2","#E8EFF0","#ECE9F0"];
+var SPECIAL_ROW_COLOURS = ["#F8BBD0","#FFE0B2","#FFF9C4","#C8E6C9","#B2DFDB","#BBDEFB","#D1C4E9","#FFCCBC","#DCEDC8","#B2EBF2","#F0F4C3","#D7CCC8"];
 function specialRowColour(label){
   var s = String(label || "").toLowerCase();
   var h = 0;
@@ -883,6 +903,36 @@ function machineSelValue(op){
   if(names.indexOf(op.machine) !== -1) return op.machine;
   return "__custom";
 }
+/* Thread dropdown options for one slot: base types + this style's
+   contrast labels (so "Contrast BLACK" picks type + colour together) +
+   the row's own value when it is none of those (still displays). */
+function threadSelValueRaw(op, slot){
+  var t = slot === 1 ? op.thread1 : op.thread2;
+  var c = slot === 1 ? op.colour1 : op.colour2;
+  return (String(t || "").trim() + " " + String(c || "").trim()).trim();
+}
+function threadSelOptions(op, slot){
+  var base = ["Contrast", "Body thread", "Lurex", "20/2 thread", "Elastic thread", "Filament", "Other"];
+  var seen = {}, opts = [];
+  base.forEach(function(b){ seen[b.toLowerCase()] = true; opts.push(b); });
+  contrastGroups().forEach(function(g){ var k = g.label.toLowerCase(); if(!seen[k]){ seen[k] = true; opts.push(g.label); } });
+  var cur = threadSelValueRaw(op, slot);
+  if(cur && !seen[cur.toLowerCase()]) opts.push(cur);
+  return opts;
+}
+function threadSelValue(op, slot){
+  var t = String(slot === 1 ? op.thread1 : (op.thread2 || "")).trim();
+  if(!t) return "";
+  var opts = threadSelOptions(op, slot);
+  var combined = threadSelValueRaw(op, slot);
+  if(combined && opts.indexOf(combined) !== -1) return combined;
+  if(opts.indexOf(t) !== -1) return t;
+  return combined;
+}
+/* Looper % shows only for a selected special thread. For body thread (or an
+   empty slot) there is nothing to show, so the cell stays blank and locked;
+   the stored value is kept and reappears if a special thread is picked. */
+function isSpecialThreadSel(th){ var t = String(th || "").trim(); return !!t && t.toLowerCase() !== "body thread"; }
 function renderOps(){
   var keepId = null, keepF = null;
   var ae = document.activeElement;
@@ -914,12 +964,12 @@ function renderOps(){
       + '<td><input class="num' + (op.mcThread === "" || op.mcThread == null ? " req-empty" : "") + '" data-f="mcThread" value="' + esc(op.mcThread) + '"></td>'
       + '<td><input class="num' + (function(){ var q = num(op.seamQty); return q >= 10 ? " qty-red" : (q >= 2 ? " qty-warn" : ""); })() + (op.seamQty === "" || op.seamQty == null ? " req-empty" : "") + '" data-f="seamQty" value="' + esc(op.seamQty) + '"></td>'
       + '<td class="fig-big">' + s.consumption.toFixed(2) + '</td>'
-      + '<td><input data-f="thread1" list="specialThreadList" value="' + esc(op.thread1) + '"></td>'
-      + '<td class="colour-col"><select data-f="colourSel1">' + cOpts1 + '</select>' + (csv1 === "__custom" ? '<input data-f="colour1" value="' + esc(op.colour1) + '" style="margin-top:4px">' : '') + '</td>'
-      + '<td><input class="num" data-f="pct1" value="' + esc(op.pct1) + '"></td>'
-      + '<td><input data-f="thread2" list="specialThreadList" value="' + esc(op.thread2) + '"></td>'
-      + '<td class="colour-col"><select data-f="colourSel2">' + cOpts2 + '</select>' + (csv2 === "__custom" ? '<input data-f="colour2" value="' + esc(op.colour2) + '" style="margin-top:4px">' : '') + '</td>'
-      + '<td><input class="num" data-f="pct2" value="' + esc(op.pct2) + '"></td>'
+      + '<td><select data-f="threadSel1"><option value=""></option>' + threadSelOptions(op, 1).map(function(o){ return '<option value="' + esc(o) + '"' + (o === threadSelValue(op, 1) ? ' selected' : '') + '>' + esc(o) + '</option>'; }).join("") + '</select></td>'
+      + '<td class="colour-col"><input data-f="colour1" list="colourDatalist" value="' + esc(op.colour1) + '"></td>'
+      + '<td><input class="num" data-f="pct1" value="' + (isSpecialThreadSel(op.thread1) ? esc(op.pct1) : '') + '"' + (isSpecialThreadSel(op.thread1) ? '' : ' disabled style="background:#F1F3F5"') + '></td>'
+      + '<td><select data-f="threadSel2"><option value=""></option>' + threadSelOptions(op, 2).map(function(o){ return '<option value="' + esc(o) + '"' + (o === threadSelValue(op, 2) ? ' selected' : '') + '>' + esc(o) + '</option>'; }).join("") + '</select></td>'
+      + '<td class="colour-col"><input data-f="colour2" list="colourDatalist" value="' + esc(op.colour2) + '"></td>'
+      + '<td><input class="num" data-f="pct2" value="' + (isSpecialThreadSel(op.thread2) ? esc(op.pct2) : '') + '"' + (isSpecialThreadSel(op.thread2) ? '' : ' disabled style="background:#F1F3F5"') + '></td>'
       + '<td class="fig-big">' + s.body.toFixed(2) + '</td>'
       + '<td class="fig-big">' + s.special.toFixed(2) + '</td>'
       + '<td style="white-space:nowrap"><button class="btn btn-p btn-sm" data-ins="' + op.id + '" title="Insert a row below">＋</button> <button class="btn btn-d btn-sm" data-del="' + op.id + '" title="Delete this row">−</button></td></tr>';
@@ -991,6 +1041,7 @@ $("opsBody").addEventListener("input", function(e){
   if(!op) return;
   if(f === "mcThread") op.mcAuto = false; /* hand-edited Mc thread is never auto-overwritten */
   if(f === "machineSel") return; /* dropdowns commit on change, not on input */
+  if(f === "threadSel1" || f === "threadSel2") return; /* dropdowns commit on change, not on input */
   if(f === "colourSel1" || f === "colourSel2") return;
   if(f === "seamLength") { op.seamLengthRaw = inp.value; renderTotals(); return; /* numeric value updates on blur; raw text stays typable */ }
   op[f] = inp.value;
@@ -1043,6 +1094,8 @@ function opsStepRow(ri, dir, count){
 /* Commit one operations-table field to the model. Shared by the change handler
    and the Enter handler, so Enter evaluates arithmetic BEFORE moving. */
 function commitOpField(op, f, value){
+  if(f === "threadSel1") f = "thread1";
+  if(f === "threadSel2") f = "thread2";
   if(f === "seamLength"){
     var v = evalQtyExpr(value);
     if(v !== null && v >= 0){
@@ -1149,11 +1202,7 @@ $("opsBody").addEventListener("keydown", function(e){
     e.preventDefault();
     var nr = opsStepRow(ri0, e.shiftKey ? -1 : 1, rows0.length);
     if(nr === -1) return; /* first/last row: stay, do not create rows */
-    var rws = $("opsBody").querySelectorAll("tr");
-    var cs = rws[nr].querySelectorAll("input,select,button");
-    if(!cs.length) return;
-    var cc = ci0; if(cc >= cs.length) cc = cs.length - 1;
-    cs[cc].focus();
+    focusAt(nr, ci0); /* skips locked cells, e.g. Looper % on a body-thread row */
     return;
   }
   if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].indexOf(e.key) === -1) return;
@@ -1171,8 +1220,12 @@ $("opsBody").addEventListener("keydown", function(e){
     if(!cs.length) return false;
     if(c < 0) c = 0;
     if(c >= cs.length) c = cs.length - 1;
-    cs[c].focus();
-    return true;
+    /* Skip locked (disabled) cells, e.g. Looper % on a body-thread row. */
+    for(var k = 0; k < cs.length; k++){
+      var idx = (k % 2 === 0) ? c + Math.floor(k / 2) : c - Math.ceil(k / 2);
+      if(idx >= 0 && idx < cs.length && !cs[idx].disabled){ cs[idx].focus(); return true; }
+    }
+    return false;
   }
   function caretPos(el){
     try{ return el.selectionStart; }catch(err){ return null; }
@@ -1185,8 +1238,9 @@ $("opsBody").addEventListener("keydown", function(e){
       if(p === null || p > 0) return;
     }
     e.preventDefault();
-    if(ci > 0) cells[ci - 1].focus();
-    else focusAt(ri - 1, 9999);
+    var movedL = false;
+    for(var li = ci - 1; li >= 0; li--){ if(!cells[li].disabled){ cells[li].focus(); movedL = true; break; } }
+    if(!movedL) focusAt(ri - 1, 9999);
   }
   else if(e.key === "ArrowRight"){
     if(t.tagName === "INPUT"){
@@ -1194,8 +1248,9 @@ $("opsBody").addEventListener("keydown", function(e){
       if(q === null || q < t.value.length) return;
     }
     e.preventDefault();
-    if(ci < cells.length - 1) cells[ci + 1].focus();
-    else focusAt(ri + 1, 0);
+    var movedR = false;
+    for(var rj = ci + 1; rj < cells.length; rj++){ if(!cells[rj].disabled){ cells[rj].focus(); movedR = true; break; } }
+    if(!movedR) focusAt(ri + 1, 0);
   }
 });
 $("selProcess").addEventListener("change", renderOps);
@@ -1907,6 +1962,17 @@ function doAutoSave(){
   }
   return "saving";
 }
+/* Main-sheet SAVE button: the sheet already auto-saves on every edit, so
+   no button was shown before; this button saves on demand with a status
+   confirmation (same save path as auto-save, never a second copy). */
+$("btnSaveSheet").onclick = function(){
+  saveLocalDraftIfChanged();
+  if(!FB_OK){ setStatus("Offline — saved on this device only, will sync when online."); return; }
+  if(!validHeaderSilent()){ setStatus("Buyer and Style name needed before saving."); return; }
+  var r = doAutoSave();
+  if(r === "unchanged") setStatus("Already saved — nothing new to save.");
+  else setStatus("Saving…");
+};
 /* ================= Sheet check -> main list (item 18) =================
    Checking happens on the sheet. A checked style is upserted into the
    main buyer-wise list (styleList) so it appears there directly — there
@@ -2215,6 +2281,37 @@ function listConeNoteText(){
   return "Cone Rule: Color quantity below " + SETTINGS.coneThreshold + " pcs uses 2,000-meter cones; "
     + SETTINGS.coneThreshold + " pcs or above uses 4,000-meter cones.";
 }
+/* Home buyer folders: one folder per buyer (counts match the list panel's
+   period filter); tapping a folder filters the list to that buyer. */
+function renderHomeFolders(){
+  var box = $("folderButtons");
+  if(!box) return;
+  var rows = listRowsForBuyer("", false);
+  var counts = {}, order = [];
+  rows.forEach(function(it){
+    var b = (it.data && it.data.buyer) || "(No buyer)";
+    if(!counts[b]){ counts[b] = 0; order.push(b); }
+    counts[b]++;
+  });
+  var html = '<button class="btn btn-o" data-folder="">📁 All buyers (' + rows.length + ')</button>';
+  order.forEach(function(b){
+    if(b === "(No buyer)") return; /* no-buyer styles stay visible under All buyers */
+    html += ' <button class="btn btn-o" data-folder="' + esc(b) + '">📁 ' + esc(b) + ' (' + counts[b] + ')</button>';
+  });
+  box.innerHTML = html;
+}
+$("folderButtons").addEventListener("click", function(e){
+  var btn = e.target.closest ? e.target.closest("[data-folder]") : null;
+  if(!btn) return;
+  var b = btn.getAttribute("data-folder");
+  currentListBuyer = b;
+  var sel = $("listBuyerSel");
+  if(sel) sel.value = b;
+  if(b) expandedBuyers[b] = true;
+  renderStyleList();
+  var panel = $("homeListPanel");
+  if(panel && panel.scrollIntoView) panel.scrollIntoView();
+});
 function renderStyleList(){
   var buyer = currentListBuyer;
   var rows = listRowsForBuyer(buyer);
@@ -2258,6 +2355,7 @@ function renderStyleList(){
   $("listBody").innerHTML = html || '<tr><td colspan="11" class="mut">Style list is empty.</td></tr>';
   var ph = $("listPrintHeading"); if(ph) ph.textContent = $("listHeading").value;
   updateListBuyerSel();
+  renderHomeFolders();
 }
 $("listBuyerSel").addEventListener("change", function(){
   currentListBuyer = $("listBuyerSel").value;
@@ -2267,10 +2365,14 @@ $("listPeriod").addEventListener("change", function(){
   currentListPeriod = $("listPeriod").value;
   renderStyleList();
 });
-$("listSearch").addEventListener("input", function(){
-  listSearchTerm = $("listSearch").value;
-  renderStyleList();
-});
+/* Home top date: the running day's date (this device's local date). */
+function setHomeDate(){
+  var el = $("homeTodayDate");
+  if(!el) return;
+  try{ el.textContent = new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" }); }
+  catch(err){ el.textContent = new Date().toDateString(); }
+}
+setHomeDate();
 $("listBody").addEventListener("click", function(e){
   var fr = e.target.closest ? e.target.closest("tr.folder-row") : null;
   if(!fr) return;
