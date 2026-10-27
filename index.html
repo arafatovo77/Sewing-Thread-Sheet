@@ -1989,6 +1989,20 @@ function saveSheetNow(){
   if(!FB_OK){ setStatus("Offline — saved on this device only, will sync when online."); return; }
   if(!validHeaderSilent()){ setStatus("Buyer and Style name needed before saving."); return; }
   var r = doAutoSave();
+  /* SAVE also lists the style: a saved style must show in its buyer
+     folder on Home, not only in the styles node (until now only MARK AS
+     CHECKED put a style in the list). The list entry keeps its existing
+     status, so a Checked style stays Checked on re-save; a new entry is
+     listed without the checked mark. Runs even when the sheet data is
+     unchanged, so a list entry cleared with CLEAR LIST comes back on
+     SAVE. The list's period filter still applies, as before. */
+  var d = sheetData();
+  var ex = null;
+  listCache.forEach(function(it){
+    if(it.data && it.data.buyer === d.buyer && it.data.style === d.style) ex = it;
+  });
+  d.status = ex ? (ex.data.status || "listed") : "listed";
+  upsertListEntry(d);
   if(r === "unchanged") setStatus("Already saved — nothing new to save.");
   else setStatus("Saving…");
 }
