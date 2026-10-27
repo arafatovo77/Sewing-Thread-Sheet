@@ -503,6 +503,7 @@
       <tbody id="accBody"></tbody>
     </table></div>
     <div class="row" style="margin-top:8px">
+      <button class="btn btn-p" id="btnSaveSheetAcc">SAVE</button>
       <button class="btn btn-o" id="btnAddAcc">+ Add accessory row</button>
       <button class="btn btn-o" id="btnExportExcel2">Export Excel</button>
       <button class="btn btn-p" id="btnExportPdf2">DOWNLOAD ACCESSORIES PDF</button>
@@ -1978,17 +1979,21 @@ function doAutoSave(){
   }
   return "saving";
 }
-/* Main-sheet SAVE button: the sheet already auto-saves on every edit, so
-   no button was shown before; this button saves on demand with a status
-   confirmation (same save path as auto-save, never a second copy). */
-$("btnSaveSheet").onclick = function(){
+/* SAVE buttons (main sheet + accessories sheet): the sheet already
+   auto-saves on every edit, so no button was shown before; these buttons
+   save on demand with a status confirmation (same save path as auto-save,
+   never a second copy). Both sheets save the whole sheet, accessories
+   included. */
+function saveSheetNow(){
   saveLocalDraftIfChanged();
   if(!FB_OK){ setStatus("Offline — saved on this device only, will sync when online."); return; }
   if(!validHeaderSilent()){ setStatus("Buyer and Style name needed before saving."); return; }
   var r = doAutoSave();
   if(r === "unchanged") setStatus("Already saved — nothing new to save.");
   else setStatus("Saving…");
-};
+}
+$("btnSaveSheet").onclick = saveSheetNow;
+$("btnSaveSheetAcc").onclick = saveSheetNow;
 /* ================= Sheet check -> main list (item 18) =================
    Checking happens on the sheet. A checked style is upserted into the
    main buyer-wise list (styleList) so it appears there directly — there
