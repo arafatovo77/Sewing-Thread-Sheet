@@ -67,7 +67,7 @@
   @media print{
     *{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
     body{ background:#fff; }
-    nav.topnav, .subnav, .btn, #status, #pasteCard{ display:none !important; }
+    nav.topnav, .subnav, .btn, #status, #pasteCard, header{ display:none !important; }
     main{ box-shadow:none; max-width:none; padding:0; }
     .card{ box-shadow:none; page-break-inside:auto; margin:6px 0; padding:10px; }
     h2{ font-size:15px; margin:6px 0; }
@@ -559,10 +559,10 @@
   <!-- ============ CONE REQUIREMENT ============ -->
   <section class="card">
     <h2>Cone requirement</h2>
-    <p class="sub" id="coneRuleText">Cone rule: colour quantity below 2000 pcs uses 2000-meter cones; 2000 pcs or above uses 4000-meter cones. Cones = total thread ÷ cone length, rounded up when ordering. Metres = inches × 0.0254. Header order qty + extra % (default 3%) applies to body/contrast cone rows (typed or inherited); a new custom colour row with no typed qty inherits the header qty + header %; once you type its own qty, that qty is used exactly and an empty % means none (never double-added). Each cone row also has its own Extra % beside Qty: a typed % replaces the fallback for that row.</p>
+    <p class="sub" id="coneRuleText">Cone rule: colour quantity below 2000 pcs uses 2000-meter cones; 2000 pcs or above uses 4000-meter cones. Cones = total thread ÷ cone length, rounded up when ordering. Metres = inches × 0.0254. Header order qty + extra % (default 3%) applies to body/contrast cone rows (typed or inherited); a new custom colour row with no typed qty inherits the header qty + header %; once you type its own qty, that qty is used exactly and an empty % means none (never double-added). Each cone row also has its own Extra % beside Qty: a typed % replaces the fallback for that row. Cone Qty shows the quantity with extra % already added (5000 + 3% shows 5150).</p>
     <div class="tbl-wrap"><table>
       <thead><tr>
-        <th>Body colour / Thread and colour</th><th>Qty (pcs)</th><th>Extra %</th><th>Thread per pc (m)</th>
+        <th>Body colour / Thread and colour</th><th>Qty (pcs, with %)</th><th>Extra %</th><th>Thread per pc (m)</th>
         <th>Total thread (m)</th><th>Cone (m)</th><th>Cones</th><th>Cones to order</th><th></th>
       </tr></thead>
       <tbody id="coneBody"></tbody>
@@ -829,6 +829,22 @@ function conePctEff(key, rawQty){
 function coneEffQtyPct(qtyVal, pct){
   if(!pct) return num(qtyVal);
   return Math.round(num(qtyVal) * (1 + pct / 100));
+}
+/* The cone Qty box shows the qty WITH extra % already added (5000 + 3%
+   shows 5150). Typing in it sets the effective qty, so the stored raw qty
+   is back-computed (typed / (1 + pct)) — the stored raw stays %-free, so
+   the % can never compound. Blank stays blank (inherited). */
+function backRawQty(key, typed, customRow){
+  if(typed === "" || typed == null) return "";
+  var pct;
+  if(key === "body" || key.indexOf("grp:") === 0){
+    pct = conePctEff(key);
+  } else {
+    var t = customRow ? customRow.pct : "";
+    pct = (t !== "" && t != null) ? num(t) : 0;
+  }
+  if(!pct) return typed;
+  return String(Math.round(num(typed) / (1 + pct / 100)));
 }
 function bodyThreadVal(){
   var v = selVal("fBodyThread", "fBodyThreadCustom");
@@ -1688,11 +1704,12 @@ function renderCones(){
   var groups = contrastGroups();
   var sumM = 0, sumExact = 0, sumOrder = 0;
   function rowHtml(key, label, qtyVal, perPc, editableLabel, editablePerPc, delKey, extraLabel, rawQty){
-    var calc = coneRowCalc(coneEffQtyPct(qtyVal, conePctEff(key, rawQty)), perPc);
+    var effQty = coneEffQtyPct(qtyVal, conePctEff(key, rawQty));
+    var calc = coneRowCalc(effQty, perPc);
     sumM += calc.totalM; sumExact += calc.exact; sumOrder += calc.order;
     return '<tr data-cone-key="' + esc(key) + '">'
       + '<td>' + (editableLabel ? '<input data-f="colour" value="' + esc(label) + '">' + (extraLabel || "") : esc(label)) + '</td>'
-      + '<td><input class="num" data-f="qty" value="' + esc(qtyVal) + '"></td>'
+      + '<td><input class="num" data-f="qty" value="' + esc((qtyVal === "" || qtyVal == null) ? "" : effQty) + '"></td>'
       + '<td><input class="num" data-f="pct" value="' + esc(conePctTyped(key)) + '" placeholder="' + (key.indexOf("custom:") === 0 ? ((rawQty === "" || rawQty == null) ? orderPctVal() : "0") : orderPctVal()) + '"></td>'
       + '<td>' + (editablePerPc ? '<input class="num" data-f="perPc" value="' + esc(perPc) + '">' : Number(perPc).toFixed(2)) + '</td>'
       + '<td class="cone-total">' + calc.totalM.toFixed(2) + '</td>'
@@ -1727,7 +1744,7 @@ function renderCones(){
 }
 /* Recompute one cone row's calculated cells in place (no full re-render,
    so typing in a cone input never loses focus). */
-function refreshConeRow(tr){
+function refreshConeRow(tr, changedField){
   var key = tr.getAttribute("data-cone-key");
   var qtyInp = tr.querySelector('[data-f="qty"]');
   if(!qtyInp) return;
@@ -1743,9 +1760,30 @@ function refreshConeRow(tr){
     var pp = tr.querySelector('[data-f="perPc"]');
     perPc = r ? r.perPc : (pp ? pp.value : 0);
   }
-  var rawForPct = qty;
-  if(key && key.indexOf("custom:") === 0){ var rc = CONES.filter(function(x){ return "custom:" + x.id === key; })[0]; rawForPct = rc ? rc.qty : ""; }
-  var calc = coneRowCalc(coneEffQtyPct(qty, conePctEff(key, rawForPct)), perPc);
+  var eff;
+  if(changedField === "qty"){
+    /* The box already holds the effective qty the user typed; using it
+       directly never double-adds and never fights mid-typing. */
+    eff = num(qty);
+  } else {
+    /* Any other field changed (Extra %, per-pc, colour): recompute the
+       effective qty from the stored raw qty + current %, and show it. */
+    var raw, pct;
+    if(key === "body" || key.indexOf("grp:") === 0){
+      raw = coneQtyFor(key);
+      pct = conePctEff(key);
+    } else if(key && key.indexOf("custom:") === 0){
+      var rc = CONES.filter(function(x){ return "custom:" + x.id === key; })[0];
+      raw = rc ? coneQtyForCustom(rc) : "";
+      pct = conePctEff(key, rc ? rc.qty : "");
+    } else {
+      raw = qty; pct = 0;
+    }
+    eff = coneEffQtyPct(raw, pct);
+    if(raw === "" || raw == null) qtyInp.value = "";
+    else qtyInp.value = eff;
+  }
+  var calc = coneRowCalc(eff, perPc);
   function setCell(cls, val){
     var c = tr.querySelector("." + cls);
     if(!c) return;
@@ -1792,19 +1830,20 @@ $("coneBody").addEventListener("input", function(e){
   var key = tr.getAttribute("data-cone-key");
   if(!key) return;
   if(key === "body" || key.indexOf("grp:") === 0){
-    if(f === "qty") coneQtyMap[key] = inp.value;
+    if(f === "qty") coneQtyMap[key] = backRawQty(key, inp.value);
     else if(f === "pct") conePctMap[key] = inp.value;
   } else if(key.indexOf("custom:") === 0){
     var r = CONES.filter(function(x){ return "custom:" + x.id === key; })[0];
     if(!r) return;
-    r[f] = inp.value;
+    if(f === "qty") r.qty = backRawQty(key, inp.value, r);
+    else r[f] = inp.value;
     if(f === "perPc" && r.thread){
       r.thread = "";
       var ts = tr.querySelector('[data-f="threadSel"]');
       if(ts) ts.value = "";
     }
   }
-  refreshConeRow(tr);
+  refreshConeRow(tr, f);
   renderAccs(); /* accessories order totals follow the cone quantities */
 });
 /* Split-colour thread picker: picking a thread fills this row's per-pc
@@ -3303,6 +3342,7 @@ function updateConeNote(){
     + SETTINGS.coneThreshold + " pcs or more uses 4000 m cones. Body thread is calculated colour-wise. "
     + "Contrast and other special threads use the total body-colour quantity. Add colours only as you need them.";
   if(coneModeVal() === "manual") t += " (Manual cone length: " + manualConeVal() + " m.)";
+  t += " Cone Qty shows the quantity with extra % already added (5000 + 3% shows 5150).";
   $("coneRuleText").textContent = t;
   var ln = $("listConeNote");
   if(ln) ln.textContent = listConeNoteText();
@@ -4014,12 +4054,11 @@ function buildSingleStyleSheet(){
   rows.push(["ITEM", item, "", "", "", "ORDER QTY:", oq ? oq : null]);
   rows.push(["SIZE", size, "", "", "", "PREPARED BY:", preparedByVal()]);
   rows.push([]);
-  rows.push(["SL", "OPERATION DESCRIPTION", "M/C NAME", "Seam Length (Inch)", "Mc Thread (Inch)", "Seam Qty", "Consumption (Inch)", "Thread", "", "", "", "", "Body thread " + btName, "Special thread"]);
+  rows.push(["SL", "OPERATION DESCRIPTION", "M/C NAME", "Seam Length (Inch)", "Mc Thread (Inch)", "Seam Qty", "Consumption (Inch)", "Body thread " + btName, "Special thread", "Remark"]);
   OPS.forEach(function(op, i){
     var s = opSplit(op);
     rows.push([i + 1, op.name, op.machine, ncell(op.seamLength), ncell(op.mcThread), ncell(op.seamQty),
-      s.consumption, singleSheetThreadLabel(op), "", "", "", "",
-      s.body, s.special]);
+      s.consumption, s.body, s.special, singleSheetThreadLabel(op)]);
   });
   rows.push([]);
   rows.push(["Total per garment"]);
@@ -4043,7 +4082,7 @@ function buildSingleStyleSheet(){
   function coneExportRow(label, qtyVal, perPc, pct){
     var calc = coneRowCalc(coneEffQtyPct(qtyVal, pct), perPc);
     cSumM += calc.totalM; cSumExact += calc.exact; cSumOrder += calc.order;
-    rows.push(["", label, ncell(qtyVal), (ncell(perPc) == null ? null : r4(ncell(perPc))), r4(calc.totalM), calc.cone, r4(calc.exact), calc.order]);
+    rows.push(["", label, (qtyVal === "" || qtyVal == null) ? ncell(qtyVal) : ncell(coneEffQtyPct(qtyVal, pct)), (ncell(perPc) == null ? null : r4(ncell(perPc))), r4(calc.totalM), calc.cone, r4(calc.exact), calc.order]);
   }
   var t2 = totals();
   coneExportRow(bodyThreadLabel(), coneQtyFor("body"), inToM(t2.body) * (1 + allow / 100), conePctEff("body"));
@@ -4064,8 +4103,8 @@ function buildSingleStyleSheet(){
   return rows;
 }
 function buildSingleStyleSheetMeta(){
-  return { merges: [{ s: { r: 0, c: 0 }, e: { r: 0, c: 14 } }, { s: { r: 1, c: 0 }, e: { r: 1, c: 14 } }],
-    cols: [{ wch: 6 }, { wch: 46 }, { wch: 14 }, { wch: 12 }, { wch: 12 }, { wch: 10 }, { wch: 16 }, { wch: 28 }, { wch: 3 }, { wch: 3 }, { wch: 3 }, { wch: 3 }, { wch: 3 }, { wch: 3, hidden: true }, { wch: 3, hidden: true }, { wch: 3, hidden: true }],
+  return { merges: [{ s: { r: 0, c: 0 }, e: { r: 0, c: 9 } }, { s: { r: 1, c: 0 }, e: { r: 1, c: 9 } }],
+    cols: [{ wch: 6 }, { wch: 46 }, { wch: 14 }, { wch: 12 }, { wch: 12 }, { wch: 10 }, { wch: 16 }, { wch: 16 }, { wch: 16 }, { wch: 28 }],
     pageSetup: { orientation: "portrait", paperSize: 9, fitToPage: true, fitToWidth: 1, fitToHeight: 1 } };
 }
 function accRuleLabel(rule){
@@ -4534,8 +4573,8 @@ function patchXlsxSingleStyleColors(buf){
     tag("A1", X_TITLE);
     tag("A2", X_SUB);
     [4, 5, 6, 7].forEach(function(r){ tag("A" + r, X_BOLD); tag("F" + r, X_BOLD); });
-    tagRow(9, ["A", "B", "C", "D", "F", "G", "H", "M"], X_HDR);
-    tag("E9", X_MCH); tag("N9", X_SPH);
+    tagRow(9, ["A", "B", "C", "D", "F", "G", "H", "J"], X_HDR);
+    tag("E9", X_MCH); tag("I9", X_SPH);
     for(var i = 0; i < n; i++){
       var rr = 10 + i;
       tag("E" + rr, X_MCH);
@@ -4545,13 +4584,13 @@ function patchXlsxSingleStyleColors(buf){
     Object.keys(singlePatchRowFills).forEach(function(rn){
       var col = String(singlePatchRowFills[rn] || "").replace("#", "");
       if(!col || pastelXfL[col] === undefined) return;
-      tagRow(rn, ["B", "H"], pastelXfL[col]);
-      tagRow(rn, ["A", "C", "D", "F", "G", "M", "N"], pastelXfC[col]);
+      tagRow(rn, ["B", "J"], pastelXfL[col]);
+      tagRow(rn, ["A", "C", "D", "F", "G", "H", "I"], pastelXfC[col]);
     });
     for(var pi = 0; pi < n; pi++){
       var pr = 10 + pi;
-      tagRow(pr, ["B", "H"], X_PLAIN_L);
-      tagRow(pr, ["A", "C", "D", "F", "G", "M", "N"], X_PLAIN_C);
+      tagRow(pr, ["B", "J"], X_PLAIN_L);
+      tagRow(pr, ["A", "C", "D", "F", "G", "H", "I"], X_PLAIN_C);
     }
     var labelRow = 11 + n, totHdr = 12 + n, bodyRow = 13 + n, allRow = 14 + n + k;
     tag("A" + labelRow, X_BOLD);
@@ -4995,7 +5034,9 @@ function fitAndPrint(containerEl, docTitle){
   var el = containerEl, prevZoom = null, prevTitle = null;
   try{
     if(el && el.scrollHeight){
-      var z = printZoom(el.scrollHeight, 718);
+      /* Printable height is ~718px (A4 landscape minus 10mm margins);
+         target 700px so fractional rounding can never spill a 2nd page. */
+      var z = printZoom(el.scrollHeight, 700);
       if(z < 1){ prevZoom = el.style.zoom || ""; el.style.zoom = z; }
     }
   }catch(e){}
@@ -5045,8 +5086,8 @@ function buildPrintSheetHtml(){
   h += '</table>';
   var oh = rowAt(8);
   h += '<table class="ps-ops"><tr>';
-  [oh[0], oh[1], oh[2], oh[3], oh[4], oh[5], oh[6], oh[7], oh[12], oh[13]].forEach(function(t, ci){
-    h += psTh(t || "", ci === 4 ? YEL : (ci === 9 ? PEACH : HDR));
+  [oh[0], oh[1], oh[2], oh[3], oh[4], oh[5], oh[6], oh[7], oh[8], oh[9]].forEach(function(t, ci){
+    h += psTh(t || "", ci === 4 ? YEL : (ci === 8 ? PEACH : HDR));
   });
   h += '</tr>';
   for(var i = 0; i < n; i++){
@@ -5057,7 +5098,7 @@ function buildPrintSheetHtml(){
     h += psTd(orow[0], "psc", "") + psTd(orow[1], "psl", "") + psTd(orow[2], "psc", "") + psTd(orow[3], "psc", "")
       + psTd(orow[4], "psc", YEL)
       + psTd(orow[5], "psc", (num(orow[5]) > 1 ? QTYB : ""))
-      + psTd(orow[6], "psc", "") + psTd(orow[7], "psl", "") + psTd(orow[12], "psc", "") + psTd(orow[13], "psc", "");
+      + psTd(orow[6], "psc", "") + psTd(orow[7], "psc", "") + psTd(orow[8], "psc", "") + psTd(orow[9], "psl", "");
     h += '</tr>';
   }
   h += '</table>';
