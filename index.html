@@ -182,17 +182,22 @@
     body.print-sheet-only #sheetModal{display:none !important}
     body.print-sheet-only #printSheetView{display:block !important}
     body.print-sheet-only .no-print{display:none !important}
+    /* Accessories PDF: only the accessories view prints */
+    body.print-acc-only #pageHome, body.print-acc-only #page1, body.print-acc-only #page2{display:none !important}
+    body.print-acc-only #sheetModal{display:none !important}
+    body.print-acc-only #printAccView{display:block !important}
+    body.print-acc-only .no-print{display:none !important}
   }
   /* Excel-mirror print view (also used for on-screen measuring before print) */
-  #printSheetView table{border-collapse:collapse;width:100%;margin-bottom:10px}
-  #printSheetView th, #printSheetView td{border:1px solid #8C97AB;padding:3px 5px}
-  #printSheetView .ps-title{font-family:Arial;font-size:16px;font-weight:700;color:#0B8FC9;background:#C8C8C8;text-align:center;padding:6px}
-  #printSheetView .ps-sub{font-family:Cambria;font-size:14px;font-weight:700;color:#3B7D23;background:#DDEBF7;text-align:center;padding:5px;margin-bottom:8px}
-  #printSheetView .ps-sec{margin:10px 0 4px}
-  #printSheetView .psc{text-align:center}
-  #printSheetView .psl{text-align:left}
-  #printSheetView .psb{font-weight:700}
-  #printSheetView .psb12{font-size:12px}
+  #printSheetView table, #printAccView table{border-collapse:collapse;width:100%;margin-bottom:10px}
+  #printSheetView th, #printSheetView td, #printAccView th, #printAccView td{border:1px solid #8C97AB;padding:3px 5px}
+  #printSheetView .ps-title, #printAccView .ps-title{font-family:Arial;font-size:16px;font-weight:700;color:#0B8FC9;background:#C8C8C8;text-align:center;padding:6px}
+  #printSheetView .ps-sub, #printAccView .ps-sub{font-family:Cambria;font-size:14px;font-weight:700;color:#3B7D23;background:#DDEBF7;text-align:center;padding:5px;margin-bottom:8px}
+  #printSheetView .ps-sec, #printAccView .ps-sec{margin:10px 0 4px}
+  #printSheetView .psc, #printAccView .psc{text-align:center}
+  #printSheetView .psl, #printAccView .psl{text-align:left}
+  #printSheetView .psb, #printAccView .psb{font-weight:700}
+  #printSheetView .psb12, #printAccView .psb12{font-size:12px}
 </style>
 </head>
 <body>
@@ -626,6 +631,7 @@
 </main>
 <div id="sheetModal"><div id="sheetModalBack"></div><div id="sheetModalBox"><button id="sheetModalClose" title="Close">✕</button><div id="sheetModalSlot"></div></div></div>
 <div id="printSheetView" class="print-only"></div>
+<div id="printAccView" class="print-only"></div>
 <script>
 /* ================= Firebase (user's own project, browser config) ================= */
 var firebaseConfig = {
@@ -4067,14 +4073,27 @@ function accRuleLabel(rule){
   return "None";
 }
 function buildAccessoriesSheet(){
-  var rows = [["Item for sew process", "Allowance rule", "Seam length", "Seam allowance",
-    "Input unit", "Actual total (cm)", "Allowance %", "Per garment", "Order total"]];
+  var buyer = selVal("fBuyer", "fBuyerCustom"), style = styleNameVal();
+  var item = selVal("fItem", "fItemCustom"), size = selVal("fSize", "fSizeCustom");
+  var fit = $("fFit").value, date = $("fDate").value || "", oq = orderQtyNum();
+  var rows = [];
+  rows.push(["GMS COMPOSITE KNITTING KNITTING IND LTD."]);
+  rows.push(["Accessories Consumption"]);
+  rows.push([]);
+  rows.push(["BUYER", buyer, "ORDER QTY:", oq ? oq : null]);
+  rows.push(["STYLE", style, "FIT:", fit]);
+  rows.push(["ITEM", item, "DATE:", date]);
+  rows.push(["SIZE", size, "", ""]);
+  rows.push([]);
+  rows.push(["Accessories consumption (order qty " + (oq ? oq : "-") + ")"]);
+  rows.push(["Item", "Allowance rule", "Actual total (cm)", "Allowance %", "Per garment (cm)", "Order total (cm)"]);
+  var sumPg = 0, sumOd = 0;
   ACCS.forEach(function(row){
     var c = accCompute(row);
-    rows.push([row.item, accRuleLabel(c.rule), ncell(row.seamLength),
-      ncell(row.seamAllowance), row.unit, r4(c.cm), r4(c.pct),
-      r4(c.perGarment), r4(c.order)]);
+    sumPg += c.perGarment; sumOd += c.order;
+    rows.push([row.item, accRuleLabel(c.rule), r4(c.cm), r4(c.pct), r4(c.perGarment), r4(c.order)]);
   });
+  rows.push(["Total", "", "", "", r4(sumPg), r4(sumOd)]);
   return rows;
 }
 function buildStyleListSheet(){
@@ -4740,6 +4759,163 @@ function patchXlsxHeaderColors(buf){
     return bytes;
   }
 }
+/* Accessories Excel colours for the JJA-sample layout (title/subtitle/info/heading/header/data/total). Row numbers follow buildAccessoriesSheet; n comes from accPatchN, set by exportAccessoriesExcel. Same zip-patch pattern as the other patches. */
+var accPatchN = 0;
+function patchXlsxAccessoriesColors(buf){
+  var bytes = buf instanceof Uint8Array ? buf : new Uint8Array(buf);
+  function u16(o){ return bytes[o] | (bytes[o + 1] << 8); }
+  function u32(o){ return (bytes[o] | (bytes[o + 1] << 8) | (bytes[o + 2] << 16) | (bytes[o + 3] << 24)) >>> 0; }
+  function strFromBytes(b){ var s = ""; for(var i = 0; i < b.length; i++) s += String.fromCharCode(b[i]); return s; }
+  function bytesFromStr(str){ var b = new Uint8Array(str.length); for(var i = 0; i < b.length; i++) b[i] = str.charCodeAt(i) & 0xFF; return b; }
+  try{
+    var eocd = -1;
+    for(var p = bytes.length - 22; p >= 0; p--){ if(u32(p) === 0x06054b50){ eocd = p; break; } }
+    if(eocd === -1) return bytes;
+    var cdCount = u16(eocd + 10), cdOff = u32(eocd + 16);
+    var cdCommentLen = u16(eocd + 20);
+    var cdComment = bytes.slice(eocd + 22, eocd + 22 + cdCommentLen);
+    var entries = [], off = cdOff;
+    for(var e = 0; e < cdCount; e++){
+      if(u32(off) !== 0x02014b50) return bytes;
+      var nlen = u16(off + 28), elen = u16(off + 30), clen = u16(off + 32);
+      var nameBytes = bytes.slice(off + 46, off + 46 + nlen);
+      entries.push({
+        verMade: u16(off + 4), verNeed: u16(off + 6), flags: u16(off + 8), method: u16(off + 10),
+        time: u16(off + 12), date: u16(off + 14), crc: u32(off + 16), csize: u32(off + 20), usize: u32(off + 24),
+        diskStart: u16(off + 34), intAttr: u16(off + 36), extAttr: u32(off + 38), lho: u32(off + 42),
+        nameBytes: nameBytes, name: strFromBytes(nameBytes),
+        extra: bytes.slice(off + 46 + nlen, off + 46 + nlen + elen),
+        comment: bytes.slice(off + 46 + nlen + elen, off + 46 + nlen + elen + clen)
+      });
+      off += 46 + nlen + elen + clen;
+    }
+    function entryXml(idx){
+      var en = entries[idx], lh = en.lho;
+      if(u32(lh) !== 0x04034b50) return null;
+      if(en.method !== 0) return null;
+      var nlen2 = u16(lh + 26), elen2 = u16(lh + 28);
+      var ds = lh + 30 + nlen2 + elen2;
+      return { header: { verNeed: u16(lh + 4), flags: u16(lh + 6), time: u16(lh + 8), date: u16(lh + 10) }, xml: strFromBytes(bytes.slice(ds, ds + en.csize)) };
+    }
+    var si = -1, ti = -1;
+    for(var t = 0; t < entries.length; t++){
+      if(entries[t].name === "xl/worksheets/sheet1.xml") ti = t;
+      if(entries[t].name === "xl/styles.xml") si = t;
+    }
+    if(ti === -1 || si === -1) return bytes;
+    var sheet = entryXml(ti), styles = entryXml(si);
+    if(!sheet || !styles) return bytes;
+    var sXml = styles.xml;
+    var fillsM = sXml.match(/<fills count="(\d+)">/);
+    var fontsM = sXml.match(/<fonts count="(\d+)">/);
+    var xfsM = sXml.match(/<cellXfs count="(\d+)">/);
+    if(!fillsM || !fontsM || !xfsM || sXml.indexOf("</fills>") === -1 || sXml.indexOf("</fonts>") === -1 || sXml.indexOf("</cellXfs>") === -1) return bytes;
+    var newFillId = parseInt(fillsM[1], 10);
+    var newFontId = parseInt(fontsM[1], 10);
+    var newXfId = parseInt(xfsM[1], 10);
+    var bordersM = sXml.match(/<borders count="(\d+)">/);
+    if(!bordersM || sXml.indexOf("</borders>") === -1) return bytes;
+    var newBorderId = parseInt(bordersM[1], 10);
+    sXml = sXml.replace(/<borders count="\d+">/, '<borders count="' + (newBorderId + 1) + '">');
+    sXml = sXml.replace("</borders>", '<border><left style="thin"><color rgb="FF8C97AB"/></left><right style="thin"><color rgb="FF8C97AB"/></right><top style="thin"><color rgb="FF8C97AB"/></top><bottom style="thin"><color rgb="FF8C97AB"/></bottom><diagonal/></border></borders>');
+    sXml = sXml.replace(/<fills count="\d+">/, '<fills count="' + (newFillId + 4) + '">');
+    sXml = sXml.replace("</fills>", '<fill><patternFill patternType="solid"><fgColor rgb="FFC8C8C8"/><bgColor indexed="64"/></patternFill></fill>'
+      + '<fill><patternFill patternType="solid"><fgColor rgb="FFDDEBF7"/><bgColor indexed="64"/></patternFill></fill>'
+      + '<fill><patternFill patternType="solid"><fgColor rgb="FFB8C4DC"/><bgColor indexed="64"/></patternFill></fill>'
+      + '<fill><patternFill patternType="solid"><fgColor rgb="FF92D050"/><bgColor indexed="64"/></patternFill></fill></fills>');
+    sXml = sXml.replace(/<fonts count="\d+">/, '<fonts count="' + (newFontId + 4) + '">');
+    sXml = sXml.replace("</fonts>", '<font><b/><sz val="16"/><color rgb="FF0B8FC9"/><name val="Arial"/><family val="2"/></font>'
+      + '<font><b/><sz val="14"/><color rgb="FF3B7D23"/><name val="Cambria"/><family val="2"/></font>'
+      + '<font><b/><sz val="10"/><name val="Arial"/><family val="2"/></font>'
+      + '<font><sz val="10"/><name val="Arial"/><family val="2"/></font></fonts>');
+    var X_TITLE = newXfId, X_SUB = newXfId + 1, X_INFOB = newXfId + 2, X_INFOP = newXfId + 3,
+      X_HDR = newXfId + 4, X_DATAL = newXfId + 5, X_DATAC = newXfId + 6, X_TOTL = newXfId + 7, X_TOTG = newXfId + 8;
+    sXml = sXml.replace(/<cellXfs count="\d+">/, '<cellXfs count="' + (newXfId + 9) + '">');
+    sXml = sXml.replace("</cellXfs>", '<xf numFmtId="0" fontId="' + newFontId + '" fillId="' + newFillId + '" borderId="' + newBorderId + '" xfId="0" applyFont="1" applyFill="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
+      + '<xf numFmtId="0" fontId="' + (newFontId + 1) + '" fillId="' + (newFillId + 1) + '" borderId="' + newBorderId + '" xfId="0" applyFont="1" applyFill="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
+      + '<xf numFmtId="0" fontId="' + (newFontId + 2) + '" fillId="0" borderId="' + newBorderId + '" xfId="0" applyFont="1"/></xf>'
+      + '<xf numFmtId="0" fontId="' + (newFontId + 3) + '" fillId="0" borderId="' + newBorderId + '" xfId="0" applyFont="1"/></xf>'
+      + '<xf numFmtId="0" fontId="' + (newFontId + 2) + '" fillId="' + (newFillId + 2) + '" borderId="' + newBorderId + '" xfId="0" applyFont="1" applyFill="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
+      + '<xf numFmtId="0" fontId="' + (newFontId + 3) + '" fillId="0" borderId="' + newBorderId + '" xfId="0" applyFont="1"/></xf>'
+      + '<xf numFmtId="0" fontId="' + (newFontId + 3) + '" fillId="0" borderId="' + newBorderId + '" xfId="0" applyFont="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
+      + '<xf numFmtId="0" fontId="' + (newFontId + 2) + '" fillId="0" borderId="' + newBorderId + '" xfId="0" applyFont="1"/></xf>'
+      + '<xf numFmtId="0" fontId="' + (newFontId + 2) + '" fillId="' + (newFillId + 3) + '" borderId="' + newBorderId + '" xfId="0" applyFont="1" applyFill="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf></cellXfs>');
+    function tag(ref, xf){
+      var re = new RegExp('<c r="' + ref + '"(?![^>]*\\bs=)');
+      shXml = shXml.replace(re, '<c r="' + ref + '" s="' + xf + '"');
+    }
+    function tagRow(row, cols, xf){ cols.forEach(function(cc){ tag(cc + row, xf); }); }
+    var shXml = sheet.xml;
+    tag("A1", X_TITLE);
+    tag("A2", X_SUB);
+    [4, 5, 6, 7].forEach(function(rr){ tagRow(rr, ["A", "C"], X_INFOB); tagRow(rr, ["B", "D"], X_INFOP); });
+    tag("A9", X_INFOB);
+    tagRow(10, ["A", "B", "C", "D", "E", "F"], X_HDR);
+    var n = accPatchN;
+    for(var i = 0; i < n; i++){
+      var dr = 11 + i;
+      tagRow(dr, ["A", "B"], X_DATAL); tagRow(dr, ["C", "D", "E", "F"], X_DATAC);
+    }
+    var tr = 11 + n;
+    tag("A" + tr, X_TOTL); tagRow(tr, ["B", "C", "D"], X_TOTL); tagRow(tr, ["E", "F"], X_TOTG);
+    shXml = shXml.replace(/<row r="1"(?=[\s>])(?![^>]*\bht=)/, '<row r="1" ht="26" customHeight="1"');
+    shXml = shXml.replace(/<row r="2"(?=[\s>])(?![^>]*\bht=)/, '<row r="2" ht="22" customHeight="1"');
+    if(shXml === sheet.xml) return bytes;
+    var mods = {};
+    mods[ti] = { bytes: bytesFromStr(shXml), header: sheet.header };
+    mods[si] = { bytes: bytesFromStr(sXml), header: styles.header };
+    var parts = [], total = 0, newLhos = [];
+    function push(b){ parts.push(b); total += b.length; }
+    function hdr16(v){ var a = new Uint8Array(2); a[0] = v & 0xFF; a[1] = (v >> 8) & 0xFF; return a; }
+    function hdr32(v){ var a = new Uint8Array(4); a[0] = v & 0xFF; a[1] = (v >> 8) & 0xFF; a[2] = (v >> 16) & 0xFF; a[3] = (v >> 24) & 0xFF; return a; }
+    for(var i = 0; i < entries.length; i++){
+      var en = entries[i];
+      newLhos.push(total);
+      if(mods[i]){
+        var nb = mods[i].bytes, h = new Uint8Array(30), ncrc = crc32Bytes(nb);
+        h.set(hdr32(0x04034b50), 0); h.set(hdr16(mods[i].header.verNeed), 4); h.set(hdr16(mods[i].header.flags), 6);
+        h.set(hdr16(mods[i].header.time), 8); h.set(hdr16(mods[i].header.date), 10); h.set(hdr32(ncrc), 14);
+        h.set(hdr32(nb.length), 18); h.set(hdr32(nb.length), 22);
+        h.set(hdr16(en.nameBytes.length), 26); h.set(hdr16(en.extra.length), 28);
+        push(h); push(en.nameBytes); push(en.extra); push(nb);
+      } else {
+        var oLh = en.lho;
+        var oNlen = u16(oLh + 26), oElen = u16(oLh + 28);
+        var oDataStart = oLh + 30 + oNlen + oElen;
+        push(bytes.slice(oLh, oDataStart + en.csize));
+      }
+    }
+    var cdStart = total;
+    for(var j = 0; j < entries.length; j++){
+      var ej = entries[j];
+      var mod = mods[j];
+      var nb2 = mod ? mod.bytes : null;
+      var ch = new Uint8Array(46);
+      ch.set(hdr32(0x02014b50), 0); ch.set(hdr16(ej.verMade), 4); ch.set(hdr16(ej.verNeed), 6);
+      ch.set(hdr16(ej.flags), 8); ch.set(hdr16(mod ? 0 : ej.method), 10);
+      ch.set(hdr16(ej.time), 12); ch.set(hdr16(ej.date), 14);
+      ch.set(hdr32(mod ? crc32Bytes(nb2) : ej.crc), 16);
+      ch.set(hdr32(mod ? nb2.length : ej.csize), 20);
+      ch.set(hdr32(mod ? nb2.length : ej.usize), 24);
+      ch.set(hdr16(ej.nameBytes.length), 28); ch.set(hdr16(ej.extra.length), 30); ch.set(hdr16(ej.comment.length), 32);
+      ch.set(hdr16(ej.diskStart), 34); ch.set(hdr16(ej.intAttr), 36); ch.set(hdr32(ej.extAttr), 38);
+      ch.set(hdr32(newLhos[j]), 42);
+      push(ch); push(ej.nameBytes); push(ej.extra); push(ej.comment);
+    }
+    var cdSize = total - cdStart;
+    var eo = new Uint8Array(22);
+    eo.set(hdr32(0x06054b50), 0); eo.set(hdr16(0), 4); eo.set(hdr16(0), 6);
+    eo.set(hdr16(entries.length), 8); eo.set(hdr16(entries.length), 10);
+    eo.set(hdr32(cdSize), 12); eo.set(hdr32(cdStart), 16); eo.set(hdr16(cdComment.length), 20);
+    push(eo); push(cdComment);
+    var out = new Uint8Array(total);
+    var at = 0;
+    for(var k = 0; k < parts.length; k++){ out.set(parts[k], at); at += parts[k].length; }
+    return out;
+  }catch(err){
+    return bytes;
+  }
+}
 function downloadXlsx(wb, filename, extraPatch){
   var out = XLSX.write(wb, { bookType: "xlsx", type: "array" });
   var patched = patchXlsxPageSetup(out);
@@ -4784,10 +4960,12 @@ function exportAccessoriesExcel(){
     try{
       var wb = XLSX.utils.book_new();
       var accWs = XLSX.utils.aoa_to_sheet(buildAccessoriesSheet());
-      accWs["!cols"] = [{ wch: 28 }, { wch: 20 }, { wch: 12 }, { wch: 14 }, { wch: 10 }, { wch: 14 }, { wch: 12 }, { wch: 14 }, { wch: 14 }];
+      accWs["!cols"] = [{ wch: 28 }, { wch: 22 }, { wch: 16 }, { wch: 12 }, { wch: 16 }, { wch: 16 }];
+      accWs["!merges"] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 5 } }, { s: { r: 1, c: 0 }, e: { r: 1, c: 5 } }];
       XLSX.utils.book_append_sheet(wb, accWs, "Accessories");
       var style = styleNameVal().replace(/[\\\/\?\%\*\:\|\"<>]/g, "");
-      downloadXlsx(wb, (style || "Thread-Sheet") + "-Accessories.xlsx", patchXlsxHeaderColors);
+      accPatchN = ACCS.length;
+      downloadXlsx(wb, (style || "Thread-Sheet") + "-Accessories.xlsx", patchXlsxAccessoriesColors);
       setStatus("Accessories Excel exported.");
     }catch(err){
       setStatus("Ready");
@@ -4969,7 +5147,61 @@ $("btnExportPdf").onclick = function(){
   fitAndPrint(pv, docTitle);
   setTimeout(done, 30000);
 };
-$("btnExportPdf2").onclick = function(){ fitAndPrint($("page2")); };
+/* ============ ACCESSORIES PDF PRINT VIEW (JJA sample format) ============ */
+/* Standalone accessories report: title + info + accessories table + total,
+   same layout as the style PDF's accessories section, scaled to one page. */
+function buildPrintAccHtml(){
+  var buyer = selVal("fBuyer", "fBuyerCustom"), style = styleNameVal();
+  var item = selVal("fItem", "fItemCustom"), size = selVal("fSize", "fSizeCustom");
+  var fit = $("fFit").value, date = $("fDate").value || "";
+  var oqText = orderQtyNum() ? String(orderQtyNum()) : "-";
+  var HDR = "#B8C4DC";
+  function trimAccPct(v){
+    var s = Number(v).toFixed(2);
+    return s.replace(/\.?0+$/, "") || "0";
+  }
+  function infoRow(a, av, b, bv){
+    return '<tr><td class="psb">' + psVal(a) + '</td><td>' + psVal(av) + '</td><td class="psb">' + psVal(b) + '</td><td>' + psVal(bv) + '</td></tr>';
+  }
+  var h = "";
+  h += '<div class="ps-title">GMS COMPOSITE KNITTING KNITTING IND LTD.</div>';
+  h += '<div class="ps-sub">Accessories Consumption</div>';
+  h += '<table class="ps-info">';
+  h += infoRow("BUYER", buyer, "ORDER QTY", orderQtyNum() ? orderQtyNum() : "");
+  h += infoRow("STYLE", style, "FIT", fit);
+  h += infoRow("ITEM", item, "DATE", date);
+  h += infoRow("SIZE", size, "", "");
+  h += '</table>';
+  h += '<div class="ps-sec psb">Accessories consumption (order qty ' + esc(oqText) + ')</div>';
+  h += '<table class="ps-acc"><tr>';
+  ["Item", "Allowance rule", "Actual total (cm)", "Allowance %", "Per garment (cm)", "Order total (cm)"].forEach(function(t){ h += psTh(t, HDR); });
+  h += '</tr>';
+  var sumPg = 0, sumOd = 0;
+  ACCS.forEach(function(r){
+    var c = accCompute(r);
+    sumPg += c.perGarment; sumOd += c.order;
+    h += '<tr><td class="psl">' + esc(r.item || "") + '</td><td class="psl">' + esc(accRuleLabel(c.rule)) + '</td>'
+      + '<td class="psc">' + c.cm.toFixed(2) + '</td><td class="psc">' + trimAccPct(c.pct) + '</td>'
+      + '<td class="psc">' + c.perGarment.toFixed(2) + '</td><td class="psc">' + c.order.toFixed(2) + '</td></tr>';
+  });
+  h += '<tr><td class="psl psb">Total</td><td></td><td></td><td></td>'
+    + '<td class="psc psb">' + sumPg.toFixed(2) + '</td><td class="psc psb">' + sumOd.toFixed(2) + '</td></tr>';
+  h += '</table>';
+  return h;
+}
+$("btnExportPdf2").onclick = function(){
+  var st = styleNameVal().replace(/[\\\/\?\%\*\:\|\"<>]/g, "");
+  var docTitle = (st || "Thread-Sheet") + "-Accessories";
+  var pv = $("printAccView");
+  pv.innerHTML = buildPrintAccHtml();
+  document.body.classList.add("print-acc-only");
+  pv.style.display = "block";
+  function done(){ document.body.classList.remove("print-acc-only"); pv.style.display = ""; }
+  var old = window.onafterprint;
+  window.onafterprint = function(){ done(); window.onafterprint = old; };
+  fitAndPrint(pv, docTitle);
+  setTimeout(done, 30000);
+};
 </script>
 </body>
 </html>
