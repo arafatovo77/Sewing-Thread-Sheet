@@ -245,8 +245,8 @@
     </div>
   </section>
 
-  <!-- HOME: Dashboard (merged: Dashboard + Home are one page now) -->
-  <section class="card">
+  <!-- HOME: Dashboard (merged: Dashboard + Home are one page now) — hidden per user 2026-10-28: the Dashboard option is not shown; pending checks now have their own folder below -->
+  <section class="card" style="display:none">
     <h2>Dashboard</h2>
     <p class="sub">Live summary from the saved Firebase data.</p>
     <div class="stats" id="dashCards">
@@ -265,11 +265,23 @@
     </div>
   </section>
 
+  <!-- HOME: Style Check folder (pending checks only; hidden when empty) -->
+  <section class="card" id="checkFolderSection" style="display:none">
+    <h2>📁 Style Check <span id="checkFolderCount" class="mut"></span></h2>
+    <p class="sub">Submit for check kora style ekhane thakbe. Checked / Final save hole buyer folder-e chole jabe.</p>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>BUYER</th><th>STYLE</th><th>ITEM</th><th>SIZE</th><th class="no-print"></th></tr></thead>
+      <tbody id="checkFolderBody"></tbody>
+    </table></div>
+  </section>
+
   <!-- HOME: Buyer folders -->
   <section class="card" id="homeFolders">
     <h2>📁 Buyer folders</h2>
     <p class="sub">Buyer folder-e tap korle oi buyer-er style list dekhabe. Notun style auto oi buyer-er folder-e joma hobe.</p>
     <div class="row" id="folderButtons"></div>
+    <h3 style="margin:10px 0 6px;font-size:15px">Buyer-wise accessories</h3>
+    <div class="row" id="accFolderButtons"></div>
   </section>
 
   <!-- HOME: Style list create panel -->
@@ -294,6 +306,16 @@
     <div class="tbl-wrap"><table>
       <thead><tr><th>SL</th><th>BUYER</th><th>STYLE</th><th>ITEM</th><th>SIZE</th><th>Date</th><th>MTR</th><th>BODY THREAD</th><th>SPECIAL THREAD</th><th>REMARKS</th><th>PROCESS</th><th class="no-print" id="listDeleteTh">DELETE</th><th class="no-print">MERCHANT</th><th class="no-print">COPY</th></tr></thead>
       <tbody id="listBody"></tbody>
+    </table></div>
+  </section>
+
+  <!-- HOME: Buyer-wise accessories list -->
+  <section class="card" id="accListPanel">
+    <h2>▼ Buyer-wise accessories <span id="accPanelBuyer" class="mut"></span></h2>
+    <p class="sub">Oi buyer-er style gulor accessories. OPEN dile style-ta Accessories tab-e khulbe.</p>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>BUYER</th><th>STYLE</th><th>ITEM</th><th>SIZE</th><th>ACCESSORY</th><th>RULE</th><th>SEAM LEN</th><th>ALLOWANCE</th><th>UNIT</th><th>CM</th><th>ALLOW %</th><th>PER GARM. (cm)</th><th>ORDER TOTAL (cm)</th><th class="no-print"></th></tr></thead>
+      <tbody id="accListBody"></tbody>
     </table></div>
   </section>
 
@@ -532,7 +554,7 @@
   <!-- ============ CONE REQUIREMENT ============ -->
   <section class="card">
     <h2>Cone requirement</h2>
-    <p class="sub" id="coneRuleText">Cone rule: colour quantity below 2000 pcs uses 2000-meter cones; 2000 pcs or above uses 4000-meter cones. Cones = total thread ÷ cone length, rounded up when ordering. Metres = inches × 0.0254. Header order qty + extra % (default 3%) applies to body/contrast cone rows (typed or inherited); custom colour rows use their qty exactly, no extra %. Each cone row also has its own Extra % beside Qty: a typed % replaces the header % for that row; empty keeps the old rule (header % for body/contrast, none for custom).</p>
+    <p class="sub" id="coneRuleText">Cone rule: colour quantity below 2000 pcs uses 2000-meter cones; 2000 pcs or above uses 4000-meter cones. Cones = total thread ÷ cone length, rounded up when ordering. Metres = inches × 0.0254. Header order qty + extra % (default 3%) applies to body/contrast cone rows (typed or inherited); a new custom colour row with no typed qty inherits the header qty + header %; once you type its own qty, that qty is used exactly and an empty % means none (never double-added). Each cone row also has its own Extra % beside Qty: a typed % replaces the fallback for that row.</p>
     <div class="tbl-wrap"><table>
       <thead><tr>
         <th>Body colour / Thread and colour</th><th>Qty (pcs)</th><th>Extra %</th><th>Thread per pc (m)</th>
@@ -667,6 +689,7 @@ var coneQtyMap = {}; /* cone qty overrides, keyed "body" / "grp:<key>" */
 var conePctMap = {}; /* per-row cone extra % overrides, keyed "body" / "grp:<key>" (custom rows keep pct on the row) */
 var currentStyleKey = ""; /* selected saved-style key ("" = none) */
 var currentListBuyer = ""; /* "" = all buyers in Style list panel */
+var currentAccBuyer = ""; /* "" = all buyers in Accessories list panel */
 var currentListPeriod = ""; /* "" = all periods in Style list panel (YYYY-MM) */
 var listSearchTerm = ""; /* Home folder search text */
 var expandedBuyers = {}; /* buyer -> false when its Home folder is collapsed; default open */
@@ -783,16 +806,19 @@ function coneEffQty(qtyVal, applyPct){
   return Math.round(num(qtyVal) * (1 + orderPctVal() / 100));
 }
 /* Per-row cone extra %: a typed % for the row wins; empty falls back to
-   the header % for body/contrast rows and to 0 for custom rows. */
+   the header % for body/contrast rows, and for custom rows to the header %
+   while no qty is typed yet, else 0 (a typed qty is taken exactly, never
+   double-added). */
 function conePctTyped(key){
   if(key === "body" || key.indexOf("grp:") === 0) return Object.prototype.hasOwnProperty.call(conePctMap, key) ? conePctMap[key] : "";
   if(key.indexOf("custom:") === 0){ var r = CONES.filter(function(x){ return "custom:" + x.id === key; })[0]; return r ? (r.pct == null ? "" : r.pct) : ""; }
   return "";
 }
-function conePctEff(key){
+function conePctEff(key, rawQty){
   var t = conePctTyped(key);
   if(t !== "" && t != null) return num(t);
-  return key.indexOf("custom:") === 0 ? 0 : orderPctVal();
+  if(key.indexOf("custom:") === 0) return (rawQty === "" || rawQty == null) ? orderPctVal() : 0;
+  return orderPctVal();
 }
 function coneEffQtyPct(qtyVal, pct){
   if(!pct) return num(qtyVal);
@@ -856,6 +882,11 @@ function coneQtyFor(key){
   if(Object.prototype.hasOwnProperty.call(coneQtyMap, key)) return coneQtyMap[key];
   var oq = orderQtyNum();
   return oq ? String(oq) : "";
+}
+/* A new colour row with no typed qty inherits the header order qty,
+   exactly like the body/contrast rows (coneQtyFor). */
+function coneQtyForCustom(r){
+  return (r.qty !== "" && r.qty != null) ? String(r.qty) : (orderQtyNum() ? String(orderQtyNum()) : "");
 }
 /* Special-thread groups present in the operations: keyed by type + colour,
    with their total special inches. Body thread slots are excluded. */
@@ -1650,13 +1681,13 @@ function renderCones(){
   var bodyPerPc = inToM(t.body) * (1 + allow / 100);
   var groups = contrastGroups();
   var sumM = 0, sumExact = 0, sumOrder = 0;
-  function rowHtml(key, label, qtyVal, perPc, editableLabel, editablePerPc, delKey, extraLabel){
-    var calc = coneRowCalc(coneEffQtyPct(qtyVal, conePctEff(key)), perPc);
+  function rowHtml(key, label, qtyVal, perPc, editableLabel, editablePerPc, delKey, extraLabel, rawQty){
+    var calc = coneRowCalc(coneEffQtyPct(qtyVal, conePctEff(key, rawQty)), perPc);
     sumM += calc.totalM; sumExact += calc.exact; sumOrder += calc.order;
     return '<tr data-cone-key="' + esc(key) + '">'
       + '<td>' + (editableLabel ? '<input data-f="colour" value="' + esc(label) + '">' + (extraLabel || "") : esc(label)) + '</td>'
       + '<td><input class="num" data-f="qty" value="' + esc(qtyVal) + '"></td>'
-      + '<td><input class="num" data-f="pct" value="' + esc(conePctTyped(key)) + '" placeholder="' + (key.indexOf("custom:") === 0 ? "0" : orderPctVal()) + '"></td>'
+      + '<td><input class="num" data-f="pct" value="' + esc(conePctTyped(key)) + '" placeholder="' + (key.indexOf("custom:") === 0 ? ((rawQty === "" || rawQty == null) ? orderPctVal() : "0") : orderPctVal()) + '"></td>'
       + '<td>' + (editablePerPc ? '<input class="num" data-f="perPc" value="' + esc(perPc) + '">' : Number(perPc).toFixed(2)) + '</td>'
       + '<td class="cone-total">' + calc.totalM.toFixed(2) + '</td>'
       + '<td class="cone-len">' + calc.cone + '</td>'
@@ -1677,7 +1708,7 @@ function renderCones(){
         thOpts += '<option value="grp:' + esc(g.key) + '"' + (r.thread === "grp:" + g.key ? " selected" : "") + ">" + esc(g.label) + "</option>";
       });
       var thSel = '<select data-f="threadSel" style="margin-top:4px">' + thOpts + "</select>";
-      html += rowHtml("custom:" + r.id, r.colour, r.qty, r.perPc, true, true, r.id, thSel);
+      html += rowHtml("custom:" + r.id, r.colour, coneQtyForCustom(r), r.perPc, true, true, r.id, thSel, r.qty);
     });
   } else {
     html += '<tr><td colspan="8" class="mut">Select a style name first to add colour rows.</td></tr>';
@@ -1706,7 +1737,9 @@ function refreshConeRow(tr){
     var pp = tr.querySelector('[data-f="perPc"]');
     perPc = r ? r.perPc : (pp ? pp.value : 0);
   }
-  var calc = coneRowCalc(coneEffQtyPct(qty, conePctEff(key)), perPc);
+  var rawForPct = qty;
+  if(key && key.indexOf("custom:") === 0){ var rc = CONES.filter(function(x){ return "custom:" + x.id === key; })[0]; rawForPct = rc ? rc.qty : ""; }
+  var calc = coneRowCalc(coneEffQtyPct(qty, conePctEff(key, rawForPct)), perPc);
   function setCell(cls, val){
     var c = tr.querySelector("." + cls);
     if(!c) return;
@@ -2307,7 +2340,35 @@ function onCheckQueueChange(){
   renderBell();
   renderSheetCheckStatus();
   renderStyleList();
+  renderCheckFolder();
 }
+/* Style Check folder: pending checkQueue items only (Checked items leave
+   it); the whole folder hides when nothing is pending. */
+function renderCheckFolder(){
+  var sec = $("checkFolderSection"), body = $("checkFolderBody");
+  if(!sec || !body) return;
+  var pend = checkCache.filter(function(it){ return it.data && it.data.status !== "Checked"; });
+  if(!pend.length){ sec.style.display = "none"; body.innerHTML = ""; return; }
+  sec.style.display = "";
+  var cnt = $("checkFolderCount"); if(cnt) cnt.textContent = "(" + pend.length + ")";
+  body.innerHTML = pend.map(function(it){
+    var d = it.data || {};
+    return '<tr><td>' + esc(d.buyer || "") + '</td><td>' + esc(d.style || "") + '</td><td>' + esc(d.item || "") + '</td><td>' + esc(d.size || "") + '</td>'
+      + '<td class="no-print"><button class="btn btn-p btn-sm" data-open-check="' + esc(it.key) + '">OPEN</button></td></tr>';
+  }).join("");
+}
+function openCheckStyle(key){
+  var it = checkCache.filter(function(x){ return x.key === key; })[0];
+  if(!it || !it.data) return;
+  currentStyleKey = "";
+  loadSheet(it.data);
+  showPage(2); showSub("thread");
+}
+$("checkFolderBody").addEventListener("click", function(e){
+  var btn = e.target.closest ? e.target.closest("[data-open-check]") : null;
+  if(!btn) return;
+  openCheckStyle(btn.getAttribute("data-open-check"));
+});
 function upsertListEntry(d){
   var existing = null;
   listCache.forEach(function(it){
@@ -2711,7 +2772,85 @@ function renderHomeFolders(){
     html += ' <button class="btn btn-o" data-folder="' + esc(b) + '">📁 ' + esc(b) + ' (' + counts[b] + ')</button>';
   });
   box.innerHTML = html;
+  /* Accessories folders: same buyers, but only styles that have accessory
+     rows (all months — no period filter on the accessories list yet). */
+  var accRows = listRowsForBuyer("", true);
+  var accCounts = {}, accOrder = [], accTotal = 0;
+  accRows.forEach(function(it){
+    var d = it.data || {};
+    if(!(d.accs && d.accs.length)) return;
+    var b = d.buyer || "(No buyer)";
+    if(b === "(No buyer)") return;
+    if(!accCounts[b]){ accCounts[b] = 0; accOrder.push(b); }
+    accCounts[b]++; accTotal++;
+  });
+  var accBox = $("accFolderButtons");
+  if(accBox){
+    var accHtml = '<button class="btn btn-o" data-acc-folder="">📁 All buyers (' + accTotal + ')</button>';
+    accOrder.forEach(function(b){ accHtml += ' <button class="btn btn-o" data-acc-folder="' + esc(b) + '">📁 ' + esc(b) + ' (' + accCounts[b] + ')</button>'; });
+    accBox.innerHTML = accHtml;
+  }
 }
+$("accFolderButtons").addEventListener("click", function(e){
+  var btn = e.target.closest ? e.target.closest("[data-acc-folder]") : null;
+  if(!btn) return;
+  currentAccBuyer = btn.getAttribute("data-acc-folder");
+  renderAccList();
+});
+function accRuleLabelFull(row){
+  if(row.rule === "twill") return "Back twill tape +7%";
+  if(row.rule === "elastic") return "Elastic tape +10%";
+  if(row.rule === "waist") return "Waist belt elastic +7% +7%";
+  if(row.rule === "other") return "Other (" + (row.customPct === "" || row.customPct == null ? "?" : row.customPct) + "%)";
+  if(row.rule === "none") return "No allowance";
+  return "Auto from name";
+}
+/* Order qty of one saved style, mirroring totalBodyQty() but from that
+   style's own data (the sheet's totalBodyQty reads the open sheet). */
+function styleBodyQty(d){
+  var bq = "";
+  if(d.coneQtys && d.coneQtys.body !== "" && d.coneQtys.body != null) bq = d.coneQtys.body;
+  else if(d.orderQty !== "" && d.orderQty != null) bq = d.orderQty;
+  if(bq !== "" && num(bq) > 0) return num(bq);
+  var q = 0; (d.cones || []).forEach(function(r){ q += num(r.qty); }); return q;
+}
+function renderAccList(){
+  var body = $("accListBody"); if(!body) return;
+  var rows = listRowsForBuyer(currentAccBuyer, true);
+  var pb = $("accPanelBuyer"); if(pb) pb.textContent = currentAccBuyer ? "— " + currentAccBuyer : "";
+  var html = "";
+  rows.forEach(function(it){
+    var d = it.data || {};
+    (d.accs || []).forEach(function(r){
+      var len = num(r.seamLength) + num(r.seamAllowance);
+      var cm = r.unit === "inch" ? len * 2.54 : len;
+      var rule = accRuleFor(r.item, r.rule);
+      var pg = cm * accFactor(rule, r.customPct);
+      var od = pg * styleBodyQty(d);
+      html += '<tr><td>' + esc(d.buyer || "") + '</td><td>' + esc(d.style || "") + '</td><td>' + esc(d.item || "") + '</td><td>' + esc(d.size || "") + '</td>'
+        + '<td>' + esc(r.item || "") + '</td><td>' + esc(accRuleLabelFull(r)) + '</td>'
+        + '<td>' + esc(r.seamLength) + '</td><td>' + esc(r.seamAllowance) + '</td><td>' + esc(r.unit || "") + '</td>'
+        + '<td>' + cm.toFixed(2) + '</td><td>' + accPct(rule, r.customPct).toFixed(2) + "%" + '</td>'
+        + '<td>' + pg.toFixed(2) + '</td><td>' + od.toFixed(2) + '</td>'
+        + '<td class="no-print"><button class="btn btn-p btn-sm" data-open-acc="' + esc(it.key) + '">OPEN</button></td></tr>';
+    });
+  });
+  body.innerHTML = html || '<tr><td colspan="14" class="mut">No accessories yet for this buyer.</td></tr>';
+}
+function openAccStyle(key){
+  var all = listRowsForBuyer("", true);
+  for(var i = 0; i < all.length; i++) if(all[i].key === key){
+    currentStyleKey = key;
+    loadSheet(all[i].data);
+    showPage(2); showSub("acc");
+    return;
+  }
+}
+$("accListBody").addEventListener("click", function(e){
+  var btn = e.target.closest ? e.target.closest("[data-open-acc]") : null;
+  if(!btn) return;
+  openAccStyle(btn.getAttribute("data-open-acc"));
+});
 $("folderButtons").addEventListener("click", function(e){
   var btn = e.target.closest ? e.target.closest("[data-folder]") : null;
   if(!btn) return;
@@ -2772,6 +2911,7 @@ function renderStyleList(){
   var ph = $("listPrintHeading"); if(ph) ph.textContent = $("listHeading").value;
   updateListBuyerSel();
   renderHomeFolders();
+  renderAccList();
 }
 $("listBuyerSel").addEventListener("change", function(){
   currentListBuyer = $("listBuyerSel").value;
@@ -3909,7 +4049,7 @@ function buildSingleStyleSheet(){
       var gl = gg ? gg.label : r.thread.slice(4);
       lbl = lbl ? gl + " — " + lbl : gl;
     }
-    coneExportRow(lbl, r.qty, r.perPc, conePctEff("custom:" + r.id));
+    coneExportRow(lbl, coneQtyForCustom(r), r.perPc, conePctEff("custom:" + r.id, r.qty));
   });
   rows.push(["", "Total", "", "", r4(cSumM), "", r4(cSumExact), cSumOrder]);
   return rows;
@@ -4713,10 +4853,14 @@ function buildPrintSheetHtml(){
   h += '<div class="ps-title">' + esc(rows[0] ? rows[0][0] : "") + '</div>';
   h += '<div class="ps-sub">' + esc(rows[1] ? rows[1][0] : "") + '</div>';
   h += '<table class="ps-info">';
-  for(var r = 3; r <= 6; r++){
-    var ir = rowAt(r);
-    h += '<tr><td class="psb">' + psVal(ir[0]) + '</td><td>' + psVal(ir[1]) + '</td><td class="psb">' + psVal(ir[5]) + '</td><td>' + psVal(ir[6]) + '</td></tr>';
+  var iBuyer = rowAt(3), iStyle = rowAt(4), iItem = rowAt(5), iSize = rowAt(6);
+  function infoRow(a, av, b, bv){
+    return '<tr><td class="psb">' + psVal(a) + '</td><td>' + psVal(av) + '</td><td class="psb">' + psVal(b) + '</td><td>' + psVal(bv) + '</td></tr>';
   }
+  h += infoRow("BUYER", iBuyer[1], "ORDER QTY", iItem[6]);
+  h += infoRow("STYLE", iStyle[1], "FIT", iBuyer[6]);
+  h += infoRow("ITEM", iItem[1], "DATE", iStyle[6]);
+  h += infoRow("SIZE", iSize[1], "", "");
   h += '</table>';
   var oh = rowAt(8);
   h += '<table class="ps-ops"><tr>';
@@ -4752,6 +4896,36 @@ function buildPrintSheetHtml(){
   h += totRow(rowAt(12 + n), false);
   for(var j = 0; j < k; j++) h += totRow(rowAt(13 + n + j), false);
   h += totRow(rowAt(13 + n + k), true);
+  h += '</table>';
+  /* Accessories consumption — as in the JJA sample PDF (heading carries
+     the header order qty, "-" when blank). */
+  function accRuleName(rule){
+    if(rule === "twill") return "Back twill tape";
+    if(rule === "elastic") return "Elastic tape";
+    if(rule === "waist") return "Waist belt elastic";
+    if(rule === "other") return "Other (custom %)";
+    if(rule === "none") return "No allowance";
+    return "Auto from name";
+  }
+  function trimNum(v){
+    var s = Number(v).toFixed(2);
+    return s.replace(/\.?0+$/, "") || "0";
+  }
+  var oqText = orderQtyNum() ? String(orderQtyNum()) : "-";
+  h += '<div class="ps-sec psb">Accessories consumption (order qty ' + esc(oqText) + ')</div>';
+  h += '<table class="ps-acc"><tr>';
+  ["Item", "Allowance rule", "Actual total (cm)", "Allowance %", "Per garment (cm)", "Order total (cm)"].forEach(function(t){ h += psTh(t, HDR); });
+  h += '</tr>';
+  var accSumPg = 0, accSumOd = 0;
+  ACCS.forEach(function(r){
+    var c = accCompute(r);
+    accSumPg += c.perGarment; accSumOd += c.order;
+    h += '<tr><td class="psl">' + esc(r.item || "") + '</td><td class="psl">' + esc(accRuleName(c.rule)) + '</td>'
+      + '<td class="psc">' + c.cm.toFixed(2) + '</td><td class="psc">' + trimNum(c.pct) + '</td>'
+      + '<td class="psc">' + c.perGarment.toFixed(2) + '</td><td class="psc">' + c.order.toFixed(2) + '</td></tr>';
+  });
+  h += '<tr><td class="psl psb">Total</td><td></td><td></td><td></td>'
+    + '<td class="psc psb">' + accSumPg.toFixed(2) + '</td><td class="psc psb">' + accSumOd.toFixed(2) + '</td></tr>';
   h += '</table>';
   h += '<div class="ps-sec psb">' + psVal(rowAt(15 + n + k)[0]) + '</div>';
   var ch = rowAt(16 + n + k);
