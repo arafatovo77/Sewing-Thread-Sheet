@@ -3815,7 +3815,10 @@ function hideLoginScreen(){ var ls = $("loginScreen"); if(ls) ls.style.display =
 function applyRoleUI(){
   var admin = isAdmin();
   var ap = $("adminPanelSection"); if(ap) ap.style.display = admin ? "" : "none";
-  var nav = $("navPage1"); if(nav) nav.textContent = admin ? "Admin Panel" : "Dashboard";
+  /* Team (non-admin) users used to see a "Dashboard" button that opened an
+     empty page (page1 holds only the Admin Panel, hidden from them).
+     Removed per user 2026-10-28: the button is hidden for non-admins. */
+  var nav = $("navPage1"); if(nav){ nav.textContent = "Admin Panel"; nav.style.display = admin ? "" : "none"; }
   var nu = $("navUser"); if(nu) nu.textContent = currentUser ? (currentUser.name + (admin ? " (Admin)" : "")) : "";
   var lo = $("btnLogout"); if(lo) lo.style.display = currentUser ? "" : "none";
   if(currentUser){
