@@ -79,6 +79,7 @@
 
   .topnav{background:#fff;max-width:none;margin:0;padding:10px 16px;display:flex;gap:8px;flex-wrap:wrap;box-shadow:0 2px 16px rgba(27,58,95,.10)}
   .topnav .btn{flex:1 1 200px}
+  #btnLogout{flex:0 0 auto;margin-left:auto;padding:6px 10px;font-size:13px}
   .subnav .btn{flex:1 1 140px}
   .mtr{background:#D9EAD3 !important;font-weight:700}
   .hide-allow .allow-col{display:none}
@@ -117,6 +118,13 @@
     body.print-list-only .no-print{display:none !important}
     body.print-list-only .print-only{display:block !important}
     body.print-list-only #homeListPanel th:nth-child(6), body.print-list-only #homeListPanel td:nth-child(6){display:none !important}
+    body.print-send-only .card{display:none !important}
+    body.print-send-only #sendListPanel{display:block !important}
+    body.print-send-only #pageHome{display:block !important}
+    body.print-send-only #page1, body.print-send-only #page2{display:none !important}
+    body.print-send-only .no-print{display:none !important}
+    body.print-send-only .print-only{display:block !important}
+    body.print-send-only #sendListPanel th:nth-child(6), body.print-send-only #sendListPanel td:nth-child(6){display:none !important}
     body.print-machine-only .card{display:none !important}
     body.print-machine-only #machinePrintWrap{display:block !important}
     body.print-machine-only #page1{display:block !important}
@@ -171,59 +179,10 @@
     </div>
     <div class="row" style="margin-top:8px">
       <button class="btn btn-p" id="btnOpenReport">OPEN CONSUMPTION REPORT</button>
-      <button class="btn btn-o" id="btnHomeLogout">Logout</button>
     </div>
   </section>
 
-  <!-- HOME: Dashboard counts -->
-  <section class="card">
-    <h2>Dashboard counts</h2>
-    <div class="stats">
-      <div class="stat"><b id="homeCountStyles">0</b><span>Styles saved</span></div>
-      <div class="stat"><b id="homeCountPending">0</b><span>Pending checks</span></div>
-      <div class="stat"><b id="homeCountChecked">0</b><span>Checked</span></div>
-      <div class="stat"><b id="homeCountStd">0</b><span>Standards</span></div>
-      <div class="stat"><b id="homeCountList">0</b><span>Style list</span></div>
-    </div>
-  </section>
-
-  <!-- HOME: Buyer folders -->
-  <section class="card" id="homeFolders">
-    <h2>📁 Buyer folders</h2>
-    <p class="sub">Buyer folder-e tap korle oi buyer-er style list dekhabe. Notun style auto oi buyer-er folder-e joma hobe.</p>
-    <div class="row" id="folderButtons"></div>
-  </section>
-
-  <!-- HOME: Style list create panel -->
-  <section class="card" id="homeListPanel">
-    <h2 class="no-print">▼ Style list create <span id="listPanelBuyer" class="mut"></span></h2>
-    <p class="sub no-print">Add the current completed style to the list. It shows Buyer, Style, Item, Size, Date, total meter, Body and Special Thread, Process, following the Merchant list Excel demo format.</p>
-    <div class="row no-print">
-      <div><label>Buyer-wise style list</label><select class="fi" id="listBuyerSel" style="max-width:220px"></select></div>
-      <div><label>Period</label><input class="fi" id="listPeriod" type="month" style="max-width:180px"></div>
-
-      <div><label>Heading (automatic)</label><input class="fi" id="listHeading" readonly style="max-width:320px"></div>
-    </div>
-    <div class="row no-print" style="margin-top:8px">
-      <button class="btn btn-o" id="btnListExcel">DOWNLOAD / SAVE LIST EXCEL</button>
-      <button class="btn btn-p" id="btnListPdf">DOWNLOAD / SAVE LIST PDF</button>
-      <button class="btn btn-d" id="btnClearList">CLEAR LIST</button>
-    </div>
-    <div class="print-only" id="listPrintTitle" style="font-weight:700">GMS COMPOSITE KNITTING KNITTING IND LTD.</div>
-    <div class="print-only" id="listPrintHeading" style="font-weight:700"></div>
-    <p class="sub" id="listConeNote" style="margin-top:8px"></p>
-    <div class="tbl-wrap"><table>
-      <thead><tr><th>SL</th><th>BUYER</th><th>STYLE</th><th>ITEM</th><th>SIZE</th><th>Date</th><th>MTR</th><th>BODY THREAD</th><th>SPECIAL THREAD</th><th>REMARKS</th><th>PROCESS</th></tr></thead>
-      <tbody id="listBody"></tbody>
-    </table></div>
-  </section>
-
-  </div>
-
-  <div id="page1" style="display:none">
-
-
-  <!-- ============ DASHBOARD ============ -->
+  <!-- HOME: Dashboard (merged: Dashboard + Home are one page now) -->
   <section class="card">
     <h2>Dashboard</h2>
     <p class="sub">Live summary from the saved Firebase data.</p>
@@ -242,6 +201,63 @@
       <button class="btn btn-o" id="btnDashRefresh">Refresh dashboard</button>
     </div>
   </section>
+
+  <!-- HOME: Buyer folders -->
+  <section class="card" id="homeFolders">
+    <h2>📁 Buyer folders</h2>
+    <p class="sub">Buyer folder-e tap korle oi buyer-er style list dekhabe. Notun style auto oi buyer-er folder-e joma hobe.</p>
+    <div class="row" id="folderButtons"></div>
+  </section>
+
+  <!-- HOME: Style list create panel -->
+  <section class="card" id="homeListPanel">
+    <h2 class="no-print">▼ Style list create <span id="listPanelBuyer" class="mut"></span></h2>
+    <p class="sub no-print">Add the current completed style to the list. It shows Buyer, Style, Item, Size, Date, total meter, Body and Special Thread, Process, following the Merchant list Excel demo format.</p>
+    <div class="row no-print">
+      <div><label>Buyer-wise style list</label><select class="fi" id="listBuyerSel" style="max-width:220px"></select></div>
+      <div><label>Period</label><input class="fi" id="listPeriod" type="month" style="max-width:180px"></div>
+      <div><label>Search</label><input class="fi" id="listSearchInput" placeholder="Buyer / style / item / size" style="max-width:260px"></div>
+
+      <div><label>Heading (automatic)</label><input class="fi" id="listHeading" readonly style="max-width:320px"></div>
+    </div>
+    <div class="row no-print" style="margin-top:8px">
+      <button class="btn btn-o" id="btnListExcel">DOWNLOAD / SAVE LIST EXCEL</button>
+      <button class="btn btn-p" id="btnListPdf">DOWNLOAD / SAVE LIST PDF</button>
+      <button class="btn btn-d" id="btnClearList">CLEAR LIST</button>
+    </div>
+    <div class="print-only" id="listPrintTitle" style="font-weight:700">GMS COMPOSITE KNITTING KNITTING IND LTD.</div>
+    <div class="print-only" id="listPrintHeading" style="font-weight:700"></div>
+    <p class="sub" id="listConeNote" style="margin-top:8px"></p>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>SL</th><th>BUYER</th><th>STYLE</th><th>ITEM</th><th>SIZE</th><th>Date</th><th>MTR</th><th>BODY THREAD</th><th>SPECIAL THREAD</th><th>REMARKS</th><th>PROCESS</th><th class="no-print" id="listDeleteTh">DELETE</th></tr></thead>
+      <tbody id="listBody"></tbody>
+    </table></div>
+  </section>
+
+  <!-- HOME: Merchant send list (Option 2: only added styles export for merchant mail) -->
+  <section class="card" id="sendListPanel">
+    <h2 class="no-print">✉️ Merchant list <span id="sendListCount" class="mut"></span></h2>
+    <p class="sub no-print">Running style theke ADD TO MERCHANT LIST dile ekhane joma hobe. Export-e sudhu ei list-er style guloi thakbe — sob archive thakbe na. Export korle ager list niche Saved old lists-e save thakbe, ar ekhane notun khali list ashbe.</p>
+    <div class="row no-print" style="margin-top:8px">
+      <button class="btn btn-o" id="btnSendExcel">DOWNLOAD / SAVE MERCHANT LIST EXCEL</button>
+      <button class="btn btn-p" id="btnSendPdf">DOWNLOAD / SAVE MERCHANT LIST PDF</button>
+      <button class="btn btn-d" id="btnClearSend">CLEAR SEND LIST</button>
+    </div>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>SL</th><th>BUYER</th><th>STYLE</th><th>ITEM</th><th>SIZE</th><th>Date</th><th>MTR</th><th>BODY THREAD</th><th>SPECIAL THREAD</th><th>REMARKS</th><th>PROCESS</th><th class="no-print">REMOVE</th></tr></thead>
+      <tbody id="sendBody"></tbody>
+    </table></div>
+    <h3 class="no-print" style="margin:14px 0 6px;font-size:15px">Saved old lists</h3>
+    <p class="sub no-print">Export korle ager list ekhane save thakbe, ar upore notun khali list ashbe. Purono list abar chaile EXCEL chaple file paben, RESTORE chaple abar working list-e ashbe.</p>
+    <div class="tbl-wrap no-print"><table>
+      <thead><tr><th>Date</th><th>Styles</th><th></th></tr></thead>
+      <tbody id="histBody"></tbody>
+    </table></div>
+  </section>
+
+  </div>
+
+  <div id="page1" style="display:none">
 
 
   <!-- ============ ADMIN PANEL ============ -->
@@ -330,7 +346,7 @@
   <section class="card">
     <div class="row">
       <button class="btn btn-p" id="btnSaveSheet">SAVE</button>
-      <button class="btn btn-o" id="btnBackDashboard">← Dashboard</button>
+      <button class="btn btn-o" id="btnBackDashboard">← Home</button>
       <button class="btn btn-o" id="btnExportExcel">DOWNLOAD / SAVE EXCEL</button>
       <button class="btn btn-p" id="btnExportPdf">DOWNLOAD / SAVE PDF</button>
       <button class="btn btn-o" id="btnSaveTo">DOWNLOAD SHEET JSON</button>
@@ -339,6 +355,7 @@
       <button class="btn btn-o" id="btnNewSheet">New sheet</button>
       <button class="btn btn-o" id="btnPasteGoto">PASTE FROM EXCEL</button>
       <button class="btn btn-o" id="btnAddToList">ADD CURRENT STYLE TO LIST</button>
+      <button class="btn btn-o" id="btnAddToSendList">ADD TO MERCHANT LIST</button>
       <button class="btn btn-o" id="btnUndo">Undo</button>
       <button class="btn btn-o" id="bellBtn">🔔 <span id="bellCount">0</span> pending</button>
     </div>
@@ -556,6 +573,8 @@ var ACCS = [];       /* accessory rows */
 var checkCache = []; /* checkQueue snapshots (newest first) */
 var stdCache = [];   /* standards snapshots */
 var listCache = [];  /* styleList snapshots */
+var sendCache = [];  /* sendList snapshots (merchant list) */
+var histCache = [];  /* sendHistory snapshots (saved old merchant lists) */
 var stylesCache = [];/* styles (drafts) snapshots */
 var checkersCache = []; /* admin/checkers snapshots: {key, name} */
 var usersCache = []; /* login users snapshots: {key, name, role, approved} (never passwords) */
@@ -2163,7 +2182,7 @@ $("btnPasteGoto").onclick = function(){
   if(el && el.scrollIntoView) el.scrollIntoView();
   $("pasteBox").focus();
 };
-$("btnBackDashboard").onclick = function(){ showPage(1); };
+$("btnBackDashboard").onclick = function(){ showPage("home"); };
 $("btnOpenReport").onclick = function(){ showPage(2); showSub("thread"); };
 /* Buyer-wise list: click a style row to open that style on the sheet (this
    replaces the removed style-name dropdown as the way to open a saved style).
@@ -2180,13 +2199,38 @@ function openListStyle(key){
   loadSheet(it.data);
   showPage(2); showSub("thread");
 }
+function deleteSavedStyle(key){
+  if(!isAdmin()){ alert("Only admin can delete a saved style."); return; }
+  var found = null;
+  [listCache, stdCache, stylesCache, checkCache].forEach(function(cache){
+    if(found) return;
+    (cache || []).forEach(function(it){ if(it.key === key) found = it.data; });
+  });
+  if(!found){ alert("Style not found."); return; }
+  if(!confirm("Delete style '" + (found.style || "") + "' (" + (found.buyer || "") + ")?\nIt will be removed from the style list, drafts and standards.")) return;
+  if(!FB_OK){ alert("Firebase is not connected (offline?)."); return; }
+  var jobs = [];
+  function drop(cache, node){
+    (cache || []).forEach(function(it){
+      if(it.data && it.data.buyer === found.buyer && it.data.style === found.style) jobs.push(fbDB.ref(SHEET + "/" + node + "/" + it.key).remove());
+    });
+  }
+  drop(stylesCache, "styles");
+  drop(listCache, "styleList");
+  drop(stdCache, "standards");
+  drop(checkCache, "checkQueue");
+  if(!jobs.length){ alert("Style not found."); return; }
+  Promise.all(jobs).then(function(){ setStatus("Style deleted."); })
+    .catch(function(e){ alert("Delete failed: " + e.message); });
+}
 $("listBody").addEventListener("click", function(e){
+  var del = e.target.closest ? e.target.closest("[data-del-key]") : null;
+  if(del){ deleteSavedStyle(del.getAttribute("data-del-key")); return; }
   if(e.target.closest && e.target.closest("[data-open-key]")) return; /* OPEN button handles itself */
   var tr = e.target.closest ? e.target.closest("tr[data-key]") : null;
   if(!tr) return;
   openListStyle(tr.getAttribute("data-key"));
 });
-$("btnHomeLogout").onclick = logout;
 $("homeUserName").addEventListener("input", function(){
   $("welcomeLine").textContent = "Welcome to " + ($("homeUserName").value.trim() || "—");
 });
@@ -2354,8 +2398,8 @@ $("folderButtons").addEventListener("click", function(e){
 });
 function renderStyleList(){
   var buyer = currentListBuyer;
-  var rows = listRowsForBuyer(buyer);
   var q = (listSearchTerm || "").trim().toLowerCase();
+  var rows = listRowsForBuyer(buyer, !!q); /* searching bypasses the period filter, so any month's style is found */
   if(q){
     rows = rows.filter(function(it){
       var d = it.data || {};
@@ -2374,7 +2418,7 @@ function renderStyleList(){
   order.forEach(function(b){
     var items = groups[b];
     var open = q ? true : (expandedBuyers[b] !== false);
-    html += '<tr class="folder-row" data-folder="' + esc(b) + '"><td colspan="11"><span>' + (open ? "▼" : "▶") + '</span> ' + esc(b || "(No buyer)") + ' <span class="mut">(' + items.length + ' styles)</span></td></tr>';
+    html += '<tr class="folder-row" data-folder="' + esc(b) + '"><td colspan="12"><span>' + (open ? "▼" : "▶") + '</span> ' + esc(b || "(No buyer)") + ' <span class="mut">(' + items.length + ' styles)</span></td></tr>';
     if(!open) return;
     items.forEach(function(it, j){
       var d = it.data || {};
@@ -2389,16 +2433,22 @@ function renderStyleList(){
         + '<td>' + esc(body) + '</td>'
         + '<td>' + spec + '</td>'
         + '<td>' + esc(d.remark || "") + '</td>'
-        + '<td>' + proc + '</td></tr>';
+        + '<td>' + proc + '</td>'
+        + (isAdmin() ? '<td class="no-print"><button class="btn btn-d btn-sm" data-del-key="' + esc(it.key) + '">DELETE</button></td>' : '') + '</tr>';
     });
   });
-  $("listBody").innerHTML = html || '<tr><td colspan="11" class="mut">Style list is empty.</td></tr>';
+  var ldt = $("listDeleteTh"); if(ldt) ldt.style.display = isAdmin() ? "" : "none";
+  $("listBody").innerHTML = html || '<tr><td colspan="12" class="mut">Style list is empty.</td></tr>';
   var ph = $("listPrintHeading"); if(ph) ph.textContent = $("listHeading").value;
   updateListBuyerSel();
   renderHomeFolders();
 }
 $("listBuyerSel").addEventListener("change", function(){
   currentListBuyer = $("listBuyerSel").value;
+  renderStyleList();
+});
+$("listSearchInput").addEventListener("input", function(){
+  listSearchTerm = this.value;
   renderStyleList();
 });
 $("listPeriod").addEventListener("change", function(){
@@ -2483,6 +2533,193 @@ $("btnListPdf").onclick = function(){
   setTimeout(done, 2000);
 };
 
+/* ============ MERCHANT SEND LIST (Option 2) ============ */
+function sendRowsSorted(){
+  return sendCache.slice().sort(function(a, b){ return (a.data.updatedAt || 0) - (b.data.updatedAt || 0); });
+}
+function renderSendList(){
+  var rows = sendRowsSorted();
+  var el = $("sendListCount"); if(el) el.textContent = rows.length ? "(" + rows.length + " styles)" : "";
+  var html = "";
+  rows.forEach(function(it, j){
+    var d = it.data || {};
+    var m = listRowMetres(d);
+    var body = "BODY THREAD--" + m.body;
+    var spec = m.groups.map(function(g){ return esc(g.label + "-" + g.m); }).join("<br>");
+    var proc = (d.ops || []).map(function(op){ return op.name || ""; }).filter(function(n){ return !!n; }).slice(0, 3).map(function(n){ return esc(n); }).join("<br>");
+    html += '<tr data-key="' + esc(it.key) + '" style="cursor:pointer" title="Click to open"><td>' + (j + 1) + '</td><td>' + esc(d.buyer) + '</td><td><button class="btn btn-p btn-sm" data-send-open="' + esc(it.key) + '">OPEN</button> ' + esc(d.style) + '</td>'
+      + '<td>' + esc(d.item) + '</td><td>' + esc(d.size) + '</td><td>' + esc(entryDate(d)) + '</td>'
+      + '<td class="mtr">' + m.total + '</td>'
+      + '<td>' + esc(body) + '</td>'
+      + '<td>' + spec + '</td>'
+      + '<td>' + esc(d.remark || "") + '</td>'
+      + '<td>' + proc + '</td>'
+      + '<td class="no-print"><button class="btn btn-d btn-sm" data-send-remove="' + esc(it.key) + '">✕</button></td></tr>';
+  });
+  $("sendBody").innerHTML = html || '<tr><td colspan="12" class="mut">Merchant list is empty. Sheet theke ADD TO MERCHANT LIST dile ekhane joma hobe.</td></tr>';
+}
+$("sendBody").addEventListener("click", function(e){
+  var rm = e.target.closest ? e.target.closest("[data-send-remove]") : null;
+  if(rm){
+    if(!FB_OK) return;
+    fbDB.ref(SHEET + "/sendList/" + rm.getAttribute("data-send-remove")).remove();
+    return;
+  }
+  var tr = e.target.closest ? e.target.closest("tr[data-key]") : null;
+  if(!tr) return;
+  var it = sendCache.filter(function(x){ return x.key === tr.getAttribute("data-key"); })[0];
+  if(!it) return;
+  currentStyleKey = tr.getAttribute("data-key");
+  loadSheet(it.data);
+  showPage(2); showSub("thread");
+});
+function addCurrentToSendList(){
+  if(!validHeader()) return;
+  var d = sheetData(); d.status = "send"; d.remark = "";
+  if(!FB_OK){ alert("Firebase is not connected (offline?). The style is kept only on this device for now."); return; }
+  var existing = null;
+  sendCache.forEach(function(it){ if(it.data && it.data.buyer === d.buyer && it.data.style === d.style) existing = it; });
+  if(existing){ fbDB.ref(SHEET + "/sendList/" + existing.key).set(d); }
+  else { fbDB.ref(SHEET + "/sendList").push(d); }
+  setStatus("Added to merchant list.");
+}
+$("btnAddToSendList").onclick = function(){ addCurrentToSendList(); };
+function buildSendListSheetFrom(items){
+  var rows = [];
+  rows.push(["GMS COMPOSITE KNITTING KNITTING IND LTD."]);
+  rows.push(["MERCHANT THREAD CONSUMPTION LIST"]);
+  rows.push([listConeNoteText()]);
+  rows.push(["SL", "BUYER", "STYLE", "ITEM", "SIZE", "MTR", "BODY THREAD", "SPECIAL THREAD", "REMARKS", "PROCESS"]);
+  (items || []).forEach(function(d, i){
+    d = d || {};
+    var m = listRowMetres(d);
+    rows.push([i + 1, d.buyer || "", d.style || "", d.item || "", d.size || "", m.total,
+      "BODY THREAD--" + m.body,
+      m.groups.map(function(g){ return g.label + "-" + g.m; }).join("\n"),
+      d.remark || "",
+      (d.ops || []).map(function(op){ return op.name || ""; }).filter(function(n){ return !!n; }).slice(0, 3).join("\n")]);
+  });
+  return rows;
+}
+function buildSendListSheet(){ return buildSendListSheetFrom(sendRowsSorted().map(function(it){ return it.data; })); }
+function sendSheetHeights(datas){
+  var heights = [{}, {}, {}, {}];
+  (datas || []).forEach(function(d){
+    var g = listRowMetres(d || {}).groups.length;
+    var pc = Math.min(((d || {}).ops || []).length, 3);
+    heights.push({ hpt: 15 * Math.max(1, g, pc) });
+  });
+  return heights;
+}
+function fmtDateTime(ts){
+  var d = new Date(ts || 0);
+  var mo = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  var hh = d.getHours(), mm = d.getMinutes();
+  return d.getDate() + " " + mo[d.getMonth()] + " " + d.getFullYear() + ", " + (hh < 10 ? "0" + hh : hh) + ":" + (mm < 10 ? "0" + mm : mm);
+}
+function fmtDateFile(ts){
+  var d = new Date(ts || 0);
+  var m = d.getMonth() + 1, dd = d.getDate();
+  return d.getFullYear() + "-" + (m < 10 ? "0" + m : m) + "-" + (dd < 10 ? "0" + dd : dd);
+}
+function renderSendHistory(){
+  var rows = (histCache || []).slice().sort(function(a, b){ return (b.data.exportedAt || 0) - (a.data.exportedAt || 0); });
+  var html = "";
+  rows.forEach(function(it){
+    var d = it.data || {};
+    html += '<tr><td>' + esc(fmtDateTime(d.exportedAt)) + '</td><td>' + (d.count || (d.items || []).length) + ' styles</td>'
+      + '<td><button class="btn btn-o btn-sm" data-hist-excel="' + esc(it.key) + '">EXCEL</button> '
+      + '<button class="btn btn-p btn-sm" data-hist-restore="' + esc(it.key) + '">RESTORE</button> '
+      + '<button class="btn btn-d btn-sm" data-hist-del="' + esc(it.key) + '">✕</button></td></tr>';
+  });
+  $("histBody").innerHTML = html || '<tr><td colspan="3" class="mut">No saved old lists yet.</td></tr>';
+}
+$("histBody").addEventListener("click", function(e){
+  var ex = e.target.closest ? e.target.closest("[data-hist-excel]") : null;
+  var rs = e.target.closest ? e.target.closest("[data-hist-restore]") : null;
+  var dl = e.target.closest ? e.target.closest("[data-hist-del]") : null;
+  if(dl){
+    if(!confirm("Delete this saved old list?")) return;
+    if(!FB_OK) return;
+    fbDB.ref(SHEET + "/sendHistory/" + dl.getAttribute("data-hist-del")).remove();
+    return;
+  }
+  if(rs){
+    var bit = (histCache || []).filter(function(x){ return x.key === rs.getAttribute("data-hist-restore"); })[0];
+    if(!bit || !bit.data || !bit.data.items) return;
+    if(!FB_OK){ alert("Firebase is not connected (offline?)."); return; }
+    bit.data.items.forEach(function(d){
+      var existing = null;
+      sendCache.forEach(function(it){ if(it.data && it.data.buyer === d.buyer && it.data.style === d.style) existing = it; });
+      if(existing){ fbDB.ref(SHEET + "/sendList/" + existing.key).set(d); }
+      else { fbDB.ref(SHEET + "/sendList").push(d); }
+    });
+    setStatus("Old list restored to merchant list.");
+    return;
+  }
+  if(ex){
+    var b = (histCache || []).filter(function(x){ return x.key === ex.getAttribute("data-hist-excel"); })[0];
+    if(!b || !b.data) return;
+    var items = b.data.items || [];
+    setStatus("Loading Excel writer...");
+    ensureXLSX(function(){
+      try{
+        var wb = XLSX.utils.book_new();
+        var ws = XLSX.utils.aoa_to_sheet(buildSendListSheetFrom(items));
+        ws["!merges"] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 9 } }, { s: { r: 1, c: 0 }, e: { r: 1, c: 9 } }, { s: { r: 2, c: 0 }, e: { r: 2, c: 9 } }];
+        ws["!cols"] = [{ wch: 5 }, { wch: 16 }, { wch: 28 }, { wch: 14 }, { wch: 10 }, { wch: 12 }, { wch: 20 }, { wch: 28 }, { wch: 18 }, { wch: 40 }];
+        ws["!rows"] = sendSheetHeights(items);
+        XLSX.utils.book_append_sheet(wb, ws, "Merchant List");
+        downloadXlsx(wb, "Merchant-List-" + fmtDateFile(b.data.exportedAt) + ".xlsx", patchXlsxMtrGreen);
+        setStatus("Old merchant list Excel exported.");
+      }catch(err){ setStatus("Ready"); alert("The Excel file could not be created. Please try again."); }
+    }, function(){ setStatus("Ready"); alert("The Excel writer could not be downloaded from any mirror.\n\nPlease check your network connection and try again."); });
+  }
+});
+function archiveSendListAndClear(){
+  if(!FB_OK || !sendCache.length) return;
+  var items = sendRowsSorted().map(function(it){ return it.data; });
+  var batch = { exportedAt: Date.now(), count: items.length, items: items };
+  fbDB.ref(SHEET + "/sendHistory").push().set(batch).then(function(){
+    var jobs = sendCache.map(function(it){ return fbDB.ref(SHEET + "/sendList/" + it.key).remove(); });
+    return Promise.all(jobs);
+  }).then(function(){ setStatus("Old merchant list saved. New list ready."); })
+    .catch(function(e){ alert("Save/clear failed: " + e.message); });
+}
+$("btnSendExcel").onclick = function(){
+  setStatus("Loading Excel writer...");
+  ensureXLSX(function(){
+    try{
+      var wb = XLSX.utils.book_new();
+      var ws = XLSX.utils.aoa_to_sheet(buildSendListSheet());
+      ws["!merges"] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 9 } }, { s: { r: 1, c: 0 }, e: { r: 1, c: 9 } }, { s: { r: 2, c: 0 }, e: { r: 2, c: 9 } }];
+      ws["!cols"] = [{ wch: 5 }, { wch: 16 }, { wch: 28 }, { wch: 14 }, { wch: 10 }, { wch: 12 }, { wch: 20 }, { wch: 28 }, { wch: 18 }, { wch: 40 }];
+      ws["!rows"] = sendSheetHeights(sendRowsSorted().map(function(it){ return it.data; }));
+      XLSX.utils.book_append_sheet(wb, ws, "Merchant List");
+      downloadXlsx(wb, "Merchant-List.xlsx", patchXlsxMtrGreen);
+      setStatus("Merchant list Excel exported.");
+      archiveSendListAndClear();
+    }catch(err){ setStatus("Ready"); alert("The Excel file could not be created. Please try again."); }
+  }, function(){ setStatus("Ready"); alert("The Excel writer could not be downloaded from any mirror.\n\nPlease check your network connection and try again."); });
+};
+$("btnSendPdf").onclick = function(){
+  document.body.classList.add("print-send-only");
+  function done(){ document.body.classList.remove("print-send-only"); }
+  var old = window.onafterprint;
+  window.onafterprint = function(){ done(); window.onafterprint = old; };
+  fitAndPrint($("sendListPanel"));
+  archiveSendListAndClear();
+  setTimeout(done, 2000);
+};
+$("btnClearSend").onclick = function(){
+  if(!sendCache.length){ alert("Merchant list is already empty."); return; }
+  if(!confirm("Clear " + sendCache.length + " merchant list style(s)?")) return;
+  if(!FB_OK) return;
+  var jobs = sendCache.map(function(it){ return fbDB.ref(SHEET + "/sendList/" + it.key).remove(); });
+  Promise.all(jobs).then(function(){ setStatus("Merchant list cleared."); })
+    .catch(function(e){ alert("Clear failed: " + e.message); });
+};
+
 function watch(node, cacheName, renderFn, limitN){
   if(!FB_OK) return;
   var ref = fbDB.ref(SHEET + "/" + node);
@@ -2494,6 +2731,8 @@ function watch(node, cacheName, renderFn, limitN){
     if(cacheName === "check") checkCache = arr;
     if(cacheName === "std") stdCache = arr;
     if(cacheName === "list") listCache = arr;
+    if(cacheName === "send") sendCache = arr;
+    if(cacheName === "hist") histCache = arr;
     if(cacheName === "styles") stylesCache = arr;
     renderFn();
     renderDashboard();
@@ -2514,11 +2753,6 @@ function renderDashboard(){
   $("dashChecked").textContent = chk;
   $("dashStd").textContent = stdCache.length;
   $("dashList").textContent = listRowsForBuyer("", true).length;
-  $("homeCountStyles").textContent = stylesCache.length;
-  $("homeCountPending").textContent = pend;
-  $("homeCountChecked").textContent = chk;
-  $("homeCountStd").textContent = stdCache.length;
-  $("homeCountList").textContent = listRowsForBuyer("", true).length;
   /* Buyer-wise standards */
   var groups = {};
   stdCache.forEach(function(it){
@@ -3183,6 +3417,8 @@ if(FB_OK){
   watch("checkQueue", "check", onCheckQueueChange, 0);
   watch("standards", "std", renderDashboard, 0);
   watch("styleList", "list", renderStyleList, 0);
+  watch("sendList", "send", renderSendList, 0);
+  watch("sendHistory", "hist", renderSendHistory, 0);
   watch("styles", "styles", function(){ refreshStyleSelects(); if(!localResumed){ localResumed = true; resumeLocalDraft(); } }, 0);
   watchSettings();
   watchCheckers();
