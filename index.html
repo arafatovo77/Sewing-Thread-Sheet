@@ -177,7 +177,22 @@
     body.print-machine-only #machinePrintWrap{display:block !important}
     body.print-machine-only #page1{display:block !important}
     body.print-machine-only #pageHome, body.print-machine-only #page2{display:none !important}
+    /* Style PDF: only the Excel-mirror view prints (never the modal or pages) */
+    body.print-sheet-only #pageHome, body.print-sheet-only #page1, body.print-sheet-only #page2{display:none !important}
+    body.print-sheet-only #sheetModal{display:none !important}
+    body.print-sheet-only #printSheetView{display:block !important}
+    body.print-sheet-only .no-print{display:none !important}
   }
+  /* Excel-mirror print view (also used for on-screen measuring before print) */
+  #printSheetView table{border-collapse:collapse;width:100%;margin-bottom:10px}
+  #printSheetView th, #printSheetView td{border:1px solid #8C97AB;padding:3px 5px}
+  #printSheetView .ps-title{font-family:Arial;font-size:16px;font-weight:700;color:#0B8FC9;background:#C8C8C8;text-align:center;padding:6px}
+  #printSheetView .ps-sub{font-family:Cambria;font-size:14px;font-weight:700;color:#3B7D23;background:#DDEBF7;text-align:center;padding:5px;margin-bottom:8px}
+  #printSheetView .ps-sec{margin:10px 0 4px}
+  #printSheetView .psc{text-align:center}
+  #printSheetView .psl{text-align:left}
+  #printSheetView .psb{font-weight:700}
+  #printSheetView .psb12{font-size:12px}
 </style>
 </head>
 <body>
@@ -351,6 +366,7 @@
       <div><label>Back tape / other elastic tape allowance (%)</label><input class="fi" id="sElastic" type="number" value="10"></div>
       <div><label>Waist belt elastic — first allowance (%)</label><input class="fi" id="sWaist1" type="number" value="7"></div>
       <div><label>Waist belt elastic — second allowance / wastage (%)</label><input class="fi" id="sWaist2" type="number" value="7"></div>
+      <div><label>Default thread allowance (%)</label><input class="fi" id="sAllowPct" type="number" value="20"></div>
     </div>
     <div class="row" style="margin-top:10px">
       <button class="btn btn-p" id="btnSaveSettings">Save Settings</button>
@@ -457,9 +473,10 @@
     </div>
     <div class="row" style="margin-bottom:8px">
       <label class="mut">CONTRAST / SPECIAL:</label>
-      <select class="fi" id="csThread" style="max-width:150px"><option>Contrast</option><option>Body thread</option><option>Lurex</option><option>20/2 thread</option><option>Elastic thread</option><option>Filament</option><option>Other</option></select>
-      <input class="fi colour-field" id="csColour" placeholder="Thread colour" style="max-width:150px">
-      <input class="fi num" id="csPct" type="number" value="20" style="max-width:90px">
+      <select class="fi" id="csThread" style="max-width:150px"><option>Contrast</option><option>Body thread</option><option>Lurex</option><option>20/2 thread</option><option>Elastic thread</option><option>Filament</option><option>Other</option><option>Full body thread</option></select>
+      <input class="fi colour-field" id="csColour" list="colourDatalist" placeholder="Thread colour" style="max-width:150px">
+      <label class="mut" for="csPct">Looper percentage:</label>
+      <input class="fi num" id="csPct" type="number" value="" placeholder="Auto" style="max-width:90px">
       <button class="btn btn-p btn-sm" id="btnCsApply">APPLY</button>
       <button class="btn btn-d btn-sm" id="btnDeleteAllHp">DELETE ALL HP</button>
     </div>
@@ -515,10 +532,10 @@
   <!-- ============ CONE REQUIREMENT ============ -->
   <section class="card">
     <h2>Cone requirement</h2>
-    <p class="sub" id="coneRuleText">Cone rule: colour quantity below 2000 pcs uses 2000-meter cones; 2000 pcs or above uses 4000-meter cones. Cones = total thread ÷ cone length, rounded up when ordering. Metres = inches × 0.0254. Header order qty + extra % (default 3%) applies to body/contrast cone rows (typed or inherited); custom colour rows use their qty exactly, no extra %.</p>
+    <p class="sub" id="coneRuleText">Cone rule: colour quantity below 2000 pcs uses 2000-meter cones; 2000 pcs or above uses 4000-meter cones. Cones = total thread ÷ cone length, rounded up when ordering. Metres = inches × 0.0254. Header order qty + extra % (default 3%) applies to body/contrast cone rows (typed or inherited); custom colour rows use their qty exactly, no extra %. Each cone row also has its own Extra % beside Qty: a typed % replaces the header % for that row; empty keeps the old rule (header % for body/contrast, none for custom).</p>
     <div class="tbl-wrap"><table>
       <thead><tr>
-        <th>Body colour / Thread and colour</th><th>Qty (pcs)</th><th>Thread per pc (m)</th>
+        <th>Body colour / Thread and colour</th><th>Qty (pcs)</th><th>Extra %</th><th>Thread per pc (m)</th>
         <th>Total thread (m)</th><th>Cone (m)</th><th>Cones</th><th>Cones to order</th><th></th>
       </tr></thead>
       <tbody id="coneBody"></tbody>
@@ -546,8 +563,13 @@
       <div><label>Item</label><select class="fi" id="accItem"></select><div class="row" id="accItemCustomWrap" style="display:none;margin-top:6px"><input class="fi" id="accItemCustom" placeholder="Type new item" style="flex:1"><button class="btn btn-o btn-sm" id="btnSaveAccItemCustom">Save</button></div></div>
       <div><label>Size</label><select class="fi" id="accSize"></select><div class="row" id="accSizeCustomWrap" style="display:none;margin-top:6px"><input class="fi" id="accSizeCustom" placeholder="Type new size" style="flex:1"><button class="btn btn-o btn-sm" id="btnSaveAccSizeCustom">Save</button></div></div>
       <div><label>Fit</label><select class="fi" id="accFit"><option value="">Select fit</option><option>Relaxed</option><option>Loose</option><option>Slim</option></select></div>
+      <div><label>Body thread name</label><select class="fi" id="accBodyThread"><option value="50/2">50/2</option><option value="20/2">20/2</option><option value="__custom">＋ Custom…</option></select><div class="row" id="accBodyThreadCustomWrap" style="display:none;margin-top:6px"><input class="fi" id="accBodyThreadCustom" placeholder="Type thread name" style="flex:1"></div></div>
       <div><label>Date</label><input class="fi" id="accDate" type="date"></div>
       <div><label>Order qty (pcs)</label><input class="fi" id="accOrderQty" type="number" placeholder="e.g. 5000"></div>
+      <div><label>Order extra %</label><input class="fi" id="accOrderPct" type="number" value="3"></div>
+      <div><label>Thread allowance %</label><input class="fi" id="accAllowPct" type="number" value="20"></div>
+      <div><label>Cone size</label><select class="fi" id="accConeMode"><option value="auto">Auto</option><option value="manual">Manual</option></select></div>
+      <div id="accManualConeWrap" style="display:none"><label>Manual cone length (m)</label><input class="fi" id="accManualCone" type="number" value="4000"></div>
       <div><label>Prepared by</label><input class="fi" id="accPreparedBy" readonly placeholder="Login name"></div>
     </div>
   </section>
@@ -581,6 +603,7 @@
   </div>
 </main>
 <div id="sheetModal"><div id="sheetModalBack"></div><div id="sheetModalBox"><button id="sheetModalClose" title="Close">✕</button><div id="sheetModalSlot"></div></div></div>
+<div id="printSheetView" class="print-only"></div>
 <script>
 /* ================= Firebase (user's own project, browser config) ================= */
 var firebaseConfig = {
@@ -641,6 +664,7 @@ var expandedBuyer = ""; /* buyer folder currently expanded in All Buyer Folder *
 var accTotalsUnit = "CM"; /* accessories totals display unit */
 var totUnit = "m"; /* main summary display unit: m | yards | in */
 var coneQtyMap = {}; /* cone qty overrides, keyed "body" / "grp:<key>" */
+var conePctMap = {}; /* per-row cone extra % overrides, keyed "body" / "grp:<key>" (custom rows keep pct on the row) */
 var currentStyleKey = ""; /* selected saved-style key ("" = none) */
 var currentListBuyer = ""; /* "" = all buyers in Style list panel */
 var currentListPeriod = ""; /* "" = all periods in Style list panel (YYYY-MM) */
@@ -683,7 +707,7 @@ function specialDefaultFor(typeName){
   return specialDefaults.contrast;
 }
 /* Admin settings (Firebase admin/settings overrides these defaults). */
-var SETTINGS = { coneThreshold: 2000, twill: 7, elastic: 10, waist1: 7, waist2: 7 };
+var SETTINGS = { coneThreshold: 2000, twill: 7, elastic: 10, waist1: 7, waist2: 7, allowPct: 20 };
 
 function newOp(d){
   d = d || {};
@@ -700,7 +724,7 @@ function newOp(d){
 function newCone(d){
   d = d || {};
   return { id: uid(), colour: d.colour || "", qty: d.qty == null ? "" : d.qty,
-    perPc: d.perPc == null ? "" : d.perPc, thread: d.thread || "" };
+    perPc: d.perPc == null ? "" : d.perPc, thread: d.thread || "", pct: d.pct == null ? "" : d.pct };
 }
 function newAcc(d){
   d = d || {};
@@ -757,6 +781,22 @@ function orderQtyEff(){ return Math.round(orderQtyNum() * (1 + orderPctVal() / 1
 function coneEffQty(qtyVal, applyPct){
   if(!applyPct || qtyVal === "" || qtyVal == null) return num(qtyVal);
   return Math.round(num(qtyVal) * (1 + orderPctVal() / 100));
+}
+/* Per-row cone extra %: a typed % for the row wins; empty falls back to
+   the header % for body/contrast rows and to 0 for custom rows. */
+function conePctTyped(key){
+  if(key === "body" || key.indexOf("grp:") === 0) return Object.prototype.hasOwnProperty.call(conePctMap, key) ? conePctMap[key] : "";
+  if(key.indexOf("custom:") === 0){ var r = CONES.filter(function(x){ return "custom:" + x.id === key; })[0]; return r ? (r.pct == null ? "" : r.pct) : ""; }
+  return "";
+}
+function conePctEff(key){
+  var t = conePctTyped(key);
+  if(t !== "" && t != null) return num(t);
+  return key.indexOf("custom:") === 0 ? 0 : orderPctVal();
+}
+function coneEffQtyPct(qtyVal, pct){
+  if(!pct) return num(qtyVal);
+  return Math.round(num(qtyVal) * (1 + pct / 100));
 }
 function bodyThreadVal(){
   var v = selVal("fBodyThread", "fBodyThreadCustom");
@@ -837,6 +877,10 @@ function contrastGroups(){
   });
   return order.map(function(k){ return groups[k]; });
 }
+/* Common colours always offered in colour suggestions, alongside the
+   colours already used in this style (a custom colour typed once joins
+   the style list automatically via styleColours). */
+var COMMON_COLOURS = ["BLACK", "WHITE", "NAVY", "RED", "BLUE", "GREEN", "YELLOW", "GREY", "LIGHT GREY", "DARK GREY", "BROWN", "ORANGE", "PINK", "PURPLE", "BEIGE", "MAROON", "OLIVE", "TEAL", "SKY BLUE", "CREAM"];
 /* Thread 1/2 dropdown options: the base thread types plus this style's own
    contrast labels (type + colour, e.g. "Contrast BLACK"), so picking a
    contrast from the dropdown shows its colour too. Refreshed on every totals
@@ -853,7 +897,12 @@ function renderSpecialThreadList(){
   });
   dl.innerHTML = html;
   var cdl = $("colourDatalist");
-  if(cdl){ cdl.innerHTML = styleColours().map(function(cl){ return '<option value="' + esc(cl) + '">'; }).join(""); }
+  if(cdl){
+    var cols = styleColours(), seenC = {};
+    cols.forEach(function(c){ seenC[c.toLowerCase()] = true; });
+    COMMON_COLOURS.forEach(function(c){ if(!seenC[c.toLowerCase()]){ seenC[c.toLowerCase()] = true; cols.push(c); } });
+    cdl.innerHTML = cols.map(function(cl){ return '<option value="' + esc(cl) + '">'; }).join("");
+  }
 }
 function coneRowCalc(qty, perPc){
   var totalM = num(qty) * num(perPc);
@@ -981,12 +1030,25 @@ function refreshFilters(){
   buildMselPanel("machine", machs);
   mselUpdateBtn("process"); mselUpdateBtn("machine");
 }
+/* Panel % follows the machine filter: exactly one machine ticked shows
+   that machine's looper %; no tick (ALL) or several ticks leaves the box
+   empty, meaning APPLY gives each row its own machine's looper %. */
+function syncPanelPctFromFilter(){
+  var el = $("csPct"); if(!el) return;
+  if(filterMachs.length === 1){
+    var mm = findMachine(filterMachs[0]);
+    el.value = mm ? mm.looper : "";
+  } else {
+    el.value = "";
+  }
+}
 function mselPanelChange(e){
   var t = e.target;
   var allKind = t.getAttribute ? t.getAttribute("data-msel-all") : null;
   if(allKind){
     if(allKind === "process") filterProcs = []; else filterMachs = [];
     renderOps();
+    if(allKind === "machine") syncPanelPctFromFilter();
     return;
   }
   var kind = t.getAttribute ? t.getAttribute("data-msel-kind") : null;
@@ -997,6 +1059,7 @@ function mselPanelChange(e){
   else { var ix = arr.indexOf(val); if(ix !== -1) arr.splice(ix, 1); }
   if(kind === "process") filterProcs = arr; else filterMachs = arr;
   renderOps();
+  if(kind === "machine") syncPanelPctFromFilter();
 }
 function mselTogglePanel(kind){
   var p = kind === "process" ? $("mselProcessPanel") : $("mselMachinePanel");
@@ -1133,7 +1196,7 @@ function renderOps(){
     }
   }
 }
-function allowPctVal(){ var el = $("fAllowPct"); return el ? num(el.value) : 20; }
+function allowPctVal(){ var el = $("fAllowPct"); return el ? num(el.value) : SETTINGS.allowPct; }
 function renderTotals(){
   renderSpecialThreadList();
   var t = totals();
@@ -1224,6 +1287,7 @@ $("opsBody").addEventListener("click", function(e){
     OPS.splice(idx + 1, 0, nop);
     filterProcs = []; filterMachs = [];
     renderOps();
+    syncPanelPctFromFilter();
     var nrow = $("opsBody").querySelector('tr[data-id="' + nop.id + '"]');
     if(nrow){
       var nin = nrow.querySelector('[data-f="name"]');
@@ -1434,7 +1498,7 @@ $("opsBody").addEventListener("keydown", function(e){
   }
 });
 $("btnAddOp").onclick = function(){ pushUndo(); OPS.push(newOp({})); renderOps(); };
-$("btnShowAll").onclick = function(){ filterProcs = []; filterMachs = []; renderOps(); };
+$("btnShowAll").onclick = function(){ filterProcs = []; filterMachs = []; renderOps(); syncPanelPctFromFilter(); };
 /* Auto-save triggers: any edit inside the sheet wraps schedules a save;
    the signature check in doAutoSave makes harmless clicks/navigation
    no-ops, so no write happens unless the sheet actually changed. */
@@ -1456,10 +1520,20 @@ $("btnDeleteAllHp").onclick = function(){
 $("btnCsApply").onclick = function(){
   var type = $("csThread").value, colour = $("csColour").value.trim(), pct = $("csPct").value;
   var fps = filterProcs, fms = filterMachs, n = 0;
+  var fullBody = type === "Full body thread";
   pushUndo();
   OPS.forEach(function(op){
     if(fps.length && fps.indexOf(op.name) === -1) return;
     if(fms.length && fms.indexOf(op.machine) === -1) return;
+    if(fullBody){
+      /* Full normal thread: every slot back to body — all special
+         (Contrast / Filament / Lurex / ...) gone, Special metres 0. */
+      op.thread1 = "Body thread"; op.colour1 = ""; op.colourCustom1 = false; op.pct1 = ""; op.pct1Auto = false;
+      op.thread2 = ""; op.colour2 = ""; op.colourCustom2 = false; op.pct2 = ""; op.pct2Auto = false;
+      op.thread3 = ""; op.colour3 = ""; op.colourCustom3 = false; op.pct3 = "";
+      n++;
+      return;
+    }
     op.thread1 = type; op.colour1 = colour;
     /* Panel left at its default 20 (or empty) with a known machine: the
        machine's looper % wins (4OL 80, FL 60, SN 50); a typed % is the
@@ -1471,8 +1545,14 @@ $("btnCsApply").onclick = function(){
     n++;
   });
   renderOps();
-  setStatus("Special thread applied to " + n + " visible row(s).");
+  setStatus(fullBody ? "Full body thread applied to " + n + " row(s)." : "Special thread applied to " + n + " visible row(s).");
 };
+/* Full body thread needs no colour or %: grey those fields out while it
+   is picked, so nobody types values that would be ignored. */
+$("csThread").addEventListener("change", function(){
+  var full = $("csThread").value === "Full body thread";
+  $("csColour").disabled = full; $("csPct").disabled = full;
+});
 $("btnUndo").onclick = doUndo;
 
 /* ================= Paste from Excel ================= */
@@ -1571,11 +1651,12 @@ function renderCones(){
   var groups = contrastGroups();
   var sumM = 0, sumExact = 0, sumOrder = 0;
   function rowHtml(key, label, qtyVal, perPc, editableLabel, editablePerPc, delKey, extraLabel){
-    var calc = coneRowCalc(coneEffQty(qtyVal, key.indexOf("custom:") !== 0), perPc);
+    var calc = coneRowCalc(coneEffQtyPct(qtyVal, conePctEff(key)), perPc);
     sumM += calc.totalM; sumExact += calc.exact; sumOrder += calc.order;
     return '<tr data-cone-key="' + esc(key) + '">'
       + '<td>' + (editableLabel ? '<input data-f="colour" value="' + esc(label) + '">' + (extraLabel || "") : esc(label)) + '</td>'
       + '<td><input class="num" data-f="qty" value="' + esc(qtyVal) + '"></td>'
+      + '<td><input class="num" data-f="pct" value="' + esc(conePctTyped(key)) + '" placeholder="' + (key.indexOf("custom:") === 0 ? "0" : orderPctVal()) + '"></td>'
       + '<td>' + (editablePerPc ? '<input class="num" data-f="perPc" value="' + esc(perPc) + '">' : Number(perPc).toFixed(2)) + '</td>'
       + '<td class="cone-total">' + calc.totalM.toFixed(2) + '</td>'
       + '<td class="cone-len">' + calc.cone + '</td>'
@@ -1601,7 +1682,7 @@ function renderCones(){
   } else {
     html += '<tr><td colspan="8" class="mut">Select a style name first to add colour rows.</td></tr>';
   }
-  html += '<tr id="coneTotalsRow"><td><b>Total</b></td><td></td><td></td><td class="cone-total"><b>' + sumM.toFixed(2) + '</b></td><td></td>'
+  html += '<tr id="coneTotalsRow"><td><b>Total</b></td><td></td><td></td><td></td><td class="cone-total"><b>' + sumM.toFixed(2) + '</b></td><td></td>'
     + '<td class="cone-exact"><b>' + sumExact.toFixed(2) + '</b></td><td class="cone-order"><b>' + sumOrder + '</b></td><td></td></tr>';
   $("coneBody").innerHTML = html;
   var ab = $("btnAddCone");
@@ -1625,7 +1706,7 @@ function refreshConeRow(tr){
     var pp = tr.querySelector('[data-f="perPc"]');
     perPc = r ? r.perPc : (pp ? pp.value : 0);
   }
-  var calc = coneRowCalc(qty, perPc);
+  var calc = coneRowCalc(coneEffQtyPct(qty, conePctEff(key)), perPc);
   function setCell(cls, val){
     var c = tr.querySelector("." + cls);
     if(!c) return;
@@ -1673,6 +1754,7 @@ $("coneBody").addEventListener("input", function(e){
   if(!key) return;
   if(key === "body" || key.indexOf("grp:") === 0){
     if(f === "qty") coneQtyMap[key] = inp.value;
+    else if(f === "pct") conePctMap[key] = inp.value;
   } else if(key.indexOf("custom:") === 0){
     var r = CONES.filter(function(x){ return "custom:" + x.id === key; })[0];
     if(!r) return;
@@ -1928,6 +2010,12 @@ function syncAccHeader(){
   setVal("accFit", $("fFit") ? $("fFit").value : "");
   setVal("accDate", $("fDate") ? $("fDate").value : "");
   setVal("accOrderQty", $("fOrderQty") ? $("fOrderQty").value : "");
+  setMasterMirror("accBodyThread", "accBodyThreadCustom", "fBodyThread", "fBodyThreadCustom");
+  setVal("accOrderPct", $("fOrderPct") ? $("fOrderPct").value : "");
+  setVal("accAllowPct", $("fAllowPct") ? $("fAllowPct").value : "");
+  setVal("accConeMode", $("fConeMode") ? $("fConeMode").value : "auto");
+  setVal("accManualCone", $("fManualCone") ? $("fManualCone").value : "");
+  var amcw = $("accManualConeWrap"); if(amcw) amcw.style.display = ($("fConeMode") && $("fConeMode").value === "manual") ? "" : "none";
   refreshPreparedByDisplay(); /* Prepared by always shows the logged-in user */
   var parts = [selVal("fBuyer", "fBuyerCustom"), selVal("fItem", "fItemCustom"), selVal("fSize", "fSizeCustom")].filter(Boolean);
   $("accStyleCtx").textContent = (parts.length ? parts.join("  •  ") + "  •  " : "") + "Order qty (pcs): " + totalBodyQty();
@@ -1953,6 +2041,17 @@ function accMirrorToMain(accSelId, accCustomId, mainSelId, mainCustomId){
 $("accFit").addEventListener("change", function(){ $("fFit").value = $("accFit").value; syncAccHeader(); });
 $("accDate").addEventListener("change", function(){ $("fDate").value = $("accDate").value; syncAccHeader(); });
 $("accOrderQty").addEventListener("input", function(){ $("fOrderQty").value = $("accOrderQty").value; syncAccHeader(); renderCones(); });
+$("accBodyThread").addEventListener("change", function(){ accMirrorToMain("accBodyThread", "accBodyThreadCustom", "fBodyThread", "fBodyThreadCustom"); syncAccHeader(); renderTotals(); });
+$("accBodyThreadCustom").addEventListener("input", function(){ var mc = $("fBodyThreadCustom"); if(mc) mc.value = $("accBodyThreadCustom").value; syncAccHeader(); renderTotals(); });
+$("accOrderPct").addEventListener("input", function(){ $("fOrderPct").value = $("accOrderPct").value; syncAccHeader(); renderCones(); });
+$("accAllowPct").addEventListener("input", function(){ $("fAllowPct").value = $("accAllowPct").value; syncAccHeader(); renderTotals(); });
+$("accConeMode").addEventListener("change", function(){
+  $("fConeMode").value = $("accConeMode").value;
+  $("manualConeWrap").style.display = ($("fConeMode").value === "manual") ? "" : "none";
+  var amcw = $("accManualConeWrap"); if(amcw) amcw.style.display = ($("fConeMode").value === "manual") ? "" : "none";
+  syncAccHeader(); renderCones(); updateConeNote();
+});
+$("accManualCone").addEventListener("input", function(){ $("fManualCone").value = $("accManualCone").value; syncAccHeader(); renderCones(); updateConeNote(); });
 $("accStyle").addEventListener("input", function(){ $("fStyle").value = $("accStyle").value; applyStyleChosenClass(); renderCones(); syncAccHeader(); });
 $("btnSaveAccBuyerCustom").onclick = function(){ saveCustomName("accBuyer", "accBuyerCustom", "buyers"); };
 $("btnSaveAccItemCustom").onclick = function(){ saveCustomName("accItem", "accItemCustom", "items"); };
@@ -2008,7 +2107,7 @@ function sheetData(){
     coneMode: coneModeVal(), manualCone: manualConeVal(),
     preparedBy: preparedByVal(), createdBy: preparedByVal(),
     checker: preparedByVal(),
-    ops: OPS, cones: CONES, coneQtys: coneQtyMap, accs: ACCS,
+    ops: OPS, cones: CONES, coneQtys: coneQtyMap, conePcts: conePctMap, accs: ACCS,
     totalIn: t.consumption, totalM: inToM(t.consumption),
     bodyIn: t.body, bodyM: inToM(t.body), specialIn: t.special, specialM: inToM(t.special),
     bodyThreadName: $("fBodyThread").value.trim(),
@@ -2040,7 +2139,7 @@ function loadSheet(d){
   $("fDate").value = d.date || todayISO();
   $("fOrderQty").value = (d.orderQty != null ? d.orderQty : "");
   $("fOrderPct").value = (d.orderPct != null ? d.orderPct : 3);
-  $("fAllowPct").value = (d.allowPct != null ? d.allowPct : 20);
+  $("fAllowPct").value = (d.allowPct != null ? d.allowPct : SETTINGS.allowPct);
   $("fConeMode").value = d.coneMode || "auto";
   $("fManualCone").value = (d.manualCone != null ? d.manualCone : 4000);
   $("manualConeWrap").style.display = ($("fConeMode").value === "manual") ? "" : "none";
@@ -2048,6 +2147,7 @@ function loadSheet(d){
   OPS = (d.ops || []).map(function(o){ return newOp(o); });
   CONES = (d.cones || []).map(function(c){ return newCone(c); });
   coneQtyMap = d.coneQtys || {};
+  conePctMap = d.conePcts || {};
   ACCS = (d.accs || []).map(function(a){ return newAcc(a); });
   var sk = d.styleKey || "";
   if(!sk){
@@ -2311,12 +2411,12 @@ $("btnNewSheet").onclick = function(){
   setCustomVisible("fStyleCustom", false); setCustomVisible("accStyleCustom", false);
   $("fStyle").value = ""; $("accStyle").value = "";
   currentStyleKey = "";
-  setMasterSelect("fItem", "fItemCustom", "");
-  setMasterSelect("fSize", "fSizeCustom", "");
+  setMasterSelect("fItem", "fItemCustom", "T-SHIRT");
+  setMasterSelect("fSize", "fSizeCustom", "L");
   $("fFit").value = ""; $("fBodyThread").value = "50/2"; setCustomVisible("fBodyThreadCustom", false);
-  $("fDate").value = todayISO(); $("fOrderQty").value = ""; $("fAllowPct").value = 20;
+  $("fDate").value = todayISO(); $("fOrderQty").value = ""; $("fAllowPct").value = SETTINGS.allowPct;
   $("fConeMode").value = "auto"; $("manualConeWrap").style.display = "none";
-  OPS = []; CONES = []; ACCS = []; coneQtyMap = {};
+  OPS = []; CONES = []; ACCS = []; coneQtyMap = {}; conePctMap = {};
   applyStyleChosenClass();
   renderOps(); renderCones(); renderAccs(); syncAccHeader();
   setStatus("New sheet started.");
@@ -2556,7 +2656,7 @@ function contrastGroupsFor(ops){
   return order.map(function(k){ return groups[k]; });
 }
 function listRowMetres(d){
-  var allow = 1 + (num(d.allowPct != null ? d.allowPct : 20) / 100);
+  var allow = 1 + (num(d.allowPct != null ? d.allowPct : SETTINGS.allowPct) / 100);
   var ops = d.ops || [];
   if(ops.length){
     var bodyIn = 0;
@@ -3046,6 +3146,7 @@ function applySettingsToInputs(){
   $("sElastic").value = SETTINGS.elastic;
   $("sWaist1").value = SETTINGS.waist1;
   $("sWaist2").value = SETTINGS.waist2;
+  $("sAllowPct").value = SETTINGS.allowPct;
   updateConeNote();
   $("accRuleText").textContent = "Allowance is added by type: back twill tape +" + SETTINGS.twill + "%, back tape elastic or other elastic tape +"
     + SETTINGS.elastic + "%, waist belt elastic +" + SETTINGS.waist1 + "% and then another +" + SETTINGS.waist2 + "% wastage. "
@@ -3070,8 +3171,13 @@ function watchSettings(){
       if(v.elastic != null) SETTINGS.elastic = num(v.elastic);
       if(v.waist1 != null) SETTINGS.waist1 = num(v.waist1);
       if(v.waist2 != null) SETTINGS.waist2 = num(v.waist2);
+      if(v.allowPct != null) SETTINGS.allowPct = num(v.allowPct);
     }
     applySettingsToInputs();
+    /* A fresh blank sheet follows a changed default (never clobbers a
+       typed value or a saved style's own allowance). */
+    var ap = $("fAllowPct");
+    if(ap && (ap.value === "" || ap.value === "20") && !currentStyleKey && $("fStyle") && !$("fStyle").value) ap.value = SETTINGS.allowPct;
     renderCones(); renderAccs();
   });
 }
@@ -3095,6 +3201,7 @@ $("btnDashRefresh").onclick = function(){
         if(v.elastic != null) SETTINGS.elastic = num(v.elastic);
         if(v.waist1 != null) SETTINGS.waist1 = num(v.waist1);
         if(v.waist2 != null) SETTINGS.waist2 = num(v.waist2);
+        if(v.allowPct != null) SETTINGS.allowPct = num(v.allowPct);
       }
       applySettingsToInputs(); renderCones(); renderAccs();
       setStatus("Dashboard refreshed.");
@@ -3118,7 +3225,8 @@ $("btnSaveSettings").onclick = function(){
     twill: num($("sTwill").value),
     elastic: num($("sElastic").value),
     waist1: num($("sWaist1").value),
-    waist2: num($("sWaist2").value)
+    waist2: num($("sWaist2").value),
+    allowPct: num($("sAllowPct").value)
   };
   fbDB.ref(SHEET + "/admin/settings").set(s).then(function(){
     setStatus("Settings saved.");
@@ -3219,20 +3327,21 @@ function masterNames(cache, seeds){
   return out;
 }
 function refreshMasterSelects(){
-  function fill(selId, customId, names){
+  function fill(selId, customId, names, prefer){
     var sel = $(selId); if(!sel) return;
     var cur = sel.value;
     sel.innerHTML = names.map(function(n){ return '<option value="' + esc(n) + '">' + esc(n) + '</option>'; }).join("")
       + '<option value="__custom">＋ Custom…</option>';
-    sel.value = names.indexOf(cur) !== -1 ? cur : (cur === "__custom" ? "__custom" : (names[0] || ""));
+    var fallback = (prefer && names.indexOf(prefer) !== -1) ? prefer : (names[0] || "");
+    sel.value = names.indexOf(cur) !== -1 ? cur : (cur === "__custom" ? "__custom" : fallback);
     setCustomVisible(customId, sel.value === "__custom");
   }
   fill("fBuyer", "fBuyerCustom", masterNames(buyersCache, SEED_BUYERS));
-  fill("fItem", "fItemCustom", masterNames(itemsCache, SEED_ITEMS));
-  fill("fSize", "fSizeCustom", masterNames(sizesCache, SEED_SIZES));
+  fill("fItem", "fItemCustom", masterNames(itemsCache, SEED_ITEMS), "T-SHIRT");
+  fill("fSize", "fSizeCustom", masterNames(sizesCache, SEED_SIZES), "L");
   fill("accBuyer", "accBuyerCustom", masterNames(buyersCache, SEED_BUYERS));
-  fill("accItem", "accItemCustom", masterNames(itemsCache, SEED_ITEMS));
-  fill("accSize", "accSizeCustom", masterNames(sizesCache, SEED_SIZES));
+  fill("accItem", "accItemCustom", masterNames(itemsCache, SEED_ITEMS), "T-SHIRT");
+  fill("accSize", "accSizeCustom", masterNames(sizesCache, SEED_SIZES), "L");
 }
 /* Show/hide a Custom name input together with its Save button. */
 function setCustomVisible(customId, show){
@@ -3782,15 +3891,15 @@ function buildSingleStyleSheet(){
   rows.push(["Colour-wise thread and cones (below 2000 pcs 2000 m cone, 2000 pcs or more 4000 m cone)"]);
   rows.push(["", "Thread and colour", "Qty (pcs)", "Thread per pc (Mtr)", "Total thread (Mtr)", "Cone (Mtr)", "Cones", "Cones to order"]);
   var cSumM = 0, cSumExact = 0, cSumOrder = 0;
-  function coneExportRow(label, qtyVal, perPc, applyPct){
-    var calc = coneRowCalc(coneEffQty(qtyVal, applyPct), perPc);
+  function coneExportRow(label, qtyVal, perPc, pct){
+    var calc = coneRowCalc(coneEffQtyPct(qtyVal, pct), perPc);
     cSumM += calc.totalM; cSumExact += calc.exact; cSumOrder += calc.order;
     rows.push(["", label, ncell(qtyVal), (ncell(perPc) == null ? null : r4(ncell(perPc))), r4(calc.totalM), calc.cone, r4(calc.exact), calc.order]);
   }
   var t2 = totals();
-  coneExportRow(bodyThreadLabel(), coneQtyFor("body"), inToM(t2.body) * (1 + allow / 100), true);
+  coneExportRow(bodyThreadLabel(), coneQtyFor("body"), inToM(t2.body) * (1 + allow / 100), conePctEff("body"));
   contrastGroups().forEach(function(g){
-    coneExportRow(g.label, coneQtyFor("grp:" + g.key), inToM(g.inches) * (1 + allow / 100), true);
+    coneExportRow(g.label, coneQtyFor("grp:" + g.key), inToM(g.inches) * (1 + allow / 100), conePctEff("grp:" + g.key));
   });
   CONES.forEach(function(r){
     var lbl = r.colour || "";
@@ -3800,7 +3909,7 @@ function buildSingleStyleSheet(){
       var gl = gg ? gg.label : r.thread.slice(4);
       lbl = lbl ? gl + " — " + lbl : gl;
     }
-    coneExportRow(lbl, r.qty, r.perPc, false);
+    coneExportRow(lbl, r.qty, r.perPc, conePctEff("custom:" + r.id));
   });
   rows.push(["", "Total", "", "", r4(cSumM), "", r4(cSumExact), cSumOrder]);
   return rows;
@@ -4581,11 +4690,110 @@ function fitAndPrint(containerEl, docTitle){
      the fit zoom too early un-fits the page and prints many pages. */
   setTimeout(restore, 30000);
 }
+/* ============ PDF PRINT VIEW (Excel mirror) ============ */
+/* The style PDF prints exactly what the single-style Excel contains: the
+   same rows, the same fills (title grey/blue, subtitle pale-blue/green,
+   ops header blue-grey, Mc Thread yellow, Special header peach, qty>1
+   light-blue, totals green, cone rows pale-peach, special rows pastel),
+   scaled to one landscape page. Nothing extra is added. */
+function psVal(v){ return (v == null || v === "") ? "" : esc(String(v)); }
+function psTd(v, cls, bg){
+  var st = bg ? ' style="background:' + bg + '"' : "";
+  return '<td class="' + (cls || "") + '"' + st + '>' + psVal(v) + '</td>';
+}
+function psTh(txt, bg){
+  return '<th style="background:' + bg + ';font-weight:700;text-align:center">' + esc(txt == null ? "" : String(txt)) + '</th>';
+}
+function buildPrintSheetHtml(){
+  var rows = buildSingleStyleSheet();
+  var n = OPS.length, k = contrastGroups().length, C = CONES.length;
+  var HDR = "#B8C4DC", YEL = "#FFFF00", GRN = "#92D050", QTYB = "#BDD7EE", GREY = "#C8C8C8", LBLUE = "#DDEBF7", PEACH = "#F4B183", CPEACH = "#FCE4D6";
+  function rowAt(i){ return rows[i] || []; }
+  var h = "";
+  h += '<div class="ps-title">' + esc(rows[0] ? rows[0][0] : "") + '</div>';
+  h += '<div class="ps-sub">' + esc(rows[1] ? rows[1][0] : "") + '</div>';
+  h += '<table class="ps-info">';
+  for(var r = 3; r <= 6; r++){
+    var ir = rowAt(r);
+    h += '<tr><td class="psb">' + psVal(ir[0]) + '</td><td>' + psVal(ir[1]) + '</td><td class="psb">' + psVal(ir[5]) + '</td><td>' + psVal(ir[6]) + '</td></tr>';
+  }
+  h += '</table>';
+  var oh = rowAt(8);
+  h += '<table class="ps-ops"><tr>';
+  [oh[0], oh[1], oh[2], oh[3], oh[4], oh[5], oh[6], oh[7], oh[12], oh[13]].forEach(function(t, ci){
+    h += psTh(t || "", ci === 4 ? YEL : (ci === 9 ? PEACH : HDR));
+  });
+  h += '</tr>';
+  for(var i = 0; i < n; i++){
+    var orow = rowAt(9 + i);
+    var lab = opSpecialLabel(OPS[i]);
+    var pastel = lab ? specialRowColour(lab) : "";
+    h += '<tr' + (pastel ? ' style="background:' + pastel + '"' : "") + '>';
+    h += psTd(orow[0], "psc", "") + psTd(orow[1], "psl", "") + psTd(orow[2], "psc", "") + psTd(orow[3], "psc", "")
+      + psTd(orow[4], "psc", YEL)
+      + psTd(orow[5], "psc", (num(orow[5]) > 1 ? QTYB : ""))
+      + psTd(orow[6], "psc", "") + psTd(orow[7], "psl", "") + psTd(orow[12], "psc", "") + psTd(orow[13], "psc", "");
+    h += '</tr>';
+  }
+  h += '</table>';
+  h += '<div class="ps-sec psb">' + psVal(rowAt(10 + n)[0]) + '</div>';
+  var th = rowAt(11 + n);
+  h += '<table class="ps-tot"><tr>';
+  for(var ci = 0; ci < 5; ci++) h += psTh(th[ci] || "", HDR);
+  h += '</tr>';
+  function totRow(rr, bold){
+    var b = bold ? " psb" : "";
+    return '<tr><td class="psl' + b + '">' + psVal(rr[0]) + '</td>'
+      + '<td class="psc' + b + '">' + psVal(rr[1]) + '</td>'
+      + '<td class="psc' + b + '">' + psVal(rr[2]) + '</td>'
+      + '<td class="psc' + b + '">' + psVal(rr[3]) + '</td>'
+      + '<td class="psc psb psb12" style="background:' + GRN + '">' + psVal(rr[4]) + '</td></tr>';
+  }
+  h += totRow(rowAt(12 + n), false);
+  for(var j = 0; j < k; j++) h += totRow(rowAt(13 + n + j), false);
+  h += totRow(rowAt(13 + n + k), true);
+  h += '</table>';
+  h += '<div class="ps-sec psb">' + psVal(rowAt(15 + n + k)[0]) + '</div>';
+  var ch = rowAt(16 + n + k);
+  h += '<table class="ps-cone"><tr>';
+  for(var ci = 1; ci <= 7; ci++) h += psTh(ch[ci] || "", HDR);
+  h += '</tr>';
+  var coneCount = 1 + k + C;
+  for(var ci2 = 0; ci2 < coneCount; ci2++){
+    var crow = rowAt(17 + n + k + ci2);
+    h += '<tr><td class="psl" style="background:' + CPEACH + '">' + psVal(crow[1]) + '</td>'
+      + '<td class="psc" style="background:' + CPEACH + '">' + psVal(crow[2]) + '</td>'
+      + '<td class="psc" style="background:' + CPEACH + '">' + psVal(crow[3]) + '</td>'
+      + '<td class="psc" style="background:' + CPEACH + '">' + psVal(crow[4]) + '</td>'
+      + '<td class="psc" style="background:' + CPEACH + '">' + psVal(crow[5]) + '</td>'
+      + '<td class="psc" style="background:' + CPEACH + '">' + psVal(crow[6]) + '</td>'
+      + '<td class="psc" style="background:' + CPEACH + '">' + psVal(crow[7]) + '</td></tr>';
+  }
+  var ct = rowAt(18 + n + 2 * k + C);
+  h += '<tr><td class="psl psb">' + psVal(ct[1]) + '</td>'
+    + '<td class="psc psb">' + psVal(ct[2]) + '</td>'
+    + '<td class="psc psb">' + psVal(ct[3]) + '</td>'
+    + '<td class="psc psb psb12" style="background:' + GRN + '">' + psVal(ct[4]) + '</td>'
+    + '<td class="psc psb">' + psVal(ct[5]) + '</td>'
+    + '<td class="psc psb">' + psVal(ct[6]) + '</td>'
+    + '<td class="psc psb">' + psVal(ct[7]) + '</td></tr>';
+  h += '</table>';
+  return h;
+}
 $("btnExportPdf").onclick = function(){
   var at = singleStyleAllTotals();
   var sz = selVal("fSize", "fSizeCustom");
   var st = styleNameVal().replace(/[\\\/\?\%\*\:\|\"<>]/g, "");
-  fitAndPrint($("page2"), (st || "Thread-Sheet") + (sz ? "_" + sz : "") + "_" + at.total.toFixed(2) + "m");
+  var docTitle = (st || "Thread-Sheet") + (sz ? "_" + sz : "") + "_" + at.total.toFixed(2) + "m";
+  var pv = $("printSheetView");
+  pv.innerHTML = buildPrintSheetHtml();
+  document.body.classList.add("print-sheet-only");
+  pv.style.display = "block";
+  function done(){ document.body.classList.remove("print-sheet-only"); pv.style.display = ""; }
+  var old = window.onafterprint;
+  window.onafterprint = function(){ done(); window.onafterprint = old; };
+  fitAndPrint(pv, docTitle);
+  setTimeout(done, 30000);
 };
 $("btnExportPdf2").onclick = function(){ fitAndPrint($("page2")); };
 </script>
