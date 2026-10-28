@@ -124,6 +124,7 @@
   table.ops-table th:nth-child(14),table.ops-table td:nth-child(14){width:70px;max-width:70px}
   table.ops-table th:nth-child(15),table.ops-table td:nth-child(15){width:70px;max-width:70px}
   table.ops-table th:nth-child(16),table.ops-table td:nth-child(16){width:56px;max-width:56px}
+  table.ops-table{width:1300px;max-width:1300px}
   .print-only{display:none}
   .no-style .colour-field{display:none}
   .folder{cursor:pointer}
@@ -263,7 +264,7 @@
     <div class="print-only" id="sendPrintTitle" style="font-weight:700">GMS COMPOSITE KNITTING KNITTING IND LTD.</div>
     <div class="print-only" id="sendPrintHeading" style="font-weight:700"></div>
     <div class="tbl-wrap"><table>
-      <thead><tr><th>SL</th><th>BUYER</th><th>STYLE</th><th>ITEM</th><th>SIZE</th><th>Date</th><th>MTR</th><th>BODY THREAD</th><th>SPECIAL THREAD</th><th>REMARKS</th><th>PROCESS</th><th class="no-print">REMOVE</th></tr></thead>
+      <thead><tr><th>SL</th><th>BUYER</th><th>STYLE</th><th>ITEM</th><th>SIZE</th><th>Date</th><th>MTR</th><th>BODY THREAD</th><th>SPECIAL THREAD</th><th>REMARKS</th><th class="no-print">REMOVE</th></tr></thead>
       <tbody id="sendBody"></tbody>
     </table></div>
     <h3 class="no-print" style="margin:14px 0 6px;font-size:15px">Saved old lists</h3>
@@ -392,6 +393,7 @@
       <div><label>Body thread name</label><select class="fi" id="fBodyThread"><option value="50/2">50/2</option><option value="20/2">20/2</option><option value="__custom">＋ Custom…</option></select><div class="row" id="fBodyThreadCustomWrap" style="display:none;margin-top:6px"><input class="fi" id="fBodyThreadCustom" placeholder="Type thread name" style="flex:1"></div></div>
       <div><label>Date</label><input class="fi" id="fDate" type="date"></div>
       <div><label>Order qty (pcs)</label><input class="fi" id="fOrderQty" type="number" placeholder="e.g. 5000"></div>
+      <div><label>Order extra %</label><input class="fi" id="fOrderPct" type="number" value="3"></div>
       <div><label>Thread allowance %</label><input class="fi" id="fAllowPct" type="number" value="20"></div>
       <div><label>Cone size</label><select class="fi" id="fConeMode"><option value="auto">Auto</option><option value="manual">Manual</option></select></div>
       <div id="manualConeWrap" style="display:none"><label>Manual cone length (m)</label><input class="fi" id="fManualCone" type="number" value="4000"></div>
@@ -483,7 +485,7 @@
   <!-- ============ CONE REQUIREMENT ============ -->
   <section class="card">
     <h2>Cone requirement</h2>
-    <p class="sub" id="coneRuleText">Cone rule: colour quantity below 2000 pcs uses 2000-meter cones; 2000 pcs or above uses 4000-meter cones. Cones = total thread ÷ cone length, rounded up when ordering. Metres = inches × 0.0254.</p>
+    <p class="sub" id="coneRuleText">Cone rule: colour quantity below 2000 pcs uses 2000-meter cones; 2000 pcs or above uses 4000-meter cones. Cones = total thread ÷ cone length, rounded up when ordering. Metres = inches × 0.0254. Header order qty + extra % (default 3%) fills cone rows without their own qty.</p>
     <div class="tbl-wrap"><table>
       <thead><tr>
         <th>Body colour / Thread and colour</th><th>Qty (pcs)</th><th>Thread per pc (m)</th>
@@ -714,6 +716,8 @@ function mToYards(m){ return m / 0.9144; }
 function mToUnit(m, unit){ if(unit === "yards") return mToYards(m); if(unit === "in") return m / 0.0254; return m; }
 function unitLabel(unit){ return unit === "yards" ? "yards" : unit === "in" ? "in" : "m"; }
 function orderQtyNum(){ var el = $("fOrderQty"); return el ? num(el.value) : 0; }
+function orderPctVal(){ var el = $("fOrderPct"); return el ? num(el.value) : 3; }
+function orderQtyEff(){ return Math.round(orderQtyNum() * (1 + orderPctVal() / 100)); }
 function bodyThreadVal(){
   var v = selVal("fBodyThread", "fBodyThreadCustom");
   return v || "50/2";
@@ -764,13 +768,13 @@ function conesExact(totalM, coneLen){ return coneLen > 0 ? totalM / coneLen : 0;
 function totalBodyQty(){
   var bq = coneQtyFor("body");
   if(bq !== "" && num(bq) > 0) return num(bq);
-  var oq = orderQtyNum();
+  var oq = orderQtyEff();
   if(oq > 0) return oq;
   var q = 0; CONES.forEach(function(r){ q += num(r.qty); }); return q;
 }
 function coneQtyFor(key){
   if(Object.prototype.hasOwnProperty.call(coneQtyMap, key)) return coneQtyMap[key];
-  var oq = orderQtyNum();
+  var oq = orderQtyEff();
   return oq ? String(oq) : "";
 }
 /* Special-thread groups present in the operations: keyed by type + colour,
@@ -1832,6 +1836,7 @@ $("btnSaveAccSizeCustom").onclick = function(){ saveCustomName("accSize", "accSi
 $("fFit").addEventListener("change", syncAccHeader);
 $("fDate").addEventListener("change", syncAccHeader);
 $("fOrderQty").addEventListener("input", function(){ syncAccHeader(); renderCones(); });
+$("fOrderPct").addEventListener("input", function(){ renderCones(); });
 $("fStyle").addEventListener("input", function(){ applyStyleChosenClass(); renderCones(); syncAccHeader(); });
 
 function todayISO(){
@@ -1871,7 +1876,7 @@ function sheetData(){
     buyer: selVal("fBuyer", "fBuyerCustom"), style: styleNameVal(), styleKey: currentStyleKey,
     item: selVal("fItem", "fItemCustom"), size: selVal("fSize", "fSizeCustom"),
     fit: $("fFit").value, bodyThread: bodyThreadVal(),
-    date: $("fDate").value, orderQty: orderQtyNum(), allowPct: allowPctVal(),
+    date: $("fDate").value, orderQty: orderQtyNum(), allowPct: allowPctVal(), orderPct: orderPctVal(),
     coneMode: coneModeVal(), manualCone: manualConeVal(),
     preparedBy: preparedByVal(), createdBy: preparedByVal(),
     checker: preparedByVal(),
@@ -1906,6 +1911,7 @@ function loadSheet(d){
   })();
   $("fDate").value = d.date || todayISO();
   $("fOrderQty").value = (d.orderQty != null ? d.orderQty : "");
+  $("fOrderPct").value = (d.orderPct != null ? d.orderPct : 3);
   $("fAllowPct").value = (d.allowPct != null ? d.allowPct : 20);
   $("fConeMode").value = d.coneMode || "auto";
   $("fManualCone").value = (d.manualCone != null ? d.manualCone : 4000);
@@ -2583,17 +2589,15 @@ function renderSendList(){
     var m = listRowMetres(d);
     var body = "BODY THREAD--" + m.body;
     var spec = m.groups.map(function(g){ return esc(g.label + "-" + g.m); }).join("<br>");
-    var proc = (d.ops || []).map(function(op){ return op.name || ""; }).filter(function(n){ return !!n; }).slice(0, 3).map(function(n){ return esc(n); }).join("<br>");
     html += '<tr data-key="' + esc(it.key) + '" style="cursor:pointer" title="Click to open"><td>' + (j + 1) + '</td><td>' + esc(d.buyer) + '</td><td><button class="btn btn-p btn-sm" data-send-open="' + esc(it.key) + '">OPEN</button> ' + esc(d.style) + '</td>'
       + '<td>' + esc(d.item) + '</td><td>' + esc(d.size) + '</td><td>' + esc(entryDate(d)) + '</td>'
       + '<td class="mtr">' + m.total + '</td>'
       + '<td>' + esc(body) + '</td>'
       + '<td>' + spec + '</td>'
       + '<td>' + esc(d.remark || "") + '</td>'
-      + '<td>' + proc + '</td>'
       + '<td class="no-print"><button class="btn btn-d btn-sm" data-send-remove="' + esc(it.key) + '">✕</button></td></tr>';
   });
-  $("sendBody").innerHTML = html || '<tr><td colspan="12" class="mut">Merchant list is empty. Sheet theke ADD TO MERCHANT LIST dile ekhane joma hobe.</td></tr>';
+  $("sendBody").innerHTML = html || '<tr><td colspan="11" class="mut">Merchant list is empty. Sheet theke ADD TO MERCHANT LIST dile ekhane joma hobe.</td></tr>';
 }
 $("sendBody").addEventListener("click", function(e){
   var rm = e.target.closest ? e.target.closest("[data-send-remove]") : null;
@@ -2632,15 +2636,14 @@ function buildSendListSheetFrom(items, heading){
   rows.push(["GMS COMPOSITE KNITTING KNITTING IND LTD."]);
   rows.push([heading || "ALL BUYERS THREAD CONSUMPTION"]);
   rows.push([listConeNoteText()]);
-  rows.push(["SL", "BUYER", "STYLE", "ITEM", "SIZE", "MTR", "BODY THREAD", "SPECIAL THREAD", "REMARKS", "PROCESS"]);
+  rows.push(["SL", "BUYER", "STYLE", "ITEM", "SIZE", "MTR", "BODY THREAD", "SPECIAL THREAD", "REMARKS"]);
   (items || []).forEach(function(d, i){
     d = d || {};
     var m = listRowMetres(d);
     rows.push([i + 1, d.buyer || "", d.style || "", d.item || "", d.size || "", m.total,
       "BODY THREAD--" + m.body,
       m.groups.map(function(g){ return g.label + "-" + g.m; }).join("\n"),
-      d.remark || "",
-      (d.ops || []).map(function(op){ return op.name || ""; }).filter(function(n){ return !!n; }).slice(0, 3).join("\n")]);
+      d.remark || ""]);
   });
   return rows;
 }
@@ -2649,8 +2652,7 @@ function sendSheetHeights(datas){
   var heights = [{}, {}, {}, {}];
   (datas || []).forEach(function(d){
     var g = listRowMetres(d || {}).groups.length;
-    var pc = Math.min(((d || {}).ops || []).length, 3);
-    heights.push({ hpt: 15 * Math.max(1, g, pc) });
+    heights.push({ hpt: 15 * Math.max(1, g) });
   });
   return heights;
 }
@@ -2709,8 +2711,8 @@ $("histBody").addEventListener("click", function(e){
       try{
         var wb = XLSX.utils.book_new();
         var ws = XLSX.utils.aoa_to_sheet(buildSendListSheetFrom(items, sendExportMeta(items).heading));
-        ws["!merges"] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 9 } }, { s: { r: 1, c: 0 }, e: { r: 1, c: 9 } }, { s: { r: 2, c: 0 }, e: { r: 2, c: 9 } }];
-        ws["!cols"] = [{ wch: 5 }, { wch: 16 }, { wch: 28 }, { wch: 14 }, { wch: 10 }, { wch: 12 }, { wch: 20 }, { wch: 28 }, { wch: 18 }, { wch: 40 }];
+        ws["!merges"] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 8 } }, { s: { r: 1, c: 0 }, e: { r: 1, c: 8 } }, { s: { r: 2, c: 0 }, e: { r: 2, c: 8 } }];
+        ws["!cols"] = [{ wch: 5 }, { wch: 16 }, { wch: 28 }, { wch: 14 }, { wch: 10 }, { wch: 12 }, { wch: 20 }, { wch: 28 }, { wch: 18 }];
         ws["!rows"] = sendSheetHeights(items);
         var histMeta = sendExportMeta(items);
         XLSX.utils.book_append_sheet(wb, ws, histMeta.tab);
@@ -2736,8 +2738,8 @@ $("btnSendExcel").onclick = function(){
     try{
       var wb = XLSX.utils.book_new();
       var ws = XLSX.utils.aoa_to_sheet(buildSendListSheet());
-      ws["!merges"] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 9 } }, { s: { r: 1, c: 0 }, e: { r: 1, c: 9 } }, { s: { r: 2, c: 0 }, e: { r: 2, c: 9 } }];
-      ws["!cols"] = [{ wch: 5 }, { wch: 16 }, { wch: 28 }, { wch: 14 }, { wch: 10 }, { wch: 12 }, { wch: 20 }, { wch: 28 }, { wch: 18 }, { wch: 40 }];
+      ws["!merges"] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 8 } }, { s: { r: 1, c: 0 }, e: { r: 1, c: 8 } }, { s: { r: 2, c: 0 }, e: { r: 2, c: 8 } }];
+      ws["!cols"] = [{ wch: 5 }, { wch: 16 }, { wch: 28 }, { wch: 14 }, { wch: 10 }, { wch: 12 }, { wch: 20 }, { wch: 28 }, { wch: 18 }];
       ws["!rows"] = sendSheetHeights(sendRowsSorted().map(function(it){ return it.data; }));
       var sendMeta = sendExportMeta(sendRowsSorted().map(function(it){ return it.data; }));
       XLSX.utils.book_append_sheet(wb, ws, sendMeta.tab);
@@ -3538,6 +3540,15 @@ function singleSheetThreadLabel(op){
   });
   return parts.join(" + ");
 }
+function singleStyleAllTotals(){
+  var t = totals();
+  var allB = t.body;
+  contrastGroups().forEach(function(g){ allB += r4(g.inches); });
+  var allM = r4(inToM(allB));
+  var allow = allowPctVal();
+  var allA = r4(allM * allow / 100);
+  return { allB: allB, allM: allM, allA: allA, total: r4(allM + allA) };
+}
 function buildSingleStyleSheet(){
   var buyer = selVal("fBuyer", "fBuyerCustom"), style = styleNameVal();
   var item = selVal("fItem", "fItemCustom"), size = selVal("fSize", "fSizeCustom");
@@ -3566,17 +3577,14 @@ function buildSingleStyleSheet(){
   var bodyM = r4(inToM(t.body));
   var bodyA = r4(bodyM * allow / 100);
   rows.push([bodyThreadLabel(), t.body, bodyM, bodyA, r4(bodyM + bodyA)]);
-  var allB = t.body;
   contrastGroups().forEach(function(g){
     var gi = r4(g.inches);
-    allB += gi;
     var gm = r4(inToM(gi));
     var ga = r4(gm * allow / 100);
     rows.push([g.label, gi, gm, ga, r4(gm + ga)]);
   });
-  var allM = r4(inToM(allB));
-  var allA = r4(allM * allow / 100);
-  rows.push(["All threads", allB, allM, allA, r4(allM + allA)]);
+  var at = singleStyleAllTotals();
+  rows.push(["All threads", at.allB, at.allM, at.allA, at.total]);
   rows.push([]);
   rows.push(["Colour-wise thread and cones (below 2000 pcs 2000 m cone, 2000 pcs or more 4000 m cone)"]);
   rows.push(["", "Thread and colour", "Qty (pcs)", "Thread per pc (Mtr)", "Total thread (Mtr)", "Cone (Mtr)", "Cones", "Cones to order"]);
@@ -4315,7 +4323,9 @@ function exportExcel(){
       singlePatchN = OPS.length; singlePatchK = contrastGroups().length; singlePatchC = CONES.length;
       singlePatchRowFills = {};
       OPS.forEach(function(op, i){ var lab = opSpecialLabel(op); if(lab) singlePatchRowFills[10 + i] = specialRowColour(lab); });
-      downloadXlsx(wb, (style || "Thread-Sheet") + "-Thread-Sheet.xlsx", patchXlsxSingleStyleColors);
+      var at = singleStyleAllTotals();
+      var sz = selVal("fSize", "fSizeCustom");
+      downloadXlsx(wb, (style || "Thread-Sheet") + (sz ? "_" + sz : "") + "_" + at.total.toFixed(2) + "m-Thread-Sheet.xlsx", patchXlsxSingleStyleColors);
       setStatus("Excel exported.");
     }catch(err){
       setStatus("Ready");
@@ -4358,16 +4368,18 @@ function printZoom(contentH, pageH){
   if(!contentH || !pageH || contentH <= 0 || pageH <= 0) return 1;
   return Math.min(1, pageH / contentH);
 }
-function fitAndPrint(containerEl){
-  var el = containerEl, prevZoom = null;
+function fitAndPrint(containerEl, docTitle){
+  var el = containerEl, prevZoom = null, prevTitle = null;
   try{
     if(el && el.scrollHeight){
       var z = printZoom(el.scrollHeight, 718);
       if(z < 1){ prevZoom = el.style.zoom || ""; el.style.zoom = z; }
     }
   }catch(e){}
+  if(docTitle){ prevTitle = document.title; document.title = docTitle; }
   function restore(){
     try{ if(el && prevZoom !== null) el.style.zoom = prevZoom; }catch(e){}
+    try{ if(prevTitle !== null) document.title = prevTitle; }catch(e){}
   }
   var old = window.onafterprint;
   window.onafterprint = function(){ restore(); window.onafterprint = old; if(old) old(); };
@@ -4376,7 +4388,12 @@ function fitAndPrint(containerEl){
      the fit zoom too early un-fits the page and prints many pages. */
   setTimeout(restore, 30000);
 }
-$("btnExportPdf").onclick = function(){ fitAndPrint($("page2")); };
+$("btnExportPdf").onclick = function(){
+  var at = singleStyleAllTotals();
+  var sz = selVal("fSize", "fSizeCustom");
+  var st = styleNameVal().replace(/[\\\/\?\%\*\:\|\"<>]/g, "");
+  fitAndPrint($("page2"), (st || "Thread-Sheet") + (sz ? "_" + sz : "") + "_" + at.total.toFixed(2) + "m");
+};
 $("btnExportPdf2").onclick = function(){ fitAndPrint($("page2")); };
 </script>
 </body>
