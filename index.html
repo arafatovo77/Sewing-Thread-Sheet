@@ -147,6 +147,14 @@
     #sheetModalBack,#sheetModalClose{display:none !important}
     #sheetModalBox{position:static;width:auto;height:auto;overflow:visible;box-shadow:none;border-radius:0;padding:0}
   }
+  /* Multi-select filter dropdowns: tick boxes inside the dropdown, so
+     specific processes / machines can be picked together (empty = ALL) */
+  .msel{position:relative;display:inline-block}
+  .msel-btn{max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .msel-panel{position:absolute;top:100%;left:0;z-index:60;min-width:200px;max-width:280px;max-height:260px;overflow:auto;background:#fff;border:1px solid #ccc;border-radius:8px;box-shadow:0 10px 30px rgba(0,0,0,.2);padding:6px}
+  .msel-item{display:block;padding:5px 8px;cursor:pointer;white-space:nowrap}
+  .msel-item:hover{background:#F1F3F5}
+  .msel-item input{margin-right:6px}
   .print-only{display:none}
   .no-style .colour-field{display:none}
   .folder{cursor:pointer}
@@ -442,8 +450,8 @@
     <h2>Operations</h2>
     <div class="row" style="margin-bottom:8px">
       <label class="mut">Filter:</label>
-      <select class="fi" id="selProcess" style="max-width:200px"><option value="">ALL PROCESS</option></select>
-      <select class="fi" id="selMachine" style="max-width:200px"><option value="">ALL M/C</option></select>
+      <div class="msel" id="mselProcess"><button type="button" class="btn btn-o msel-btn" id="mselProcessBtn">ALL PROCESS ▾</button><div class="msel-panel" id="mselProcessPanel" style="display:none"></div></div>
+      <div class="msel" id="mselMachine"><button type="button" class="btn btn-o msel-btn" id="mselMachineBtn">ALL M/C ▾</button><div class="msel-panel" id="mselMachinePanel" style="display:none"></div></div>
       <button class="btn btn-o btn-sm" id="btnShowAll">SHOW ALL</button>
       <span class="mut" id="opCount"></span>
     </div>
@@ -940,18 +948,71 @@ function opSpecialLabel(op){
 }
 
 /* ================= Render: operations ================= */
+/* Multi-select filters: ticked selections; empty = ALL (no filter). */
+var filterProcs = [], filterMachs = [];
+function mselUpdateBtn(kind){
+  var sel = kind === "process" ? filterProcs : filterMachs;
+  var btn = kind === "process" ? $("mselProcessBtn") : $("mselMachineBtn");
+  var allLabel = kind === "process" ? "ALL PROCESS" : "ALL M/C";
+  if(sel.length === 0) btn.textContent = allLabel + " ▾";
+  else if(sel.length === 1) btn.textContent = sel[0] + " ▾";
+  else btn.textContent = sel.length + (kind === "process" ? " processes ▾" : " machines ▾");
+}
+function buildMselPanel(kind, values){
+  var panel = kind === "process" ? $("mselProcessPanel") : $("mselMachinePanel");
+  var sel = kind === "process" ? filterProcs : filterMachs;
+  var allLabel = kind === "process" ? "ALL PROCESS" : "ALL M/C";
+  var html = '<label class="msel-item"><input type="checkbox" data-msel-all="' + kind + '"' + (sel.length === 0 ? ' checked' : '') + '> ' + esc(allLabel) + '</label>';
+  values.forEach(function(v){
+    html += '<label class="msel-item"><input type="checkbox" data-msel-kind="' + kind + '" data-msel-val="' + esc(v) + '"' + (sel.indexOf(v) !== -1 ? ' checked' : '') + '> ' + esc(v) + '</label>';
+  });
+  panel.innerHTML = html;
+}
 function refreshFilters(){
-  var ps = $("selProcess"), ms = $("selMachine");
-  var curP = ps.value, curM = ms.value;
   var procs = [], machs = [];
   OPS.forEach(function(op){
     if(op.name && procs.indexOf(op.name) === -1) procs.push(op.name);
     if(op.machine && machs.indexOf(op.machine) === -1) machs.push(op.machine);
   });
-  ps.innerHTML = '<option value="">ALL PROCESS</option>' + procs.map(function(p){ return '<option value="' + esc(p) + '">' + esc(p) + '</option>'; }).join("");
-  ms.innerHTML = '<option value="">ALL M/C</option>' + machs.map(function(m){ return '<option value="' + esc(m) + '">' + esc(m) + '</option>'; }).join("");
-  ps.value = curP; ms.value = curM;
+  /* Prune ticks for values no longer in the sheet; the rest survive. */
+  filterProcs = filterProcs.filter(function(p){ return procs.indexOf(p) !== -1; });
+  filterMachs = filterMachs.filter(function(m){ return machs.indexOf(m) !== -1; });
+  buildMselPanel("process", procs);
+  buildMselPanel("machine", machs);
+  mselUpdateBtn("process"); mselUpdateBtn("machine");
 }
+function mselPanelChange(e){
+  var t = e.target;
+  var allKind = t.getAttribute ? t.getAttribute("data-msel-all") : null;
+  if(allKind){
+    if(allKind === "process") filterProcs = []; else filterMachs = [];
+    renderOps();
+    return;
+  }
+  var kind = t.getAttribute ? t.getAttribute("data-msel-kind") : null;
+  if(!kind) return;
+  var val = t.getAttribute("data-msel-val");
+  var arr = kind === "process" ? filterProcs : filterMachs;
+  if(t.checked){ if(arr.indexOf(val) === -1) arr.push(val); }
+  else { var ix = arr.indexOf(val); if(ix !== -1) arr.splice(ix, 1); }
+  if(kind === "process") filterProcs = arr; else filterMachs = arr;
+  renderOps();
+}
+function mselTogglePanel(kind){
+  var p = kind === "process" ? $("mselProcessPanel") : $("mselMachinePanel");
+  var other = kind === "process" ? $("mselMachinePanel") : $("mselProcessPanel");
+  other.style.display = "none";
+  p.style.display = (p.style.display === "block" ? "none" : "block");
+}
+$("mselProcessPanel").addEventListener("change", mselPanelChange);
+$("mselMachinePanel").addEventListener("change", mselPanelChange);
+$("mselProcessBtn").onclick = function(){ mselTogglePanel("process"); };
+$("mselMachineBtn").onclick = function(){ mselTogglePanel("machine"); };
+document.addEventListener("click", function(e){
+  if(e.target.closest && e.target.closest(".msel")) return;
+  $("mselProcessPanel").style.display = "none";
+  $("mselMachinePanel").style.display = "none";
+});
 function isHpMachine(m){ return String(m || "").trim().toLowerCase() === "hp"; }
 /* Colours used in this style (both thread slots, first-seen order): the
    options of the colour dropdowns. A colour typed once becomes pickable. */
@@ -1021,12 +1082,12 @@ function renderOps(){
     if(atr){ keepId = atr.getAttribute("data-id"); keepF = ae.getAttribute("data-f"); }
   }
   refreshFilters();
-  var fp = $("selProcess").value, fm = $("selMachine").value;
+  var fps = filterProcs, fms = filterMachs;
   var html = "";
   var visible = 0;
   OPS.forEach(function(op, i){
-    if(fp && op.name !== fp) return;
-    if(fm && op.machine !== fm) return;
+    if(fps.length && fps.indexOf(op.name) === -1) return;
+    if(fms.length && fms.indexOf(op.machine) === -1) return;
     visible++;
     var s = opSplit(op);
     var spLabel = opSpecialLabel(op);
@@ -1161,7 +1222,7 @@ $("opsBody").addEventListener("click", function(e){
     pushUndo();
     var nop = newOp({});
     OPS.splice(idx + 1, 0, nop);
-    $("selProcess").value = ""; $("selMachine").value = "";
+    filterProcs = []; filterMachs = [];
     renderOps();
     var nrow = $("opsBody").querySelector('tr[data-id="' + nop.id + '"]');
     if(nrow){
@@ -1372,7 +1433,8 @@ $("opsBody").addEventListener("keydown", function(e){
     if(!movedR) focusAt(ri + 1, 0);
   }
 });
-$("selProcess").addEventListener("change", renderOps);
+$("btnAddOp").onclick = function(){ pushUndo(); OPS.push(newOp({})); renderOps(); };
+$("btnShowAll").onclick = function(){ filterProcs = []; filterMachs = []; renderOps(); };
 /* Auto-save triggers: any edit inside the sheet wraps schedules a save;
    the signature check in doAutoSave makes harmless clicks/navigation
    no-ops, so no write happens unless the sheet actually changed. */
@@ -1382,9 +1444,6 @@ $("selProcess").addEventListener("change", renderOps);
   w.addEventListener("change", function(){ saveLocalDraftIfChanged(); scheduleAutoSave(); });
   w.addEventListener("click", function(){ saveLocalDraftIfChanged(); scheduleAutoSave(); });
 });
-$("selMachine").addEventListener("change", renderOps);
-$("btnAddOp").onclick = function(){ pushUndo(); OPS.push(newOp({})); renderOps(); };
-$("btnShowAll").onclick = function(){ $("selProcess").value = ""; $("selMachine").value = ""; renderOps(); };
 $("btnDeleteAllHp").onclick = function(){
   var hpRows = OPS.filter(function(o){ return String(o.machine || "").trim().toLowerCase() === "hp"; });
   if(!hpRows.length){ alert("No HP rows to delete."); return; }
@@ -1396,11 +1455,11 @@ $("btnDeleteAllHp").onclick = function(){
 };
 $("btnCsApply").onclick = function(){
   var type = $("csThread").value, colour = $("csColour").value.trim(), pct = $("csPct").value;
-  var fp = $("selProcess").value, fm = $("selMachine").value, n = 0;
+  var fps = filterProcs, fms = filterMachs, n = 0;
   pushUndo();
   OPS.forEach(function(op){
-    if(fp && op.name !== fp) return;
-    if(fm && op.machine !== fm) return;
+    if(fps.length && fps.indexOf(op.name) === -1) return;
+    if(fms.length && fms.indexOf(op.machine) === -1) return;
     op.thread1 = type; op.colour1 = colour;
     /* Panel left at its default 20 (or empty) with a known machine: the
        machine's looper % wins (4OL 80, FL 60, SN 50); a typed % is the
