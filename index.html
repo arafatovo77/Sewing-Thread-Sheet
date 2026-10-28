@@ -1710,7 +1710,7 @@ function renderCones(){
     return '<tr data-cone-key="' + esc(key) + '">'
       + '<td>' + (editableLabel ? '<input data-f="colour" value="' + esc(label) + '">' + (extraLabel || "") : esc(label)) + '</td>'
       + '<td><input class="num" data-f="qty" value="' + esc((qtyVal === "" || qtyVal == null) ? "" : effQty) + '"></td>'
-      + '<td><input class="num" data-f="pct" value="' + esc(conePctTyped(key)) + '" placeholder="' + (key.indexOf("custom:") === 0 ? ((rawQty === "" || rawQty == null) ? orderPctVal() : "0") : orderPctVal()) + '"></td>'
+      + '<td><input class="num" data-f="pct" value="' + esc(conePctTyped(key)) + '"></td>'
       + '<td>' + (editablePerPc ? '<input class="num" data-f="perPc" value="' + esc(perPc) + '">' : Number(perPc).toFixed(2)) + '</td>'
       + '<td class="cone-total">' + calc.totalM.toFixed(2) + '</td>'
       + '<td class="cone-len">' + calc.cone + '</td>'
