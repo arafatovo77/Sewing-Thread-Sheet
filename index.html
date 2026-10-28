@@ -485,7 +485,7 @@
   <!-- ============ CONE REQUIREMENT ============ -->
   <section class="card">
     <h2>Cone requirement</h2>
-    <p class="sub" id="coneRuleText">Cone rule: colour quantity below 2000 pcs uses 2000-meter cones; 2000 pcs or above uses 4000-meter cones. Cones = total thread ÷ cone length, rounded up when ordering. Metres = inches × 0.0254. Header order qty + extra % (default 3%) fills cone rows without their own qty.</p>
+    <p class="sub" id="coneRuleText">Cone rule: colour quantity below 2000 pcs uses 2000-meter cones; 2000 pcs or above uses 4000-meter cones. Cones = total thread ÷ cone length, rounded up when ordering. Metres = inches × 0.0254. Header order qty + extra % (default 3%) applies to body/contrast cone rows (typed or inherited); custom colour rows use their qty exactly, no extra %.</p>
     <div class="tbl-wrap"><table>
       <thead><tr>
         <th>Body colour / Thread and colour</th><th>Qty (pcs)</th><th>Thread per pc (m)</th>
@@ -718,6 +718,14 @@ function unitLabel(unit){ return unit === "yards" ? "yards" : unit === "in" ? "i
 function orderQtyNum(){ var el = $("fOrderQty"); return el ? num(el.value) : 0; }
 function orderPctVal(){ var el = $("fOrderPct"); return el ? num(el.value) : 3; }
 function orderQtyEff(){ return Math.round(orderQtyNum() * (1 + orderPctVal() / 100)); }
+/* Effective cone qty: auto (body/contrast) rows get +extra %, custom rows use
+   their qty exactly (a custom qty may already include the % — never add twice).
+   Saved qtys stay raw; the % applies at calculation time only, so it can never
+   compound across saves or re-renders. */
+function coneEffQty(qtyVal, applyPct){
+  if(!applyPct || qtyVal === "" || qtyVal == null) return num(qtyVal);
+  return Math.round(num(qtyVal) * (1 + orderPctVal() / 100));
+}
 function bodyThreadVal(){
   var v = selVal("fBodyThread", "fBodyThreadCustom");
   return v || "50/2";
@@ -774,7 +782,7 @@ function totalBodyQty(){
 }
 function coneQtyFor(key){
   if(Object.prototype.hasOwnProperty.call(coneQtyMap, key)) return coneQtyMap[key];
-  var oq = orderQtyEff();
+  var oq = orderQtyNum();
   return oq ? String(oq) : "";
 }
 /* Special-thread groups present in the operations: keyed by type + colour,
@@ -1444,7 +1452,7 @@ function renderCones(){
   var groups = contrastGroups();
   var sumM = 0, sumExact = 0, sumOrder = 0;
   function rowHtml(key, label, qtyVal, perPc, editableLabel, editablePerPc, delKey, extraLabel){
-    var calc = coneRowCalc(qtyVal, perPc);
+    var calc = coneRowCalc(coneEffQty(qtyVal, key.indexOf("custom:") !== 0), perPc);
     sumM += calc.totalM; sumExact += calc.exact; sumOrder += calc.order;
     return '<tr data-cone-key="' + esc(key) + '">'
       + '<td>' + (editableLabel ? '<input data-f="colour" value="' + esc(label) + '">' + (extraLabel || "") : esc(label)) + '</td>'
@@ -3589,15 +3597,15 @@ function buildSingleStyleSheet(){
   rows.push(["Colour-wise thread and cones (below 2000 pcs 2000 m cone, 2000 pcs or more 4000 m cone)"]);
   rows.push(["", "Thread and colour", "Qty (pcs)", "Thread per pc (Mtr)", "Total thread (Mtr)", "Cone (Mtr)", "Cones", "Cones to order"]);
   var cSumM = 0, cSumExact = 0, cSumOrder = 0;
-  function coneExportRow(label, qtyVal, perPc){
-    var calc = coneRowCalc(qtyVal, perPc);
+  function coneExportRow(label, qtyVal, perPc, applyPct){
+    var calc = coneRowCalc(coneEffQty(qtyVal, applyPct), perPc);
     cSumM += calc.totalM; cSumExact += calc.exact; cSumOrder += calc.order;
     rows.push(["", label, ncell(qtyVal), (ncell(perPc) == null ? null : r4(ncell(perPc))), r4(calc.totalM), calc.cone, r4(calc.exact), calc.order]);
   }
   var t2 = totals();
-  coneExportRow(bodyThreadLabel(), coneQtyFor("body"), inToM(t2.body) * (1 + allow / 100));
+  coneExportRow(bodyThreadLabel(), coneQtyFor("body"), inToM(t2.body) * (1 + allow / 100), true);
   contrastGroups().forEach(function(g){
-    coneExportRow(g.label, coneQtyFor("grp:" + g.key), inToM(g.inches) * (1 + allow / 100));
+    coneExportRow(g.label, coneQtyFor("grp:" + g.key), inToM(g.inches) * (1 + allow / 100), true);
   });
   CONES.forEach(function(r){
     var lbl = r.colour || "";
@@ -3607,7 +3615,7 @@ function buildSingleStyleSheet(){
       var gl = gg ? gg.label : r.thread.slice(4);
       lbl = lbl ? gl + " — " + lbl : gl;
     }
-    coneExportRow(lbl, r.qty, r.perPc);
+    coneExportRow(lbl, r.qty, r.perPc, false);
   });
   rows.push(["", "Total", "", "", r4(cSumM), "", r4(cSumExact), cSumOrder]);
   return rows;
