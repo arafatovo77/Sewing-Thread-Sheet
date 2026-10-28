@@ -107,32 +107,46 @@
   table.ops-table th:nth-child(7),table.ops-table td:nth-child(7),table.ops-table th:nth-child(14),table.ops-table td:nth-child(14),table.ops-table th:nth-child(15),table.ops-table td:nth-child(15){width:76px}
   table.ops-table th:nth-child(8),table.ops-table td:nth-child(8),table.ops-table th:nth-child(11),table.ops-table td:nth-child(11){width:100px;max-width:100px}
   table.ops-table th:nth-child(9),table.ops-table td:nth-child(9),table.ops-table th:nth-child(12),table.ops-table td:nth-child(12){width:84px;max-width:84px}
-  /* Main working sheet only: 19 columns sum to 1298px, so the right side shows fully on a ~1300px computer screen */
-  table.ops-table th:nth-child(1),table.ops-table td:nth-child(1){width:40px;max-width:40px}
-  table.ops-table th:nth-child(2),table.ops-table td:nth-child(2){min-width:200px;width:200px;max-width:200px}
-  table.ops-table th:nth-child(3),table.ops-table td:nth-child(3){width:80px;max-width:80px}
-  table.ops-table th:nth-child(4),table.ops-table td:nth-child(4){width:70px;max-width:70px}
-  table.ops-table th:nth-child(5),table.ops-table td:nth-child(5){width:70px;max-width:70px}
-  table.ops-table th:nth-child(6),table.ops-table td:nth-child(6){width:70px;max-width:70px}
+  /* Main working sheet only: 19 columns sum to 1294px, so the right side shows fully on a ~1300px computer screen */
+  table.ops-table th:nth-child(1),table.ops-table td:nth-child(1){width:36px;max-width:36px}
+  table.ops-table th:nth-child(2),table.ops-table td:nth-child(2){min-width:300px;width:300px;max-width:300px}
+  table.ops-table th:nth-child(3),table.ops-table td:nth-child(3){width:70px;max-width:70px}
+  table.ops-table th:nth-child(4),table.ops-table td:nth-child(4){width:60px;max-width:60px}
+  table.ops-table th:nth-child(5),table.ops-table td:nth-child(5){width:60px;max-width:60px}
+  table.ops-table th:nth-child(6),table.ops-table td:nth-child(6){width:60px;max-width:60px}
   table.ops-table th:nth-child(7),table.ops-table td:nth-child(7){width:60px;max-width:60px}
-  table.ops-table th:nth-child(8),table.ops-table td:nth-child(8){width:70px;max-width:70px}
-  table.ops-table th:nth-child(9),table.ops-table td:nth-child(9){width:60px;max-width:60px}
-  table.ops-table th:nth-child(10),table.ops-table td:nth-child(10){width:50px;max-width:50px}
-  table.ops-table th:nth-child(11),table.ops-table td:nth-child(11){width:70px;max-width:70px}
-  table.ops-table th:nth-child(12),table.ops-table td:nth-child(12){width:60px;max-width:60px}
-  table.ops-table th:nth-child(13),table.ops-table td:nth-child(13){width:50px;max-width:50px}
-  table.ops-table th:nth-child(14),table.ops-table td:nth-child(14){width:70px;max-width:70px}
-  table.ops-table th:nth-child(15),table.ops-table td:nth-child(15){width:60px;max-width:60px}
-  table.ops-table th:nth-child(16),table.ops-table td:nth-child(16){width:50px;max-width:50px}
+  table.ops-table th:nth-child(8),table.ops-table td:nth-child(8){width:60px;max-width:60px}
+  table.ops-table th:nth-child(9),table.ops-table td:nth-child(9){width:55px;max-width:55px}
+  table.ops-table th:nth-child(10),table.ops-table td:nth-child(10){width:45px;max-width:45px}
+  table.ops-table th:nth-child(11),table.ops-table td:nth-child(11){width:60px;max-width:60px}
+  table.ops-table th:nth-child(12),table.ops-table td:nth-child(12){width:55px;max-width:55px}
+  table.ops-table th:nth-child(13),table.ops-table td:nth-child(13){width:45px;max-width:45px}
+  table.ops-table th:nth-child(14),table.ops-table td:nth-child(14){width:60px;max-width:60px}
+  table.ops-table th:nth-child(15),table.ops-table td:nth-child(15){width:55px;max-width:55px}
+  table.ops-table th:nth-child(16),table.ops-table td:nth-child(16){width:45px;max-width:45px}
   table.ops-table th:nth-child(17),table.ops-table td:nth-child(17){width:60px;max-width:60px}
   table.ops-table th:nth-child(18),table.ops-table td:nth-child(18){width:60px;max-width:60px}
   table.ops-table th:nth-child(19),table.ops-table td:nth-child(19){width:48px;max-width:48px}
-  table.ops-table{width:1298px;max-width:1298px}
+  table.ops-table{width:1294px;max-width:1294px}
   /* Main sheet = header to cone requirement: one uniform width on computer
-     (card padding 14px x2 + border 1px x2, so 1340 outer = 1310 inner >= 1298
+     (card padding 14px x2 + border 1px x2, so 1340 outer = 1310 inner >= 1294
      table, no horizontal scroll; phone screens are narrower than 1340, so
      this cap never binds there and phone scrolling is unchanged) */
   #page2{max-width:1340px;margin:0 auto}
+  /* Merchant-list style box: the sheet opens as a small centred box over
+     the list (the list stays visible behind it); the cross on the box
+     closes it and the list is instantly back. Only the merchant list
+     opens this way; the main list still opens full-page. */
+  #sheetModal{position:fixed;inset:0;z-index:9999;display:none}
+  #sheetModal.open{display:block}
+  #sheetModalBack{position:absolute;inset:0;background:rgba(0,0,0,.45)}
+  #sheetModalBox{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:94%;max-width:1150px;height:88vh;overflow:auto;background:#fff;border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.35);padding:44px 14px 12px}
+  #sheetModalClose{position:absolute;top:8px;right:10px;width:40px;height:40px;font-size:22px;line-height:1;border-radius:50%;border:1px solid #ccc;background:#fff;cursor:pointer;z-index:5}
+  @media print{
+    #sheetModal{position:static}
+    #sheetModalBack,#sheetModalClose{display:none !important}
+    #sheetModalBox{position:static;width:auto;height:auto;overflow:visible;box-shadow:none;border-radius:0;padding:0}
+  }
   .print-only{display:none}
   .no-style .colour-field{display:none}
   .folder{cursor:pointer}
@@ -255,7 +269,7 @@
     <div class="print-only" id="listPrintHeading" style="font-weight:700"></div>
     <p class="sub" id="listConeNote" style="margin-top:8px"></p>
     <div class="tbl-wrap"><table>
-      <thead><tr><th>SL</th><th>BUYER</th><th>STYLE</th><th>ITEM</th><th>SIZE</th><th>Date</th><th>MTR</th><th>BODY THREAD</th><th>SPECIAL THREAD</th><th>REMARKS</th><th>PROCESS</th><th class="no-print" id="listDeleteTh">DELETE</th><th class="no-print">MERCHANT</th></tr></thead>
+      <thead><tr><th>SL</th><th>BUYER</th><th>STYLE</th><th>ITEM</th><th>SIZE</th><th>Date</th><th>MTR</th><th>BODY THREAD</th><th>SPECIAL THREAD</th><th>REMARKS</th><th>PROCESS</th><th class="no-print" id="listDeleteTh">DELETE</th><th class="no-print">MERCHANT</th><th class="no-print">COPY</th></tr></thead>
       <tbody id="listBody"></tbody>
     </table></div>
   </section>
@@ -382,7 +396,6 @@
     <div class="row" style="margin-top:8px">
       <button class="btn btn-o" id="btnNewSheet">New sheet</button>
       <button class="btn btn-o" id="btnPasteGoto">PASTE FROM EXCEL</button>
-      <button class="btn btn-o" id="btnAddToList">ADD CURRENT STYLE TO LIST</button>
       <button class="btn btn-o" id="btnAddToSendList">ADD TO MERCHANT LIST</button>
       <button class="btn btn-o" id="btnUndo">Undo</button>
       <button class="btn btn-o" id="bellBtn">🔔 <span id="bellCount">0</span> pending</button>
@@ -559,6 +572,7 @@
   </div>
   </div>
 </main>
+<div id="sheetModal"><div id="sheetModalBack"></div><div id="sheetModalBox"><button id="sheetModalClose" title="Close">✕</button><div id="sheetModalSlot"></div></div></div>
 <script>
 /* ================= Firebase (user's own project, browser config) ================= */
 var firebaseConfig = {
@@ -671,8 +685,8 @@ function newOp(d){
     mcThread: d.mcThread == null ? "" : d.mcThread,
     mcAuto: !!d.mcAuto,
     seamQty: d.seamQty == null ? 1 : d.seamQty,
-    thread1: d.thread1 || "", colour1: d.colour1 || "", colourCustom1: !!d.colourCustom1, pct1: d.pct1 == null ? "" : d.pct1,
-    thread2: d.thread2 || "", colour2: d.colour2 || "", colourCustom2: !!d.colourCustom2, pct2: d.pct2 == null ? "" : d.pct2,
+    thread1: d.thread1 || "", colour1: d.colour1 || "", colourCustom1: !!d.colourCustom1, pct1: d.pct1 == null ? "" : d.pct1, pct1Auto: d.pct1Auto == null ? null : !!d.pct1Auto,
+    thread2: d.thread2 || "", colour2: d.colour2 || "", colourCustom2: !!d.colourCustom2, pct2: d.pct2 == null ? "" : d.pct2, pct2Auto: d.pct2Auto == null ? null : !!d.pct2Auto,
     thread3: d.thread3 || "", colour3: d.colour3 || "", colourCustom3: !!d.colourCustom3, pct3: d.pct3 == null ? "" : d.pct3 };
 }
 function newCone(d){
@@ -892,11 +906,16 @@ function applyMachineToRow(op){
   var m = findMachine(op.machine);
   if(m){
     if(op.mcThread === "" || op.mcThread == null || op.mcAuto){ op.mcThread = m.spi; op.mcAuto = true; }
-    if(op.pct1 === "" || op.pct1 == null) op.pct1 = m.looper;
-    if((op.pct2 === "" || op.pct2 == null) && (op.thread2 || op.colour2)) op.pct2 = m.needle;
+    /* Looper % follows the machine when it was auto-filled, or is still at
+       the generic type default from an older save (flag never set); a
+       hand-typed % sticks and machine changes never overwrite it. */
+    var p1auto = op.pct1Auto === true || (op.pct1Auto == null && num(op.pct1) === specialDefaultFor(op.thread1));
+    if(op.pct1 === "" || op.pct1 == null || p1auto){ op.pct1 = m.looper; op.pct1Auto = true; }
+    var p2auto = op.pct2Auto === true || (op.pct2Auto == null && num(op.pct2) === specialDefaultFor(op.thread2));
+    if((op.thread2 || op.colour2) && (op.pct2 === "" || op.pct2 == null || p2auto)){ op.pct2 = m.needle; op.pct2Auto = true; }
   } else {
-    if(op.pct1 === "" || op.pct1 == null) op.pct1 = specialDefaultFor(op.thread1);
-    if((op.pct2 === "" || op.pct2 == null) && (op.thread2 || op.colour2)) op.pct2 = specialDefaultFor(op.thread2);
+    if(op.pct1 === "" || op.pct1 == null){ op.pct1 = specialDefaultFor(op.thread1); op.pct1Auto = true; }
+    if((op.thread2 || op.colour2) && (op.pct2 === "" || op.pct2 == null)){ op.pct2 = specialDefaultFor(op.thread2); op.pct2Auto = true; }
   }
 }
 
@@ -1109,6 +1128,8 @@ $("opsBody").addEventListener("input", function(e){
   if(f === "colourSel1" || f === "colourSel2") return;
   if(f === "seamLength") { op.seamLengthRaw = inp.value; renderTotals(); return; /* numeric value updates on blur; raw text stays typable */ }
   op[f] = inp.value;
+  if(f === "pct1") op.pct1Auto = false; /* hand-typed % sticks; machine changes must not overwrite it */
+  if(f === "pct2") op.pct2Auto = false;
   /* Typing a colour with no thread picked means a contrast thread: default
      the slot to Contrast so its Looper % unlocks (otherwise a typed colour
      can never count in any calculation). */
@@ -1188,6 +1209,7 @@ function commitOpField(op, f, value){
     var v3 = evalQtyExpr(value);
     if(v3 !== null && v3 >= 0) op[f] = v3; /* "20+20" -> 40, like seam qty */
     else op[f] = value; /* invalid: keep typed text; num() treats it as 0 in sums */
+    if(f === "pct1") op.pct1Auto = false; else op.pct2Auto = false;
     return;
   }
   if(f === "machine"){
@@ -1223,6 +1245,10 @@ function commitOpField(op, f, value){
        style's colour list; otherwise it stays a hand-typed custom colour. */
     var lv = String(value || "").trim().toLowerCase();
     op[fl2] = String(value || "").trim() !== "" && !styleColours().some(function(x){ return x.toLowerCase() === lv; });
+    /* Applying a colour with a machine set fills empty/auto % from that
+       machine; with no machine the generic default still applies, and it
+       follows the machine once one is picked. */
+    if(String(value || "").trim() !== "" || String(op[ctf2] || "").trim() !== "") applyMachineToRow(op);
     return;
   }
   if(f === "thread1" || f === "thread2" || f === "thread3"){
@@ -1236,10 +1262,11 @@ function commitOpField(op, f, value){
       var tp = types[ti];
       if(tv.toLowerCase().indexOf(tp.toLowerCase() + " ") === 0){
         var rest = tv.slice(tp.length + 1).trim();
-        if(rest){ op[f] = tp; op[cf] = rest; return; }
+        if(rest){ op[f] = tp; op[cf] = rest; applyMachineToRow(op); return; }
       }
     }
     op[f] = value;
+    applyMachineToRow(op);
     return;
   }
   op[f] = value;
@@ -1374,7 +1401,15 @@ $("btnCsApply").onclick = function(){
   OPS.forEach(function(op){
     if(fp && op.name !== fp) return;
     if(fm && op.machine !== fm) return;
-    op.thread1 = type; op.colour1 = colour; op.pct1 = pct; n++;
+    op.thread1 = type; op.colour1 = colour;
+    /* Panel left at its default 20 (or empty) with a known machine: the
+       machine's looper % wins (4OL 80, FL 60, SN 50); a typed % is the
+       user's own choice and sticks. Machine-applied % stays auto, so a
+       later machine change follows it. */
+    var mm = findMachine(op.machine);
+    if(mm && (pct === "" || pct == null || num(pct) === 20)){ op.pct1 = mm.looper; op.pct1Auto = true; }
+    else { op.pct1 = pct; op.pct1Auto = false; }
+    n++;
   });
   renderOps();
   setStatus("Special thread applied to " + n + " visible row(s).");
@@ -2127,13 +2162,6 @@ function upsertListEntry(d){
     fbDB.ref(SHEET + "/styleList").push(d);
   }
 }
-function addCurrentToList(remark){
-  if(!validHeader()) return;
-  var d = sheetData(); d.status = "listed"; d.remark = remark || "";
-  if(!FB_OK){ alert("Firebase is not connected (offline?). The style is kept only on this device for now."); return; }
-  upsertListEntry(d);
-  setStatus("Added to the main list.");
-}
 function markCurrentChecked(){
   if(!FB_OK){ alert("Firebase is not connected (offline?)."); return; }
   if(!validHeader()) return;
@@ -2216,7 +2244,6 @@ $("btnSaveTo").onclick = function(){
   var d = sheetData(); d.status = "draft";
   saveToDevice(d);
 };
-$("btnAddToList").onclick = function(){ addCurrentToList(""); };
 $("btnNewSheet").onclick = function(){
   flushAutoSave();
   if(!confirm("Start a new sheet? (The current sheet is saved automatically.)")) return;
@@ -2241,7 +2268,7 @@ $("btnPasteGoto").onclick = function(){
   if(el && el.scrollIntoView) el.scrollIntoView();
   $("pasteBox").focus();
 };
-$("btnBackDashboard").onclick = function(){ showPage("home"); };
+$("btnBackDashboard").onclick = function(){ if($("sheetModal").classList.contains("open")){ closeSheetModal(); return; } showPage("home"); };
 $("btnOpenReport").onclick = function(){ showPage(2); showSub("thread"); };
 /* Buyer-wise list: click a style row to open that style on the sheet (this
    replaces the removed style-name dropdown as the way to open a saved style).
@@ -2258,6 +2285,71 @@ function openListStyle(key){
   loadSheet(it.data);
   showPage(2); showSub("thread");
 }
+function copyListStyle(key){
+  var it = stylesCache.filter(function(x){ return x.key === key; })[0];
+  if(!it){
+    var all = listRowsForBuyer("", true);
+    for(var i = 0; i < all.length; i++) if(all[i].key === key){ it = all[i]; break; }
+  }
+  if(!it || !it.data) return;
+  var copy = JSON.parse(JSON.stringify(it.data));
+  copy.styleKey = "";
+  /* Fresh name so SAVE creates a new style instead of overwriting the
+     original: "X COPY", or "X COPY 2" when that name already exists. */
+  var base = (copy.style || "") + " COPY";
+  var nm = base, n = 2;
+  function styleNameTaken(s){
+    var hit = false;
+    [stylesCache, listCache, stdCache].forEach(function(cache){
+      (cache || []).forEach(function(x){ if(x.data && x.data.buyer === copy.buyer && x.data.style === s) hit = true; });
+    });
+    return hit;
+  }
+  while(styleNameTaken(nm)){ nm = base + " " + n++; }
+  copy.style = nm;
+  copy.status = ""; copy.remark = ""; copy.date = "";
+  loadSheet(copy);
+  showPage(2); showSub("thread");
+}
+/* Merchant-list style box: open a merchant style in a small box over the
+   list instead of navigating away; the cross closes it and the list is
+   instantly back (same page, no reload). */
+var sheetModalParent = null, sheetModalNext = null, sheetModalBodyOverflow = "";
+function openSheetModal(){
+  if(sheetModalParent) return;
+  var p2 = $("page2");
+  sheetModalParent = p2.parentNode; sheetModalNext = p2.nextSibling;
+  sheetModalBodyOverflow = document.body.style.overflow;
+  $("sheetModalSlot").appendChild(p2);
+  p2.style.display = "";
+  $("sheetModal").classList.add("open");
+  document.body.style.overflow = "hidden";
+}
+function closeSheetModal(){
+  var p2 = $("page2");
+  flushAutoSave();
+  if(sheetModalParent){
+    if(sheetModalNext) sheetModalParent.insertBefore(p2, sheetModalNext);
+    else sheetModalParent.appendChild(p2);
+    sheetModalParent = null; sheetModalNext = null;
+  }
+  p2.style.display = "none";
+  $("sheetModal").classList.remove("open");
+  document.body.style.overflow = sheetModalBodyOverflow;
+  showPage("home");
+}
+function openSendStyleModal(key){
+  var it = sendCache.filter(function(x){ return x.key === key; })[0];
+  if(!it) return;
+  currentStyleKey = key;
+  loadSheet(it.data);
+  showSub("thread");
+  openSheetModal();
+}
+$("sheetModalClose").onclick = closeSheetModal;
+document.addEventListener("keydown", function(e){
+  if(e.key === "Escape" && $("sheetModal").classList.contains("open")) closeSheetModal();
+});
 function deleteSavedStyle(key){
   if(!isAdmin()){ alert("Only admin can delete a saved style."); return; }
   var found = null;
@@ -2301,6 +2393,8 @@ $("listBody").addEventListener("click", function(e){
   if(del){ deleteSavedStyle(del.getAttribute("data-del-key")); return; }
   var snd = e.target.closest ? e.target.closest("[data-add-send-key]") : null;
   if(snd){ addRowToSendList(snd.getAttribute("data-add-send-key")); return; }
+  var cpy = e.target.closest ? e.target.closest("[data-copy-key]") : null;
+  if(cpy){ copyListStyle(cpy.getAttribute("data-copy-key")); return; }
   if(e.target.closest && e.target.closest("[data-open-key]")) return; /* OPEN button handles itself */
   var tr = e.target.closest ? e.target.closest("tr[data-key]") : null;
   if(!tr) return;
@@ -2510,7 +2604,8 @@ function renderStyleList(){
         + '<td>' + esc(d.remark || "") + '</td>'
         + '<td>' + proc + '</td>'
         + (isAdmin() ? '<td class="no-print"><button class="btn btn-d btn-sm" data-del-key="' + esc(it.key) + '">DELETE</button></td>' : '')
-        + '<td class="no-print"><button class="btn btn-o btn-sm" data-add-send-key="' + esc(it.key) + '" title="Add to merchant list">＋ MERCHANT</button></td>' + '</tr>';
+        + '<td class="no-print"><button class="btn btn-o btn-sm" data-add-send-key="' + esc(it.key) + '" title="Add to merchant list">＋ MERCHANT</button></td>'
+        + '<td class="no-print"><button class="btn btn-p btn-sm" data-copy-key="' + esc(it.key) + '" title="Open a copy as a new style">STYLE COPY</button></td>' + '</tr>';
     });
   });
   var ldt = $("listDeleteTh"); if(ldt) ldt.style.display = isAdmin() ? "" : "none";
@@ -2623,7 +2718,7 @@ function renderSendList(){
     var m = listRowMetres(d);
     var body = "BODY THREAD--" + m.body;
     var spec = m.groups.map(function(g){ return esc(g.label + "-" + g.m); }).join("<br>");
-    html += '<tr data-key="' + esc(it.key) + '" style="cursor:pointer" title="Click to open"><td>' + (j + 1) + '</td><td>' + esc(d.buyer) + '</td><td><button class="btn btn-p btn-sm" data-send-open="' + esc(it.key) + '">OPEN</button> ' + esc(d.style) + '</td>'
+    html += '<tr data-key="' + esc(it.key) + '" style="cursor:pointer" title="Click to open in a box"><td>' + (j + 1) + '</td><td>' + esc(d.buyer) + '</td><td><button class="btn btn-p btn-sm" data-send-open="' + esc(it.key) + '">OPEN</button> ' + esc(d.style) + '</td>'
       + '<td>' + esc(d.item) + '</td><td>' + esc(d.size) + '</td><td>' + esc(entryDate(d)) + '</td>'
       + '<td class="mtr">' + m.total + '</td>'
       + '<td>' + esc(body) + '</td>'
@@ -2642,11 +2737,7 @@ $("sendBody").addEventListener("click", function(e){
   }
   var tr = e.target.closest ? e.target.closest("tr[data-key]") : null;
   if(!tr) return;
-  var it = sendCache.filter(function(x){ return x.key === tr.getAttribute("data-key"); })[0];
-  if(!it) return;
-  currentStyleKey = tr.getAttribute("data-key");
-  loadSheet(it.data);
-  showPage(2); showSub("thread");
+  openSendStyleModal(tr.getAttribute("data-key"));
 });
 function addCurrentToSendList(){
   if(!validHeader()) return;
@@ -2663,6 +2754,15 @@ function sendExportMeta(items){
   var buyers = [];
   (items || []).forEach(function(d){ var b = (d || {}).buyer || ""; if(b && buyers.indexOf(b) === -1) buyers.push(b); });
   if(buyers.length === 1) return { heading: buyers[0] + " THREAD CONSUMPTION", file: buyers[0] + "-Thread-Consumption.xlsx", tab: buyers[0].substring(0, 31) };
+  if(buyers.length > 1){
+    /* 2-3 buyers together: the heading names those buyers instead of the
+       generic ALL BUYERS (same names flow to the Excel/PDF heading, the
+       file name and the tab). */
+    var joined = buyers.join(", ");
+    var fileBuyers = buyers.map(function(b){ return b.replace(/[\\\/\?\%\*\:\|\"<>]/g, ""); }).join("-") || "All-Buyers";
+    var tab = joined.replace(/[\/\\\?\*\[\]:]/g, "").substring(0, 31) || "All Buyers";
+    return { heading: joined + " THREAD CONSUMPTION", file: fileBuyers + "-Thread-Consumption.xlsx", tab: tab };
+  }
   return { heading: "ALL BUYERS THREAD CONSUMPTION", file: "All-Buyers-Thread-Consumption.xlsx", tab: "All Buyers" };
 }
 function buildSendListSheetFrom(items, heading){
