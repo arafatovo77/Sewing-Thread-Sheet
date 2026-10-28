@@ -107,24 +107,32 @@
   table.ops-table th:nth-child(7),table.ops-table td:nth-child(7),table.ops-table th:nth-child(14),table.ops-table td:nth-child(14),table.ops-table th:nth-child(15),table.ops-table td:nth-child(15){width:76px}
   table.ops-table th:nth-child(8),table.ops-table td:nth-child(8),table.ops-table th:nth-child(11),table.ops-table td:nth-child(11){width:100px;max-width:100px}
   table.ops-table th:nth-child(9),table.ops-table td:nth-child(9),table.ops-table th:nth-child(12),table.ops-table td:nth-child(12){width:84px;max-width:84px}
-  /* Main working sheet only: columns sum to 1300px, so the right side shows fully on a ~1300px computer screen */
-  table.ops-table th:nth-child(1),table.ops-table td:nth-child(1){width:44px;max-width:44px}
-  table.ops-table th:nth-child(2),table.ops-table td:nth-child(2){min-width:240px;width:240px;max-width:240px}
-  table.ops-table th:nth-child(3),table.ops-table td:nth-child(3){width:90px;max-width:90px}
-  table.ops-table th:nth-child(4),table.ops-table td:nth-child(4){width:80px;max-width:80px}
-  table.ops-table th:nth-child(5),table.ops-table td:nth-child(5){width:80px;max-width:80px}
-  table.ops-table th:nth-child(6),table.ops-table td:nth-child(6){width:80px;max-width:80px}
-  table.ops-table th:nth-child(7),table.ops-table td:nth-child(7){width:70px;max-width:70px}
-  table.ops-table th:nth-child(8),table.ops-table td:nth-child(8){width:80px;max-width:80px}
-  table.ops-table th:nth-child(9),table.ops-table td:nth-child(9){width:70px;max-width:70px}
-  table.ops-table th:nth-child(10),table.ops-table td:nth-child(10){width:60px;max-width:60px}
-  table.ops-table th:nth-child(11),table.ops-table td:nth-child(11){width:80px;max-width:80px}
-  table.ops-table th:nth-child(12),table.ops-table td:nth-child(12){width:70px;max-width:70px}
-  table.ops-table th:nth-child(13),table.ops-table td:nth-child(13){width:60px;max-width:60px}
+  /* Main working sheet only: 19 columns sum to 1298px, so the right side shows fully on a ~1300px computer screen */
+  table.ops-table th:nth-child(1),table.ops-table td:nth-child(1){width:40px;max-width:40px}
+  table.ops-table th:nth-child(2),table.ops-table td:nth-child(2){min-width:200px;width:200px;max-width:200px}
+  table.ops-table th:nth-child(3),table.ops-table td:nth-child(3){width:80px;max-width:80px}
+  table.ops-table th:nth-child(4),table.ops-table td:nth-child(4){width:70px;max-width:70px}
+  table.ops-table th:nth-child(5),table.ops-table td:nth-child(5){width:70px;max-width:70px}
+  table.ops-table th:nth-child(6),table.ops-table td:nth-child(6){width:70px;max-width:70px}
+  table.ops-table th:nth-child(7),table.ops-table td:nth-child(7){width:60px;max-width:60px}
+  table.ops-table th:nth-child(8),table.ops-table td:nth-child(8){width:70px;max-width:70px}
+  table.ops-table th:nth-child(9),table.ops-table td:nth-child(9){width:60px;max-width:60px}
+  table.ops-table th:nth-child(10),table.ops-table td:nth-child(10){width:50px;max-width:50px}
+  table.ops-table th:nth-child(11),table.ops-table td:nth-child(11){width:70px;max-width:70px}
+  table.ops-table th:nth-child(12),table.ops-table td:nth-child(12){width:60px;max-width:60px}
+  table.ops-table th:nth-child(13),table.ops-table td:nth-child(13){width:50px;max-width:50px}
   table.ops-table th:nth-child(14),table.ops-table td:nth-child(14){width:70px;max-width:70px}
-  table.ops-table th:nth-child(15),table.ops-table td:nth-child(15){width:70px;max-width:70px}
-  table.ops-table th:nth-child(16),table.ops-table td:nth-child(16){width:56px;max-width:56px}
-  table.ops-table{width:1300px;max-width:1300px}
+  table.ops-table th:nth-child(15),table.ops-table td:nth-child(15){width:60px;max-width:60px}
+  table.ops-table th:nth-child(16),table.ops-table td:nth-child(16){width:50px;max-width:50px}
+  table.ops-table th:nth-child(17),table.ops-table td:nth-child(17){width:60px;max-width:60px}
+  table.ops-table th:nth-child(18),table.ops-table td:nth-child(18){width:60px;max-width:60px}
+  table.ops-table th:nth-child(19),table.ops-table td:nth-child(19){width:48px;max-width:48px}
+  table.ops-table{width:1298px;max-width:1298px}
+  /* Main sheet = header to cone requirement: one uniform width on computer
+     (card padding 14px x2 + border 1px x2, so 1340 outer = 1310 inner >= 1298
+     table, no horizontal scroll; phone screens are narrower than 1340, so
+     this cap never binds there and phone scrolling is unchanged) */
+  #page2{max-width:1340px;margin:0 auto}
   .print-only{display:none}
   .no-style .colour-field{display:none}
   .folder{cursor:pointer}
@@ -440,6 +448,7 @@
         <th>Mc thread (in)</th><th>Seam qty</th><th>Consumption (in)</th>
         <th>Thread 1</th><th class="colour-col">Colour 1</th><th>Looper % 1</th>
         <th>Thread 2</th><th class="colour-col">Colour 2</th><th>Looper % 2</th>
+        <th>Thread 3</th><th class="colour-col">Colour 3</th><th>Looper % 3</th>
         <th>Body (in)</th><th>Special (in)</th><th>Add / Del</th>
       </tr></thead>
       <tbody id="opsBody"></tbody>
@@ -663,7 +672,8 @@ function newOp(d){
     mcAuto: !!d.mcAuto,
     seamQty: d.seamQty == null ? 1 : d.seamQty,
     thread1: d.thread1 || "", colour1: d.colour1 || "", colourCustom1: !!d.colourCustom1, pct1: d.pct1 == null ? "" : d.pct1,
-    thread2: d.thread2 || "", colour2: d.colour2 || "", colourCustom2: !!d.colourCustom2, pct2: d.pct2 == null ? "" : d.pct2 };
+    thread2: d.thread2 || "", colour2: d.colour2 || "", colourCustom2: !!d.colourCustom2, pct2: d.pct2 == null ? "" : d.pct2,
+    thread3: d.thread3 || "", colour3: d.colour3 || "", colourCustom3: !!d.colourCustom3, pct3: d.pct3 == null ? "" : d.pct3 };
 }
 function newCone(d){
   d = d || {};
@@ -690,7 +700,7 @@ function opConsumption(op){
    always add up to the special total. */
 function opSpecialPct(op){
   var sp = 0;
-  [[op.thread1, op.colour1, op.pct1], [op.thread2, op.colour2, op.pct2]].forEach(function(slot){
+  [[op.thread1, op.colour1, op.pct1], [op.thread2, op.colour2, op.pct2], [op.thread3, op.colour3, op.pct3]].forEach(function(slot){
     var th = String(slot[0] || "").trim(), col = String(slot[1] || "").trim();
     if(!th && !col) return;
     if(th.toLowerCase() === "body thread") return;
@@ -791,7 +801,7 @@ function contrastGroups(){
   var groups = {}, order = [];
   OPS.forEach(function(op){
     var c = opConsumption(op);
-    [[op.thread1, op.colour1, op.pct1], [op.thread2, op.colour2, op.pct2]].forEach(function(slot){
+    [[op.thread1, op.colour1, op.pct1], [op.thread2, op.colour2, op.pct2], [op.thread3, op.colour3, op.pct3]].forEach(function(slot){
       var th = String(slot[0] || "").trim(), col = String(slot[1] || "").trim(), pct = num(slot[2]);
       if((!th && !col) || pct <= 0) return;
       if(th.toLowerCase() === "body thread") return;
@@ -900,7 +910,7 @@ function specialRowColour(label){
   return SPECIAL_ROW_COLOURS[h % SPECIAL_ROW_COLOURS.length];
 }
 function opSpecialLabel(op){
-  var slots = [[op.thread1, op.colour1, op.pct1], [op.thread2, op.colour2, op.pct2]];
+  var slots = [[op.thread1, op.colour1, op.pct1], [op.thread2, op.colour2, op.pct2], [op.thread3, op.colour3, op.pct3]];
   for(var i = 0; i < slots.length; i++){
     var th = String(slots[i][0] || "").trim(), col = String(slots[i][1] || "").trim(), pct = num(slots[i][2]);
     if((!th && !col) || pct <= 0) continue;
@@ -929,7 +939,7 @@ function isHpMachine(m){ return String(m || "").trim().toLowerCase() === "hp"; }
 function styleColours(){
   var seen = {}, out = [];
   OPS.forEach(function(op){
-    [op.colour1, op.colour2].forEach(function(c){
+    [op.colour1, op.colour2, op.colour3].forEach(function(c){
       var v = String(c || "").trim();
       if(v && !seen[v.toLowerCase()]){ seen[v.toLowerCase()] = true; out.push(v); }
     });
@@ -939,8 +949,8 @@ function styleColours(){
 /* Colour dropdown value for one slot: a style colour, "__custom" when the
    row's colour was typed by hand, else "". */
 function colourSelValue(op, slot){
-  var c = slot === 1 ? op.colour1 : op.colour2;
-  var flag = slot === 1 ? op.colourCustom1 : op.colourCustom2;
+  var c = slot === 1 ? op.colour1 : (slot === 2 ? op.colour2 : op.colour3);
+  var flag = slot === 1 ? op.colourCustom1 : (slot === 2 ? op.colourCustom2 : op.colourCustom3);
   if(!c) return "";
   if(flag) return "__custom";
   var hit = styleColours().filter(function(x){ return x.toLowerCase() === String(c).trim().toLowerCase(); })[0];
@@ -958,8 +968,8 @@ function machineSelValue(op){
    contrast labels (so "Contrast BLACK" picks type + colour together) +
    the row's own value when it is none of those (still displays). */
 function threadSelValueRaw(op, slot){
-  var t = slot === 1 ? op.thread1 : op.thread2;
-  var c = slot === 1 ? op.colour1 : op.colour2;
+  var t = slot === 1 ? op.thread1 : (slot === 2 ? op.thread2 : op.thread3);
+  var c = slot === 1 ? op.colour1 : (slot === 2 ? op.colour2 : op.colour3);
   return (String(t || "").trim() + " " + String(c || "").trim()).trim();
 }
 function threadSelOptions(op, slot){
@@ -972,7 +982,7 @@ function threadSelOptions(op, slot){
   return opts;
 }
 function threadSelValue(op, slot){
-  var t = String(slot === 1 ? op.thread1 : (op.thread2 || "")).trim();
+  var t = String(slot === 1 ? op.thread1 : (slot === 2 ? op.thread2 : (op.thread3 || ""))).trim();
   if(!t) return "";
   var opts = threadSelOptions(op, slot);
   var combined = threadSelValueRaw(op, slot);
@@ -1021,11 +1031,14 @@ function renderOps(){
       + '<td><select data-f="threadSel2"><option value=""></option>' + threadSelOptions(op, 2).map(function(o){ return '<option value="' + esc(o) + '"' + (o === threadSelValue(op, 2) ? ' selected' : '') + '>' + esc(o) + '</option>'; }).join("") + '</select></td>'
       + '<td class="colour-col"><input data-f="colour2" list="colourDatalist" value="' + esc(op.colour2) + '"></td>'
       + '<td><input class="num" data-f="pct2" value="' + (isSpecialThreadSel(op.thread2) ? esc(op.pct2) : '') + '"' + (isSpecialThreadSel(op.thread2) ? '' : ' disabled style="background:#F1F3F5"') + '></td>'
+      + '<td><select data-f="threadSel3"><option value=""></option>' + threadSelOptions(op, 3).map(function(o){ return '<option value="' + esc(o) + '"' + (o === threadSelValue(op, 3) ? ' selected' : '') + '>' + esc(o) + '</option>'; }).join("") + '</select></td>'
+      + '<td class="colour-col"><input data-f="colour3" list="colourDatalist" value="' + esc(op.colour3) + '"></td>'
+      + '<td><input class="num" data-f="pct3" value="' + (isSpecialThreadSel(op.thread3) ? esc(op.pct3) : '') + '"' + (isSpecialThreadSel(op.thread3) ? '' : ' disabled style="background:#F1F3F5"') + '></td>'
       + '<td class="fig-big">' + s.body.toFixed(2) + '</td>'
       + '<td class="fig-big">' + s.special.toFixed(2) + '</td>'
       + '<td style="white-space:nowrap"><button class="btn btn-p btn-sm" data-ins="' + op.id + '" title="Insert a row below">＋</button> <button class="btn btn-d btn-sm" data-del="' + op.id + '" title="Delete this row">−</button></td></tr>';
   });
-  $("opsBody").innerHTML = html || '<tr><td colspan="16" class="mut">No operations yet. Add a row or paste from Excel.</td></tr>';
+  $("opsBody").innerHTML = html || '<tr><td colspan="19" class="mut">No operations yet. Add a row or paste from Excel.</td></tr>';
   $("opCount").textContent = visible + " processes" + (visible !== OPS.length ? " (of " + OPS.length + " total)" : "");
   renderTotals();
   if(keepId && keepF){
@@ -1092,10 +1105,17 @@ $("opsBody").addEventListener("input", function(e){
   if(!op) return;
   if(f === "mcThread") op.mcAuto = false; /* hand-edited Mc thread is never auto-overwritten */
   if(f === "machineSel") return; /* dropdowns commit on change, not on input */
-  if(f === "threadSel1" || f === "threadSel2") return; /* dropdowns commit on change, not on input */
+  if(f === "threadSel1" || f === "threadSel2" || f === "threadSel3") return; /* dropdowns commit on change, not on input */
   if(f === "colourSel1" || f === "colourSel2") return;
   if(f === "seamLength") { op.seamLengthRaw = inp.value; renderTotals(); return; /* numeric value updates on blur; raw text stays typable */ }
   op[f] = inp.value;
+  /* Typing a colour with no thread picked means a contrast thread: default
+     the slot to Contrast so its Looper % unlocks (otherwise a typed colour
+     can never count in any calculation). */
+  if((f === "colour1" || f === "colour2" || f === "colour3") && String(inp.value || "").trim() !== ""){
+    var ctf = f === "colour1" ? "thread1" : (f === "colour2" ? "thread2" : "thread3");
+    if(!String(op[ctf] || "").trim()) op[ctf] = "Contrast";
+  }
   renderTotals(); /* no full re-render while typing, so focus is kept (expressions like 2+1 stay typable) */
 });
 $("opsBody").addEventListener("change", function(e){
@@ -1147,6 +1167,7 @@ function opsStepRow(ri, dir, count){
 function commitOpField(op, f, value){
   if(f === "threadSel1") f = "thread1";
   if(f === "threadSel2") f = "thread2";
+  if(f === "threadSel3") f = "thread3";
   if(f === "seamLength"){
     var v = evalQtyExpr(value);
     if(v !== null && v >= 0){
@@ -1191,22 +1212,26 @@ function commitOpField(op, f, value){
     op[fl] = false;
     return;
   }
-  if(f === "colour1" || f === "colour2"){
-    var fl2 = f === "colour1" ? "colourCustom1" : "colourCustom2";
+  if(f === "colour1" || f === "colour2" || f === "colour3"){
+    var fl2 = f === "colour1" ? "colourCustom1" : (f === "colour2" ? "colourCustom2" : "colourCustom3");
     op[f] = value;
+    /* Same default as while typing: a colour with no thread picked is a
+       contrast thread, so its Looper % unlocks on the re-render. */
+    var ctf2 = f === "colour1" ? "thread1" : (f === "colour2" ? "thread2" : "thread3");
+    if(String(value || "").trim() !== "" && !String(op[ctf2] || "").trim()) op[ctf2] = "Contrast";
     /* Snap back to the dropdown when the typed colour already exists in this
        style's colour list; otherwise it stays a hand-typed custom colour. */
     var lv = String(value || "").trim().toLowerCase();
     op[fl2] = String(value || "").trim() !== "" && !styleColours().some(function(x){ return x.toLowerCase() === lv; });
     return;
   }
-  if(f === "thread1" || f === "thread2"){
+  if(f === "thread1" || f === "thread2" || f === "thread3"){
     /* Picking "Contrast BLACK" from the dropdown splits into thread + colour:
        the type is matched longest-first (so "Body thread RED" splits as type
        "Body thread", colour "RED"), the colour goes into the colour box. */
     var tv = String(value || "").trim();
     var types = ["Elastic thread", "Body thread", "20/2 thread", "Filament", "Contrast", "Lurex", "Other"];
-    var cf = f === "thread1" ? "colour1" : "colour2";
+    var cf = f === "thread1" ? "colour1" : (f === "thread2" ? "colour2" : "colour3");
     for(var ti = 0; ti < types.length; ti++){
       var tp = types[ti];
       if(tv.toLowerCase().indexOf(tp.toLowerCase() + " ") === 0){
@@ -1865,6 +1890,7 @@ function deriveSpecialThread(){
     var op = OPS[i];
     if(num(op.pct1) > 0) return (op.thread1 || "Special") + " " + (op.colour1 || "") + " " + num(op.pct1) + "%";
     if(num(op.pct2) > 0) return (op.thread2 || "Special") + " " + (op.colour2 || "") + " " + num(op.pct2) + "%";
+    if(num(op.pct3) > 0) return (op.thread3 || "Special") + " " + (op.colour3 || "") + " " + num(op.pct3) + "%";
   }
   return "";
 }
@@ -2362,7 +2388,7 @@ function contrastGroupsFor(ops){
   var groups = {}, order = [];
   (ops || []).forEach(function(op){
     var c = opConsumption(op);
-    [[op.thread1, op.colour1, op.pct1], [op.thread2, op.colour2, op.pct2]].forEach(function(slot){
+    [[op.thread1, op.colour1, op.pct1], [op.thread2, op.colour2, op.pct2], [op.thread3, op.colour3, op.pct3]].forEach(function(slot){
       var th = String(slot[0] || "").trim(), col = String(slot[1] || "").trim(), pct = num(slot[2]);
       if((!th && !col) || pct <= 0) return;
       if(th.toLowerCase() === "body thread") return;
@@ -3541,7 +3567,7 @@ function r4(x){ return Math.round(x * 100) / 100; }
    Colour-wise cones table). Prints on 1 page A4 portrait. */
 function singleSheetThreadLabel(op){
   var parts = [];
-  [[op.thread1, op.colour1, op.pct1], [op.thread2, op.colour2, op.pct2]].forEach(function(slot){
+  [[op.thread1, op.colour1, op.pct1], [op.thread2, op.colour2, op.pct2], [op.thread3, op.colour3, op.pct3]].forEach(function(slot){
     var th = String(slot[0] || "").trim(), col = String(slot[1] || "").trim(), pct = num(slot[2]);
     if((!th && !col) || pct <= 0) return;
     parts.push(((th + " " + col).trim() + " " + pct + "%").trim());
