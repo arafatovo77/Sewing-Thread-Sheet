@@ -107,6 +107,23 @@
   table.ops-table th:nth-child(7),table.ops-table td:nth-child(7),table.ops-table th:nth-child(14),table.ops-table td:nth-child(14),table.ops-table th:nth-child(15),table.ops-table td:nth-child(15){width:76px}
   table.ops-table th:nth-child(8),table.ops-table td:nth-child(8),table.ops-table th:nth-child(11),table.ops-table td:nth-child(11){width:100px;max-width:100px}
   table.ops-table th:nth-child(9),table.ops-table td:nth-child(9),table.ops-table th:nth-child(12),table.ops-table td:nth-child(12){width:84px;max-width:84px}
+  /* Main working sheet only: columns sum to 1300px, so the right side shows fully on a ~1300px computer screen */
+  table.ops-table th:nth-child(1),table.ops-table td:nth-child(1){width:44px;max-width:44px}
+  table.ops-table th:nth-child(2),table.ops-table td:nth-child(2){min-width:240px;width:240px;max-width:240px}
+  table.ops-table th:nth-child(3),table.ops-table td:nth-child(3){width:90px;max-width:90px}
+  table.ops-table th:nth-child(4),table.ops-table td:nth-child(4){width:80px;max-width:80px}
+  table.ops-table th:nth-child(5),table.ops-table td:nth-child(5){width:80px;max-width:80px}
+  table.ops-table th:nth-child(6),table.ops-table td:nth-child(6){width:80px;max-width:80px}
+  table.ops-table th:nth-child(7),table.ops-table td:nth-child(7){width:70px;max-width:70px}
+  table.ops-table th:nth-child(8),table.ops-table td:nth-child(8){width:80px;max-width:80px}
+  table.ops-table th:nth-child(9),table.ops-table td:nth-child(9){width:70px;max-width:70px}
+  table.ops-table th:nth-child(10),table.ops-table td:nth-child(10){width:60px;max-width:60px}
+  table.ops-table th:nth-child(11),table.ops-table td:nth-child(11){width:80px;max-width:80px}
+  table.ops-table th:nth-child(12),table.ops-table td:nth-child(12){width:70px;max-width:70px}
+  table.ops-table th:nth-child(13),table.ops-table td:nth-child(13){width:60px;max-width:60px}
+  table.ops-table th:nth-child(14),table.ops-table td:nth-child(14){width:70px;max-width:70px}
+  table.ops-table th:nth-child(15),table.ops-table td:nth-child(15){width:70px;max-width:70px}
+  table.ops-table th:nth-child(16),table.ops-table td:nth-child(16){width:56px;max-width:56px}
   .print-only{display:none}
   .no-style .colour-field{display:none}
   .folder{cursor:pointer}
@@ -229,7 +246,7 @@
     <div class="print-only" id="listPrintHeading" style="font-weight:700"></div>
     <p class="sub" id="listConeNote" style="margin-top:8px"></p>
     <div class="tbl-wrap"><table>
-      <thead><tr><th>SL</th><th>BUYER</th><th>STYLE</th><th>ITEM</th><th>SIZE</th><th>Date</th><th>MTR</th><th>BODY THREAD</th><th>SPECIAL THREAD</th><th>REMARKS</th><th>PROCESS</th><th class="no-print" id="listDeleteTh">DELETE</th></tr></thead>
+      <thead><tr><th>SL</th><th>BUYER</th><th>STYLE</th><th>ITEM</th><th>SIZE</th><th>Date</th><th>MTR</th><th>BODY THREAD</th><th>SPECIAL THREAD</th><th>REMARKS</th><th>PROCESS</th><th class="no-print" id="listDeleteTh">DELETE</th><th class="no-print">MERCHANT</th></tr></thead>
       <tbody id="listBody"></tbody>
     </table></div>
   </section>
@@ -243,6 +260,8 @@
       <button class="btn btn-p" id="btnSendPdf">DOWNLOAD / SAVE MERCHANT LIST PDF</button>
       <button class="btn btn-d" id="btnClearSend">CLEAR SEND LIST</button>
     </div>
+    <div class="print-only" id="sendPrintTitle" style="font-weight:700">GMS COMPOSITE KNITTING KNITTING IND LTD.</div>
+    <div class="print-only" id="sendPrintHeading" style="font-weight:700"></div>
     <div class="tbl-wrap"><table>
       <thead><tr><th>SL</th><th>BUYER</th><th>STYLE</th><th>ITEM</th><th>SIZE</th><th>Date</th><th>MTR</th><th>BODY THREAD</th><th>SPECIAL THREAD</th><th>REMARKS</th><th>PROCESS</th><th class="no-print">REMOVE</th></tr></thead>
       <tbody id="sendBody"></tbody>
@@ -2223,9 +2242,25 @@ function deleteSavedStyle(key){
   Promise.all(jobs).then(function(){ setStatus("Style deleted."); })
     .catch(function(e){ alert("Delete failed: " + e.message); });
 }
+function addRowToSendList(key){
+  var found = null;
+  [listCache, stdCache, stylesCache].forEach(function(cache){
+    if(found) return;
+    (cache || []).forEach(function(it){ if(it.key === key) found = it.data; });
+  });
+  if(!found){ alert("Style not found."); return; }
+  if(!FB_OK){ alert("Firebase is not connected (offline?)."); return; }
+  var existing = null;
+  sendCache.forEach(function(it){ if(it.data && it.data.buyer === found.buyer && it.data.style === found.style) existing = it; });
+  if(existing){ fbDB.ref(SHEET + "/sendList/" + existing.key).set(found); }
+  else { fbDB.ref(SHEET + "/sendList").push(found); }
+  setStatus("Added to merchant list.");
+}
 $("listBody").addEventListener("click", function(e){
   var del = e.target.closest ? e.target.closest("[data-del-key]") : null;
   if(del){ deleteSavedStyle(del.getAttribute("data-del-key")); return; }
+  var snd = e.target.closest ? e.target.closest("[data-add-send-key]") : null;
+  if(snd){ addRowToSendList(snd.getAttribute("data-add-send-key")); return; }
   if(e.target.closest && e.target.closest("[data-open-key]")) return; /* OPEN button handles itself */
   var tr = e.target.closest ? e.target.closest("tr[data-key]") : null;
   if(!tr) return;
@@ -2418,7 +2453,7 @@ function renderStyleList(){
   order.forEach(function(b){
     var items = groups[b];
     var open = q ? true : (expandedBuyers[b] !== false);
-    html += '<tr class="folder-row" data-folder="' + esc(b) + '"><td colspan="12"><span>' + (open ? "▼" : "▶") + '</span> ' + esc(b || "(No buyer)") + ' <span class="mut">(' + items.length + ' styles)</span></td></tr>';
+    html += '<tr class="folder-row" data-folder="' + esc(b) + '"><td colspan="13"><span>' + (open ? "▼" : "▶") + '</span> ' + esc(b || "(No buyer)") + ' <span class="mut">(' + items.length + ' styles)</span></td></tr>';
     if(!open) return;
     items.forEach(function(it, j){
       var d = it.data || {};
@@ -2434,11 +2469,12 @@ function renderStyleList(){
         + '<td>' + spec + '</td>'
         + '<td>' + esc(d.remark || "") + '</td>'
         + '<td>' + proc + '</td>'
-        + (isAdmin() ? '<td class="no-print"><button class="btn btn-d btn-sm" data-del-key="' + esc(it.key) + '">DELETE</button></td>' : '') + '</tr>';
+        + (isAdmin() ? '<td class="no-print"><button class="btn btn-d btn-sm" data-del-key="' + esc(it.key) + '">DELETE</button></td>' : '')
+        + '<td class="no-print"><button class="btn btn-o btn-sm" data-add-send-key="' + esc(it.key) + '" title="Add to merchant list">＋ MERCHANT</button></td>' + '</tr>';
     });
   });
   var ldt = $("listDeleteTh"); if(ldt) ldt.style.display = isAdmin() ? "" : "none";
-  $("listBody").innerHTML = html || '<tr><td colspan="12" class="mut">Style list is empty.</td></tr>';
+  $("listBody").innerHTML = html || '<tr><td colspan="13" class="mut">Style list is empty.</td></tr>';
   var ph = $("listPrintHeading"); if(ph) ph.textContent = $("listHeading").value;
   updateListBuyerSel();
   renderHomeFolders();
@@ -2530,7 +2566,7 @@ $("btnListPdf").onclick = function(){
   var old = window.onafterprint;
   window.onafterprint = function(){ done(); window.onafterprint = old; };
   fitAndPrint($("homeListPanel"));
-  setTimeout(done, 2000);
+  setTimeout(done, 30000);
 };
 
 /* ============ MERCHANT SEND LIST (Option 2) ============ */
@@ -2540,6 +2576,7 @@ function sendRowsSorted(){
 function renderSendList(){
   var rows = sendRowsSorted();
   var el = $("sendListCount"); if(el) el.textContent = rows.length ? "(" + rows.length + " styles)" : "";
+  var sph = $("sendPrintHeading"); if(sph) sph.textContent = sendExportMeta(rows.map(function(it){ return it.data; })).heading;
   var html = "";
   rows.forEach(function(it, j){
     var d = it.data || {};
@@ -2584,10 +2621,16 @@ function addCurrentToSendList(){
   setStatus("Added to merchant list.");
 }
 $("btnAddToSendList").onclick = function(){ addCurrentToSendList(); };
-function buildSendListSheetFrom(items){
+function sendExportMeta(items){
+  var buyers = [];
+  (items || []).forEach(function(d){ var b = (d || {}).buyer || ""; if(b && buyers.indexOf(b) === -1) buyers.push(b); });
+  if(buyers.length === 1) return { heading: buyers[0] + " THREAD CONSUMPTION", file: buyers[0] + "-Thread-Consumption.xlsx", tab: buyers[0].substring(0, 31) };
+  return { heading: "ALL BUYERS THREAD CONSUMPTION", file: "All-Buyers-Thread-Consumption.xlsx", tab: "All Buyers" };
+}
+function buildSendListSheetFrom(items, heading){
   var rows = [];
   rows.push(["GMS COMPOSITE KNITTING KNITTING IND LTD."]);
-  rows.push(["MERCHANT THREAD CONSUMPTION LIST"]);
+  rows.push([heading || "ALL BUYERS THREAD CONSUMPTION"]);
   rows.push([listConeNoteText()]);
   rows.push(["SL", "BUYER", "STYLE", "ITEM", "SIZE", "MTR", "BODY THREAD", "SPECIAL THREAD", "REMARKS", "PROCESS"]);
   (items || []).forEach(function(d, i){
@@ -2601,7 +2644,7 @@ function buildSendListSheetFrom(items){
   });
   return rows;
 }
-function buildSendListSheet(){ return buildSendListSheetFrom(sendRowsSorted().map(function(it){ return it.data; })); }
+function buildSendListSheet(){ var items = sendRowsSorted().map(function(it){ return it.data; }); return buildSendListSheetFrom(items, sendExportMeta(items).heading); }
 function sendSheetHeights(datas){
   var heights = [{}, {}, {}, {}];
   (datas || []).forEach(function(d){
@@ -2665,12 +2708,13 @@ $("histBody").addEventListener("click", function(e){
     ensureXLSX(function(){
       try{
         var wb = XLSX.utils.book_new();
-        var ws = XLSX.utils.aoa_to_sheet(buildSendListSheetFrom(items));
+        var ws = XLSX.utils.aoa_to_sheet(buildSendListSheetFrom(items, sendExportMeta(items).heading));
         ws["!merges"] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 9 } }, { s: { r: 1, c: 0 }, e: { r: 1, c: 9 } }, { s: { r: 2, c: 0 }, e: { r: 2, c: 9 } }];
         ws["!cols"] = [{ wch: 5 }, { wch: 16 }, { wch: 28 }, { wch: 14 }, { wch: 10 }, { wch: 12 }, { wch: 20 }, { wch: 28 }, { wch: 18 }, { wch: 40 }];
         ws["!rows"] = sendSheetHeights(items);
-        XLSX.utils.book_append_sheet(wb, ws, "Merchant List");
-        downloadXlsx(wb, "Merchant-List-" + fmtDateFile(b.data.exportedAt) + ".xlsx", patchXlsxMtrGreen);
+        var histMeta = sendExportMeta(items);
+        XLSX.utils.book_append_sheet(wb, ws, histMeta.tab);
+        downloadXlsx(wb, histMeta.file, patchXlsxMtrGreen);
         setStatus("Old merchant list Excel exported.");
       }catch(err){ setStatus("Ready"); alert("The Excel file could not be created. Please try again."); }
     }, function(){ setStatus("Ready"); alert("The Excel writer could not be downloaded from any mirror.\n\nPlease check your network connection and try again."); });
@@ -2695,8 +2739,9 @@ $("btnSendExcel").onclick = function(){
       ws["!merges"] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 9 } }, { s: { r: 1, c: 0 }, e: { r: 1, c: 9 } }, { s: { r: 2, c: 0 }, e: { r: 2, c: 9 } }];
       ws["!cols"] = [{ wch: 5 }, { wch: 16 }, { wch: 28 }, { wch: 14 }, { wch: 10 }, { wch: 12 }, { wch: 20 }, { wch: 28 }, { wch: 18 }, { wch: 40 }];
       ws["!rows"] = sendSheetHeights(sendRowsSorted().map(function(it){ return it.data; }));
-      XLSX.utils.book_append_sheet(wb, ws, "Merchant List");
-      downloadXlsx(wb, "Merchant-List.xlsx", patchXlsxMtrGreen);
+      var sendMeta = sendExportMeta(sendRowsSorted().map(function(it){ return it.data; }));
+      XLSX.utils.book_append_sheet(wb, ws, sendMeta.tab);
+      downloadXlsx(wb, sendMeta.file, patchXlsxMtrGreen);
       setStatus("Merchant list Excel exported.");
       archiveSendListAndClear();
     }catch(err){ setStatus("Ready"); alert("The Excel file could not be created. Please try again."); }
@@ -2709,7 +2754,7 @@ $("btnSendPdf").onclick = function(){
   window.onafterprint = function(){ done(); window.onafterprint = old; };
   fitAndPrint($("sendListPanel"));
   archiveSendListAndClear();
-  setTimeout(done, 2000);
+  setTimeout(done, 30000);
 };
 $("btnClearSend").onclick = function(){
   if(!sendCache.length){ alert("Merchant list is already empty."); return; }
@@ -3508,27 +3553,30 @@ function buildSingleStyleSheet(){
   rows.push(["SIZE", size, "", "", "", "PREPARED BY:", preparedByVal()]);
   rows.push([]);
   rows.push(["SL", "OPERATION DESCRIPTION", "M/C NAME", "Seam Length (Inch)", "Mc Thread (Inch)", "Seam Qty", "Consumption (Inch)", "Thread", "", "", "", "", "Body thread " + btName, "Special thread"]);
-  var opStart = rows.length + 1;
   OPS.forEach(function(op, i){
-    var sp = opSpecialPct(op);
-    var r = opStart + i;
+    var s = opSplit(op);
     rows.push([i + 1, op.name, op.machine, ncell(op.seamLength), ncell(op.mcThread), ncell(op.seamQty),
-      "=D" + r + "*E" + r + "*F" + r, singleSheetThreadLabel(op), "", "", "", "",
-      "=MAX(0,G" + r + "*(100-" + sp + ")/100)", "=G" + r + "*" + sp + "/100"]);
+      s.consumption, singleSheetThreadLabel(op), "", "", "", "",
+      s.body, s.special]);
   });
-  var opEnd = opStart + OPS.length - 1;
   rows.push([]);
   rows.push(["Total per garment"]);
   rows.push(["Thread", "Consumption (inch)", "Metres", "Allowance " + allow + "%", "Total metres"]);
-  var bodyRow = rows.length + 1;
-  var bodyCons = OPS.length ? "=SUM(M" + opStart + ":M" + opEnd + ")" : 0;
-  rows.push([bodyThreadLabel(), bodyCons, "=ROUND(B" + bodyRow + "*0.0254,2)", "=ROUND(C" + bodyRow + "*" + allow + "/100,2)", "=ROUND(C" + bodyRow + "+D" + bodyRow + ",2)"]);
+  var t = totals();
+  var bodyM = r4(inToM(t.body));
+  var bodyA = r4(bodyM * allow / 100);
+  rows.push([bodyThreadLabel(), t.body, bodyM, bodyA, r4(bodyM + bodyA)]);
+  var allB = t.body;
   contrastGroups().forEach(function(g){
-    var gr = rows.length + 1;
-    rows.push([g.label, r4(g.inches), "=ROUND(B" + gr + "*0.0254,2)", "=ROUND(C" + gr + "*" + allow + "/100,2)", "=ROUND(C" + gr + "+D" + gr + ",2)"]);
+    var gi = r4(g.inches);
+    allB += gi;
+    var gm = r4(inToM(gi));
+    var ga = r4(gm * allow / 100);
+    rows.push([g.label, gi, gm, ga, r4(gm + ga)]);
   });
-  var allRow = rows.length + 1;
-  rows.push(["All threads", "=SUM(B" + bodyRow + ":B" + (allRow - 1) + ")", "=ROUND(B" + allRow + "*0.0254,2)", "=ROUND(C" + allRow + "*" + allow + "/100,2)", "=ROUND(C" + allRow + "+D" + allRow + ",2)"]);
+  var allM = r4(inToM(allB));
+  var allA = r4(allM * allow / 100);
+  rows.push(["All threads", allB, allM, allA, r4(allM + allA)]);
   rows.push([]);
   rows.push(["Colour-wise thread and cones (below 2000 pcs 2000 m cone, 2000 pcs or more 4000 m cone)"]);
   rows.push(["", "Thread and colour", "Qty (pcs)", "Thread per pc (Mtr)", "Total thread (Mtr)", "Cone (Mtr)", "Cones", "Cones to order"]);
@@ -3661,7 +3709,19 @@ function patchXlsxPageSetup(buf){
     var wsTag = xml.indexOf("<worksheet");
     if(wsTag === -1) return bytes;
     var gt = xml.indexOf(">", wsTag);
-    xml = xml.slice(0, gt + 1) + '<sheetPr><pageSetUpPr fitToPage="1"/></sheetPr>' + xml.slice(gt + 1);
+    /* Drop any page setup SheetJS already wrote: duplicate pageSetup/pageMargins
+       elements make Excel/WPS ignore fit-to-page, so the file prints on many pages. */
+    xml = xml.replace(/<pageSetup[\s\/>][^>]*\/>/g, "");
+    xml = xml.replace(/<pageSetup[\s\/>][^>]*>[\s\S]*?<\/pageSetup>/g, "");
+    xml = xml.replace(/<pageMargins[\s\/>][^>]*\/>/g, "");
+    var spr = xml.match(/<sheetPr\b[^>]*>/);
+    if(spr){
+      xml = xml.replace(/<pageSetUpPr\b[^>]*\/>/g, "");
+      if(/\/>$/.test(spr[0])) xml = xml.replace(/<sheetPr\b([^>]*)\/>/, '<sheetPr$1><pageSetUpPr fitToPage="1"/></sheetPr>');
+      else xml = xml.replace(/<sheetPr\b([^>]*)>/, '<sheetPr$1><pageSetUpPr fitToPage="1"/>');
+    } else {
+      xml = xml.slice(0, gt + 1) + '<sheetPr><pageSetUpPr fitToPage="1"/></sheetPr>' + xml.slice(gt + 1);
+    }
     var setup = '<pageMargins left="0.25" right="0.25" top="0.3" bottom="0.3" header="0.15" footer="0.15"/><pageSetup paperSize="9" orientation="portrait" fitToWidth="1" fitToHeight="1"/>';
     var ie = xml.indexOf("<ignoredErrors");
     if(ie !== -1) xml = xml.slice(0, ie) + setup + xml.slice(ie);
@@ -4312,7 +4372,9 @@ function fitAndPrint(containerEl){
   var old = window.onafterprint;
   window.onafterprint = function(){ restore(); window.onafterprint = old; if(old) old(); };
   window.print();
-  setTimeout(restore, 2000);
+  /* Phone print dialogs take longer than 2s to pick Save as PDF; restoring
+     the fit zoom too early un-fits the page and prints many pages. */
+  setTimeout(restore, 30000);
 }
 $("btnExportPdf").onclick = function(){ fitAndPrint($("page2")); };
 $("btnExportPdf2").onclick = function(){ fitAndPrint($("page2")); };
