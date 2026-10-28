@@ -2166,11 +2166,10 @@ $("btnPasteGoto").onclick = function(){
 $("btnBackDashboard").onclick = function(){ showPage(1); };
 $("btnOpenReport").onclick = function(){ showPage(2); showSub("thread"); };
 /* Buyer-wise list: click a style row to open that style on the sheet (this
-   replaces the removed style-name dropdown as the way to open a saved style). */
-$("listBody").addEventListener("click", function(e){
-  var tr = e.target.closest ? e.target.closest("tr[data-key]") : null;
-  if(!tr) return;
-  var key = tr.getAttribute("data-key");
+   replaces the removed style-name dropdown as the way to open a saved style).
+   Each row also has an explicit OPEN button (visible on phones, where a
+   tappable row alone is easy to miss); the button opens directly. */
+function openListStyle(key){
   var it = stylesCache.filter(function(x){ return x.key === key; })[0];
   if(!it){
     var all = listRowsForBuyer("", true);
@@ -2180,6 +2179,12 @@ $("listBody").addEventListener("click", function(e){
   currentStyleKey = key;
   loadSheet(it.data);
   showPage(2); showSub("thread");
+}
+$("listBody").addEventListener("click", function(e){
+  if(e.target.closest && e.target.closest("[data-open-key]")) return; /* OPEN button handles itself */
+  var tr = e.target.closest ? e.target.closest("tr[data-key]") : null;
+  if(!tr) return;
+  openListStyle(tr.getAttribute("data-key"));
 });
 $("btnHomeLogout").onclick = logout;
 $("homeUserName").addEventListener("input", function(){
@@ -2378,7 +2383,7 @@ function renderStyleList(){
       var spec = m.groups.map(function(g){ return esc(g.label + "-" + g.m); }).join("<br>");
       var proc = (d.ops || []).map(function(op){ return op.name || ""; }).filter(function(n){ return !!n; }).slice(0, 3).map(function(n){ return esc(n); }).join("<br>");
       var checked = isStyleChecked(d.buyer, d.style);
-      html += '<tr data-key="' + esc(it.key) + '" style="cursor:pointer"' + (checked ? ' class="row-checked" title="Checked — click to open"' : ' title="Click to open"') + '><td>' + (j + 1) + '</td><td>' + esc(d.buyer) + '</td><td>' + esc(d.style) + '</td>'
+      html += '<tr data-key="' + esc(it.key) + '" style="cursor:pointer"' + (checked ? ' class="row-checked" title="Checked — click to open"' : ' title="Click to open"') + '><td>' + (j + 1) + '</td><td>' + esc(d.buyer) + '</td><td><button class="btn btn-p btn-sm" data-open-key="' + esc(it.key) + '" onclick="event.stopPropagation();openListStyle(\'' + esc(it.key) + '\')">OPEN</button> ' + esc(d.style) + '</td>'
         + '<td>' + esc(d.item) + '</td><td>' + esc(d.size) + '</td><td>' + esc(entryDate(d)) + '</td>'
         + '<td class="mtr">' + m.total + '</td>'
         + '<td>' + esc(body) + '</td>'
