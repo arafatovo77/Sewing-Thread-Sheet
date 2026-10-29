@@ -9,6 +9,8 @@
      No Gmail dependency of any kind. -->
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <style>
   *{box-sizing:border-box}
   body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans Bengali",sans-serif;background:#EDF1F7;color:#1B3A5F}
@@ -5176,21 +5178,185 @@ function buildPrintSheetHtml(){
   h += '</table>';
   return h;
 }
-$("btnExportPdf").onclick = function(){
+/* ============ DIRECT PDF DOWNLOAD (jsPDF, no print preview) ============ */
+/* Both sheet PDFs download straight to the phone as files — the browser print
+   dialog is never opened, so the blank-page/preview problem is gone. jsPDF +
+   autotable load from CDN (same as Firebase); if they fail to load, the button
+   shows a status message instead of opening print preview. */
+function jspdfReady(){
+  if(window.jspdf && window.jspdf.jsPDF){
+    var d = new window.jspdf.jsPDF({unit: "mm", format: "a4", orientation: "landscape"});
+    if(d.autoTable) return d;
+  }
+  return null;
+}
+function pdfHex(h){ var n = parseInt(h.slice(1), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; }
+function pdfCell(v){ return (v === "" || v == null) ? "" : String(v); }
+function pdfNum(v){
+  if(v === "" || v == null) return "";
+  var n = Number(v);
+  if(isNaN(n)) return String(v);
+  var t = n.toFixed(2);
+  return t.replace(/\.?0+$/, "") || "0";
+}
+function pdfTitle(doc, title, sub){
+  doc.setFillColor.apply(doc, pdfHex("#C8C8C8")); doc.rect(10, 8, 277, 9, "F");
+  doc.setFont("helvetica", "bold"); doc.setFontSize(15); doc.setTextColor.apply(doc, pdfHex("#0B8FC9"));
+  doc.text(title, 148.5, 14.5, {align: "center"});
+  doc.setFillColor.apply(doc, pdfHex("#DDEBF7")); doc.rect(10, 17, 277, 8, "F");
+  doc.setFontSize(12); doc.setTextColor.apply(doc, pdfHex("#3B7D23"));
+  doc.text(sub, 148.5, 22.5, {align: "center"});
+  doc.setTextColor(0, 0, 0);
+}
+function pdfInfo(doc, pairs){
+  doc.autoTable({
+    startY: 27, margin: {left: 10, right: 10, top: 8},
+    body: pairs,
+    theme: "grid",
+    styles: {font: "helvetica", fontSize: 8, cellPadding: 1.2, lineColor: pdfHex("#8C97AB"), lineWidth: 0.2},
+    columnStyles: {0: {fontStyle: "bold", cellWidth: 28}, 1: {cellWidth: 110}, 2: {fontStyle: "bold", cellWidth: 28}, 3: {cellWidth: 111}}
+  });
+  return doc.lastAutoTable.finalY + 3;
+}
+function pdfTable(doc, y, head, body, widths, opts){
+  opts = opts || {};
+  var cs = {}; widths.forEach(function(w, i){ cs[i] = {cellWidth: w}; });
+  doc.autoTable({
+    startY: y, margin: {left: 10, right: 10, top: 8},
+    head: [head], body: body,
+    theme: "grid",
+    styles: {font: "helvetica", fontSize: 8, cellPadding: 1.2, lineColor: pdfHex("#8C97AB"), lineWidth: 0.2, halign: "center"},
+    headStyles: {fillColor: pdfHex("#B8C4DC"), textColor: 0, fontStyle: "bold"},
+    columnStyles: cs,
+    didParseCell: function(d){
+      if(d.section === "head" && opts.headFill && opts.headFill[d.column.index]){
+        d.cell.styles.fillColor = pdfHex(opts.headFill[d.column.index]);
+      }
+      if(d.section === "body"){
+        if(opts.leftCols && opts.leftCols.indexOf(d.column.index) >= 0) d.cell.styles.halign = "left";
+        if(opts.boldRows && opts.boldRows.indexOf(d.row.index) >= 0) d.cell.styles.fontStyle = "bold";
+        if(opts.greenCol != null && d.column.index === opts.greenCol && (!opts.greenRows || opts.greenRows.indexOf(d.row.index) >= 0)){
+          d.cell.styles.fillColor = pdfHex("#92D050"); d.cell.styles.fontStyle = "bold";
+        }
+        if(opts.yellowCol != null && d.column.index === opts.yellowCol) d.cell.styles.fillColor = pdfHex("#FFFF00");
+        if(opts.qtyBlueCol != null && d.column.index === opts.qtyBlueCol && num(d.cell.raw) > 1){
+          d.cell.styles.fillColor = pdfHex("#BDD7EE"); d.cell.styles.fontStyle = "bold";
+        }
+        if(opts.rowFill && opts.rowFill[d.row.index]){
+          if(!opts.keepCellFill || opts.keepCellFill.indexOf(d.column.index) < 0) d.cell.styles.fillColor = pdfHex(opts.rowFill[d.row.index]);
+        }
+      }
+    }
+  });
+  return doc.lastAutoTable.finalY + 3;
+}
+function pdfSection(doc, y, text){
+  doc.setFont("helvetica", "bold"); doc.setFontSize(9);
+  doc.text(text, 10, y + 4);
+  return y + 7;
+}
+/* Accessories breakdown table (sample-2 format), shared by both PDFs. */
+function pdfAccTableData(){
+  var head = ["Accessory item", "Allowance rule", "Seam length", "Seam allow.", "Input unit", "Actual cm", "Allow. %", "Per pc (cm)", "Order (cm)"];
+  var body = [], sumPg = 0, sumOd = 0;
+  ACCS.forEach(function(r){
+    var c = accCompute(r);
+    sumPg += c.perGarment; sumOd += c.order;
+    body.push([pdfCell(r.item), accRuleLabelFull({rule: c.rule, customPct: r.customPct}),
+      pdfCell(r.seamLength), pdfCell(r.seamAllowance), pdfCell(r.unit || "CM"),
+      c.cm.toFixed(2), pdfNum(c.pct), c.perGarment.toFixed(2), c.order.toFixed(2)]);
+  });
+  body.push(["Total", "", "", "", "", "", "", sumPg.toFixed(2), sumOd.toFixed(2)]);
+  return {head: head, body: body};
+}
+function pdfInfoPairs(buyer, style, item, size, fit, date, oq, outUnit){
+  return [
+    ["BUYER", pdfCell(buyer), "ORDER QTY", oq ? String(oq) : ""],
+    ["STYLE", pdfCell(style), "FIT", pdfCell(fit)],
+    ["ITEM", pdfCell(item), "DATE", pdfCell(date)],
+    ["SIZE", pdfCell(size), "OUTPUT UNIT", outUnit]
+  ];
+}
+function downloadThreadPdf(){
+  var doc = jspdfReady();
+  if(!doc){ setStatus("PDF library load hoy nai — internet connection check kore abar try koren."); return; }
+  var rows = buildSingleStyleSheet();
+  var n = OPS.length, k = contrastGroups().length, C = CONES.length;
+  function rowAt(i){ return rows[i] || []; }
+  pdfTitle(doc, "GMS COMPOSITE KNITTING KNITTING IND LTD.", "Thread Consumption");
+  var buyer = rowAt(3)[1], fit = rowAt(3)[6], style = rowAt(4)[1], date = rowAt(4)[6];
+  var item = rowAt(5)[1], oq = rowAt(5)[6], size = rowAt(6)[1];
+  var y = pdfInfo(doc, pdfInfoPairs(buyer, style, item, size, fit, date, oq, "M"));
+  var oh = rowAt(8);
+  var opsBody = [], opsFill = [];
+  for(var i = 0; i < n; i++){
+    var orow = rowAt(9 + i);
+    opsBody.push([pdfCell(orow[0]), pdfCell(orow[1]), pdfCell(orow[2]), pdfNum(orow[3]), pdfNum(orow[4]),
+      pdfCell(orow[5]), pdfNum(orow[6]), pdfNum(orow[7]), pdfNum(orow[8]), pdfCell(orow[9])]);
+    var lab = opSpecialLabel(OPS[i]);
+    opsFill.push(lab ? specialRowColour(lab) : "");
+  }
+  y = pdfTable(doc, y, [oh[0], oh[1], oh[2], oh[3], oh[4], oh[5], oh[6], oh[7], oh[8], oh[9]], opsBody,
+    [10, 62, 22, 24, 24, 20, 28, 28, 28, 31],
+    {leftCols: [1, 9], yellowCol: 4, qtyBlueCol: 5, rowFill: opsFill, keepCellFill: [4, 5],
+     headFill: {4: "#FFFF00", 8: "#F4B183"}});
+  y = pdfSection(doc, y, pdfCell(rowAt(10 + n)[0]));
+  var th = rowAt(11 + n);
+  var totBody = [];
+  totBody.push([pdfCell(rowAt(12 + n)[0]), pdfNum(rowAt(12 + n)[1]), pdfNum(rowAt(12 + n)[2]), pdfNum(rowAt(12 + n)[3]), pdfNum(rowAt(12 + n)[4])]);
+  for(var j = 0; j < k; j++){
+    var rr = rowAt(13 + n + j);
+    totBody.push([pdfCell(rr[0]), pdfNum(rr[1]), pdfNum(rr[2]), pdfNum(rr[3]), pdfNum(rr[4])]);
+  }
+  var ar = rowAt(13 + n + k);
+  totBody.push([pdfCell(ar[0]), pdfNum(ar[1]), pdfNum(ar[2]), pdfNum(ar[3]), pdfNum(ar[4])]);
+  y = pdfTable(doc, y, [th[0], th[1], th[2], th[3], th[4]], totBody,
+    [100, 44, 44, 44, 45], {leftCols: [0], greenCol: 4, boldRows: [totBody.length - 1]});
+  y = pdfSection(doc, y, "Accessories breakdown");
+  var acc = pdfAccTableData();
+  y = pdfTable(doc, y, acc.head, acc.body,
+    [45, 48, 24, 24, 20, 28, 20, 32, 36], {leftCols: [0, 1], boldRows: [acc.body.length - 1]});
+  var note = pdfCell(rowAt(15 + n + k)[0]);
+  doc.setFont("helvetica", "bold"); doc.setFontSize(9);
+  var lines = doc.splitTextToSize(note, 277);
+  lines.forEach(function(ln, li){ doc.text(ln, 10, y + 4 + li * 4); });
+  y = y + 4 + lines.length * 4 + 2;
+  var coneBody = [], coneFill = [];
+  for(var ci = 0; ci < 1 + k + C; ci++){
+    var crow = rowAt(17 + n + k + ci);
+    coneBody.push([pdfCell(crow[1]), pdfCell(crow[2]), pdfNum(crow[3]), pdfNum(crow[4]), pdfCell(crow[5]), pdfNum(crow[6]), pdfCell(crow[7])]);
+    coneFill.push("#FCE4D6");
+  }
+  var tr = rowAt(18 + n + 2 * k + C);
+  coneBody.push(["Total", "", "", pdfNum(tr[4]), "", pdfNum(tr[6]), pdfCell(tr[7])]);
+  coneFill.push("");
+  pdfTable(doc, y, ["Thread and colour", "Qty (pcs)", "Thread per pc (Mtr)", "Total thread (Mtr)", "Cone (Mtr)", "Cones", "Cones to order"], coneBody,
+    [90, 30, 35, 40, 30, 25, 27],
+    {leftCols: [0], rowFill: coneFill, greenCol: 3, greenRows: [coneBody.length - 1], boldRows: [coneBody.length - 1]});
   var at = singleStyleAllTotals();
   var sz = selVal("fSize", "fSizeCustom");
   var st = styleNameVal().replace(/[\\\/\?\%\*\:\|\"<>]/g, "");
   var docTitle = (st || "Thread-Sheet") + (sz ? "_" + sz : "") + "_" + at.total.toFixed(2) + "m";
-  var pv = $("printSheetView");
-  pv.innerHTML = buildPrintSheetHtml();
-  document.body.classList.add("print-sheet-only");
-  pv.style.display = "block";
-  function done(){ document.body.classList.remove("print-sheet-only"); pv.style.display = ""; }
-  var old = window.onafterprint;
-  window.onafterprint = function(){ done(); window.onafterprint = old; };
-  fitAndPrint(pv, docTitle);
-  setTimeout(done, 30000);
-};
+  doc.save(docTitle + ".pdf");
+  setStatus("PDF downloaded: " + docTitle + ".pdf");
+}
+function downloadAccPdf(){
+  var doc = jspdfReady();
+  if(!doc){ setStatus("PDF library load hoy nai — internet connection check kore abar try koren."); return; }
+  pdfTitle(doc, "GMS COMPOSITE KNITTING KNITTING IND LTD.", "Accessories Consumption Report");
+  var y = pdfInfo(doc, pdfInfoPairs(
+    selVal("fBuyer", "fBuyerCustom"), styleNameVal(), selVal("fItem", "fItemCustom"), selVal("fSize", "fSizeCustom"),
+    $("fFit").value, $("fDate").value || "", orderQtyNum(), "CM"));
+  y = pdfSection(doc, y, "Accessories breakdown");
+  var acc = pdfAccTableData();
+  pdfTable(doc, y, acc.head, acc.body,
+    [45, 48, 24, 24, 20, 28, 20, 32, 36], {leftCols: [0, 1], boldRows: [acc.body.length - 1]});
+  var st = styleNameVal().replace(/[\\\/\?\%\*\:\|\"<>]/g, "");
+  var docTitle = (st || "Thread-Sheet") + "-Accessories";
+  doc.save(docTitle + ".pdf");
+  setStatus("PDF downloaded: " + docTitle + ".pdf");
+}
+$("btnExportPdf").onclick = function(){ downloadThreadPdf(); };
 /* ============ ACCESSORIES PDF PRINT VIEW (JJA sample format) ============ */
 /* Standalone accessories report: title + info + accessories table + total,
    same layout as the style PDF's accessories section, scaled to one page. */
@@ -5233,19 +5399,7 @@ function buildPrintAccHtml(){
   h += '</table>';
   return h;
 }
-$("btnExportPdf2").onclick = function(){
-  var st = styleNameVal().replace(/[\\\/\?\%\*\:\|\"<>]/g, "");
-  var docTitle = (st || "Thread-Sheet") + "-Accessories";
-  var pv = $("printAccView");
-  pv.innerHTML = buildPrintAccHtml();
-  document.body.classList.add("print-acc-only");
-  pv.style.display = "block";
-  function done(){ document.body.classList.remove("print-acc-only"); pv.style.display = ""; }
-  var old = window.onafterprint;
-  window.onafterprint = function(){ done(); window.onafterprint = old; };
-  fitAndPrint(pv, docTitle);
-  setTimeout(done, 30000);
-};
+$("btnExportPdf2").onclick = function(){ downloadAccPdf(); };
 </script>
 </body>
 </html>
