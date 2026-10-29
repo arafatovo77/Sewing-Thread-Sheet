@@ -286,8 +286,7 @@
   <!-- HOME: Buyer folders -->
   <section class="card" id="homeFolders">
     <h2>📁 Buyer folders</h2>
-    <p class="sub">1st tap-e folder select hobe, 2nd tap-e khulbe. ◀ ▶ diye folder bodlan jabe. Notun style auto oi buyer-er folder-e joma hobe.</p>
-    <div class="row"><button class="btn btn-o" id="btnFolderPrev">◀</button> <button class="btn btn-o" id="btnFolderNext">▶</button></div>
+    <p class="sub">1st tap-e folder select hobe, 2nd tap-e khulbe. Keyboard-er ◀ ▶ (arrow key) diye folder bodlan jabe. Notun style auto oi buyer-er folder-e joma hobe.</p>
     <div class="row" id="folderButtons"></div>
     <h3 style="margin:10px 0 6px;font-size:15px">Buyer-wise accessories</h3>
     <div class="row" id="accFolderButtons"></div>
@@ -2917,6 +2916,17 @@ $("accFolderButtons").addEventListener("click", function(e){
   currentAccBuyer = btn.getAttribute("data-acc-folder");
   renderAccList();
 });
+$("accFolderButtons").addEventListener("keydown", function(e){
+  if(e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+  var btns = $("accFolderButtons").querySelectorAll("[data-acc-folder]");
+  if(!btns.length) return;
+  var idx = -1;
+  for(var i = 0; i < btns.length; i++){ if(btns[i] === document.activeElement){ idx = i; break; } }
+  if(idx === -1) idx = e.key === "ArrowRight" ? -1 : 0;
+  idx = (idx + (e.key === "ArrowRight" ? 1 : -1) + btns.length) % btns.length;
+  e.preventDefault();
+  btns[idx].focus();
+});
 function accRuleLabelFull(row){
   if(row.rule === "twill") return "Back twill tape +7%";
   if(row.rule === "elastic") return "Elastic tape +10%";
@@ -2995,9 +3005,18 @@ function folderStep(dir){
   idx = (idx + dir + ord.length) % ord.length;
   selectedFolderBuyer = ord[idx];
   renderHomeFolders();
+  var box = $("folderButtons");
+  if(box){
+    var btns = box.querySelectorAll("[data-folder]");
+    for(var i = 0; i < btns.length; i++){
+      if(btns[i].getAttribute("data-folder") === selectedFolderBuyer){ btns[i].focus(); break; }
+    }
+  }
 }
-$("btnFolderPrev").onclick = function(){ folderStep(-1); };
-$("btnFolderNext").onclick = function(){ folderStep(1); };
+$("folderButtons").addEventListener("keydown", function(e){
+  if(e.key === "ArrowLeft"){ e.preventDefault(); folderStep(-1); }
+  else if(e.key === "ArrowRight"){ e.preventDefault(); folderStep(1); }
+});
 function renderStyleList(){
   var buyer = currentListBuyer;
   var q = (listSearchTerm || "").trim().toLowerCase();
