@@ -3250,19 +3250,39 @@ function sendExportMeta(items){
   }
   return { heading: "ALL BUYERS THREAD CONSUMPTION", file: "All-Buyers-Thread-Consumption.xlsx", tab: "All Buyers" };
 }
+function sendLabelsFor(items){
+  var labels = [], seen = {};
+  (items || []).forEach(function(d){
+    var m = listRowMetres(d || {});
+    m.groups.forEach(function(g){
+      var k = String(g.label).toLowerCase();
+      if(!seen[k]){ seen[k] = true; labels.push(g.label); }
+    });
+  });
+  return labels;
+}
+function sendLabelValue(d, label){
+  var m = listRowMetres(d || {});
+  for(var i = 0; i < m.groups.length; i++){
+    if(String(m.groups[i].label).toLowerCase() === String(label).toLowerCase()) return m.groups[i].m;
+  }
+  return "";
+}
 function buildSendListSheetFrom(items, heading){
+  var labels = sendLabelsFor(items);
   var rows = [];
   rows.push(["GMS COMPOSITE KNITTING KNITTING IND LTD."]);
   rows.push([heading || "ALL BUYERS THREAD CONSUMPTION"]);
   rows.push([listConeNoteText()]);
-  rows.push(["SL", "BUYER", "STYLE", "ITEM", "SIZE", "MTR", "BODY THREAD", "SPECIAL THREAD", "REMARKS"]);
+  rows.push(["SL", "BUYER", "STYLE", "ITEM", "SIZE", "MTR", "BODY THREAD"].concat(labels).concat(["REMARKS"]));
   (items || []).forEach(function(d, i){
     d = d || {};
     var m = listRowMetres(d);
-    rows.push([i + 1, d.buyer || "", d.style || "", d.item || "", d.size || "", m.total,
-      "BODY THREAD--" + m.body,
-      m.groups.map(function(g){ return g.label + "-" + g.m; }).join("\n"),
-      d.remark || ""]);
+    var row = [i + 1, d.buyer || "", d.style || "", d.item || "", d.size || "", m.total,
+      "BODY THREAD--" + m.body];
+    labels.forEach(function(lb){ row.push(sendLabelValue(d, lb)); });
+    row.push(d.remark || "");
+    rows.push(row);
   });
   return rows;
 }
@@ -3330,8 +3350,10 @@ $("histBody").addEventListener("click", function(e){
       try{
         var wb = XLSX.utils.book_new();
         var ws = XLSX.utils.aoa_to_sheet(buildSendListSheetFrom(items, sendExportMeta(items).heading));
-        ws["!merges"] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 8 } }, { s: { r: 1, c: 0 }, e: { r: 1, c: 8 } }, { s: { r: 2, c: 0 }, e: { r: 2, c: 8 } }];
-        ws["!cols"] = [{ wch: 5 }, { wch: 16 }, { wch: 28 }, { wch: 14 }, { wch: 10 }, { wch: 12 }, { wch: 20 }, { wch: 28 }, { wch: 18 }];
+        var histLabels = sendLabelsFor(items);
+        var histLastCol = 7 + histLabels.length;
+        ws["!merges"] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: histLastCol } }, { s: { r: 1, c: 0 }, e: { r: 1, c: histLastCol } }, { s: { r: 2, c: 0 }, e: { r: 2, c: histLastCol } }];
+        ws["!cols"] = [{ wch: 5 }, { wch: 16 }, { wch: 28 }, { wch: 14 }, { wch: 10 }, { wch: 12 }, { wch: 20 }].concat(histLabels.map(function(){ return { wch: 18 }; })).concat([{ wch: 18 }]);
         ws["!rows"] = sendSheetHeights(items);
         var histMeta = sendExportMeta(items);
         XLSX.utils.book_append_sheet(wb, ws, histMeta.tab);
@@ -3357,8 +3379,11 @@ $("btnSendExcel").onclick = function(){
     try{
       var wb = XLSX.utils.book_new();
       var ws = XLSX.utils.aoa_to_sheet(buildSendListSheet());
-      ws["!merges"] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 8 } }, { s: { r: 1, c: 0 }, e: { r: 1, c: 8 } }, { s: { r: 2, c: 0 }, e: { r: 2, c: 8 } }];
-      ws["!cols"] = [{ wch: 5 }, { wch: 16 }, { wch: 28 }, { wch: 14 }, { wch: 10 }, { wch: 12 }, { wch: 20 }, { wch: 28 }, { wch: 18 }];
+      var sendItems = sendRowsSorted().map(function(it){ return it.data; });
+      var sendLabels = sendLabelsFor(sendItems);
+      var sendLastCol = 7 + sendLabels.length;
+      ws["!merges"] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: sendLastCol } }, { s: { r: 1, c: 0 }, e: { r: 1, c: sendLastCol } }, { s: { r: 2, c: 0 }, e: { r: 2, c: sendLastCol } }];
+      ws["!cols"] = [{ wch: 5 }, { wch: 16 }, { wch: 28 }, { wch: 14 }, { wch: 10 }, { wch: 12 }, { wch: 20 }].concat(sendLabels.map(function(){ return { wch: 18 }; })).concat([{ wch: 18 }]);
       ws["!rows"] = sendSheetHeights(sendRowsSorted().map(function(it){ return it.data; }));
       var sendMeta = sendExportMeta(sendRowsSorted().map(function(it){ return it.data; }));
       XLSX.utils.book_append_sheet(wb, ws, sendMeta.tab);
@@ -3368,15 +3393,7 @@ $("btnSendExcel").onclick = function(){
     }catch(err){ setStatus("Ready"); alert("The Excel file could not be created. Please try again."); }
   }, function(){ setStatus("Ready"); alert("The Excel writer could not be downloaded from any mirror.\n\nPlease check your network connection and try again."); });
 };
-$("btnSendPdf").onclick = function(){
-  document.body.classList.add("print-send-only");
-  function done(){ document.body.classList.remove("print-send-only"); }
-  var old = window.onafterprint;
-  window.onafterprint = function(){ done(); window.onafterprint = old; };
-  fitAndPrint($("sendListPanel"));
-  archiveSendListAndClear();
-  setTimeout(done, 30000);
-};
+$("btnSendPdf").onclick = downloadSendPdf;
 $("btnClearSend").onclick = function(){
   if(!sendCache.length){ alert("Merchant list is already empty."); return; }
   if(!confirm("Clear " + sendCache.length + " merchant list style(s)?")) return;
@@ -4527,7 +4544,7 @@ function patchXlsxMtrGreen(buf){
     var shXml = sheet.xml.replace(/<c r="F(\d+)"(?![^>]*\bs=)/g, function(m, row){
       return (parseInt(row, 10) >= 5) ? '<c r="F' + row + '" s="' + greenXfId + '"' : m;
     });
-    shXml = shXml.replace(/<c r="([A-J])4"(?![^>]*\bs=)/g, function(m, col){
+    shXml = shXml.replace(/<c r="([A-Z]+)4"(?![^>]*\bs=)/g, function(m, col){
       return '<c r="' + col + '4" s="' + hdrXfId + '"';
     });
     shXml = shXml.replace(/<c r="A([12])"(?![^>]*\bs=)/g, function(m, row){
@@ -4545,6 +4562,9 @@ function patchXlsxMtrGreen(buf){
     });
     shXml = shXml.replace(/<c r="J([0-9]+)"/g, function(m, row){
       return (parseInt(row, 10) >= 5) ? '<c r="J' + row + '" s="' + wrapLXfId + '"' : m;
+    });
+    shXml = shXml.replace(/<c r="([A-Z]+)([0-9]+)"(?![^>]*\bs=)/g, function(m, col, row){
+      return (parseInt(row, 10) >= 5) ? '<c r="' + col + row + '" s="' + plainLXfId + '"' : m;
     });
     if(shXml === sheet.xml) return bytes;
     var mods = {};
@@ -5526,6 +5546,52 @@ function downloadAccPdf(){
   var docTitle = (st || "Thread-Sheet") + "-Accessories";
   doc.save(docTitle + ".pdf");
   setStatus(doc.getNumberOfPages() === 1 ? "PDF downloaded: " + docTitle + ".pdf" : "PDF downloaded (" + doc.getNumberOfPages() + " page-e): " + docTitle + ".pdf");
+}
+function buildSendDoc(){
+  var doc = jspdfReady();
+  if(!doc) return null;
+  var items = sendRowsSorted().map(function(it){ return it.data; });
+  var meta = sendExportMeta(items);
+  var labels = sendLabelsFor(items);
+  pdfTitle(doc, "GMS COMPOSITE KNITTING KNITTING IND LTD.", meta.heading);
+  doc.setFont("helvetica", ""); doc.setFontSize(PDF_FS);
+  var noteLines = doc.splitTextToSize(listConeNoteText(), 190);
+  doc.text(noteLines, 10, 29);
+  var y = 29 + noteLines.length * 4 + 3;
+  var head = ["SL", "BUYER", "STYLE", "ITEM", "SIZE", "MTR", "BODY THREAD"].concat(labels).concat(["REMARKS"]);
+  var body = [];
+  items.forEach(function(d, i){
+    d = d || {};
+    var m = listRowMetres(d);
+    var row = [String(i + 1), pdfCell(d.buyer), pdfCell(d.style), pdfCell(d.item), pdfCell(d.size),
+      pdfCell(m.total), "BODY THREAD--" + m.body];
+    labels.forEach(function(lb){ row.push(pdfCell(sendLabelValue(d, lb))); });
+    row.push(pdfCell(d.remark));
+    body.push(row);
+  });
+  var widths = [8, 22, 26, 16, 11, 13, 24];
+  labels.forEach(function(){ widths.push("auto"); });
+  widths.push(20);
+  var left = [1, 2, 3, 6];
+  labels.forEach(function(_, j){ left.push(7 + j); });
+  left.push(7 + labels.length);
+  pdfTable(doc, y, head, body, widths, {leftCols: left});
+  return doc;
+}
+function downloadSendPdf(){
+  var doc = null;
+  var tries = [[8, 1.2], [7.5, 1], [7, 0.8], [6.5, 0.7], [6, 0.6]];
+  for(var ti = 0; ti < tries.length; ti++){
+    PDF_FS = tries[ti][0]; PDF_PAD = tries[ti][1];
+    doc = buildSendDoc();
+    if(!doc){ setStatus("PDF library load hoy nai — internet connection check kore abar try koren."); return; }
+    if(doc.getNumberOfPages() === 1) break;
+  }
+  var items = sendRowsSorted().map(function(it){ return it.data; });
+  var file = sendExportMeta(items).file.replace(/\.xlsx$/i, ".pdf");
+  doc.save(file);
+  setStatus(doc.getNumberOfPages() === 1 ? "PDF downloaded: " + file : "PDF downloaded (" + doc.getNumberOfPages() + " page-e): " + file);
+  archiveSendListAndClear();
 }
 </script>
 </body>
