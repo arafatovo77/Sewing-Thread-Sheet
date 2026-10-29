@@ -293,7 +293,7 @@
   <!-- HOME: Accessories folders -->
   <section class="card" id="homeAccFolders">
     <h2>📁 Accessories</h2>
-    <p class="sub">Tap korle khulbe. Keyboard-er ◀ ▶ (arrow key) diye folder bodlan jabe, Enter dile khulbe.</p>
+    <p class="sub">1st tap-e folder select hobe, 2nd tap-e khulbe. Keyboard-er ◀ ▶ (arrow key) diye folder bodlan jabe, Enter dile khulbe.</p>
     <div class="row" id="accFolderButtons"></div>
   </section>
 
@@ -705,6 +705,8 @@ var currentStyleKey = ""; /* selected saved-style key ("" = none) */
 var currentListBuyer = ""; /* "" = all buyers in Style list panel */
 var selectedFolderBuyer = null; /* null = none selected; "" = All buyers */
 var lastFolderOrder = [];
+var selectedAccFolder = null; /* null = none selected; "" = All buyers */
+var lastAccFolderOrder = [];
 var currentAccBuyer = ""; /* "" = all buyers in Accessories list panel */
 var currentListPeriod = ""; /* "" = all periods in Style list panel (YYYY-MM) */
 var listSearchTerm = ""; /* Home folder search text */
@@ -2906,29 +2908,47 @@ function renderHomeFolders(){
   });
   var accBox = $("accFolderButtons");
   if(accBox){
-    var accHtml = '<button class="btn btn-o" data-acc-folder="">📁 All buyers (' + accTotal + ')</button>';
-    accOrder.forEach(function(b){ accHtml += ' <button class="btn btn-o" data-acc-folder="' + esc(b) + '">📁 ' + esc(b) + ' (' + accCounts[b] + ')</button>'; });
+    var accFOrder = [""].concat(accOrder);
+    if(selectedAccFolder !== null && accFOrder.indexOf(selectedAccFolder) === -1) selectedAccFolder = null;
+    lastAccFolderOrder = accFOrder;
+    var accHtml = '<button class="btn btn-o' + (selectedAccFolder === "" ? " folder-sel" : "") + '" data-acc-folder="">📁 All buyers (' + accTotal + ')</button>';
+    accOrder.forEach(function(b){ accHtml += ' <button class="btn btn-o' + (selectedAccFolder === b ? " folder-sel" : "") + '" data-acc-folder="' + esc(b) + '">📁 ' + esc(b) + ' (' + accCounts[b] + ')</button>'; });
     accBox.innerHTML = accHtml;
   }
 }
 $("accFolderButtons").addEventListener("click", function(e){
   var btn = e.target.closest ? e.target.closest("[data-acc-folder]") : null;
   if(!btn) return;
-  currentAccBuyer = btn.getAttribute("data-acc-folder");
-  renderAccList();
-  var panel = $("accListPanel");
-  if(panel && panel.scrollIntoView) panel.scrollIntoView();
+  var b = btn.getAttribute("data-acc-folder");
+  if(selectedAccFolder !== null && selectedAccFolder === b){
+    currentAccBuyer = b;
+    renderAccList();
+    var lp = $("homeListPanel"); if(lp) lp.style.display = "none";
+    var panel = $("accListPanel");
+    if(panel){ panel.style.display = ""; if(panel.scrollIntoView) panel.scrollIntoView(); }
+  } else {
+    selectedAccFolder = b;
+    renderHomeFolders();
+  }
 });
+function accFolderStep(dir){
+  var ord = lastAccFolderOrder.length ? lastAccFolderOrder : [""];
+  var idx = ord.indexOf(selectedAccFolder);
+  if(idx === -1) idx = dir > 0 ? -1 : 0;
+  idx = (idx + dir + ord.length) % ord.length;
+  selectedAccFolder = ord[idx];
+  renderHomeFolders();
+  var box = $("accFolderButtons");
+  if(box){
+    var btns = box.querySelectorAll("[data-acc-folder]");
+    for(var i = 0; i < btns.length; i++){
+      if(btns[i].getAttribute("data-acc-folder") === selectedAccFolder){ btns[i].focus(); break; }
+    }
+  }
+}
 $("accFolderButtons").addEventListener("keydown", function(e){
-  if(e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
-  var btns = $("accFolderButtons").querySelectorAll("[data-acc-folder]");
-  if(!btns.length) return;
-  var idx = -1;
-  for(var i = 0; i < btns.length; i++){ if(btns[i] === document.activeElement){ idx = i; break; } }
-  if(idx === -1) idx = e.key === "ArrowRight" ? -1 : 0;
-  idx = (idx + (e.key === "ArrowRight" ? 1 : -1) + btns.length) % btns.length;
-  e.preventDefault();
-  btns[idx].focus();
+  if(e.key === "ArrowLeft"){ e.preventDefault(); accFolderStep(-1); }
+  else if(e.key === "ArrowRight"){ e.preventDefault(); accFolderStep(1); }
 });
 function accRuleLabelFull(row){
   if(row.rule === "twill") return "Back twill tape +7%";
@@ -3000,8 +3020,9 @@ $("folderButtons").addEventListener("click", function(e){
     if(sel) sel.value = b;
     if(b) expandedBuyers[b] = true;
     renderStyleList();
+    var ap = $("accListPanel"); if(ap) ap.style.display = "none";
     var panel = $("homeListPanel");
-    if(panel && panel.scrollIntoView) panel.scrollIntoView();
+    if(panel){ panel.style.display = ""; if(panel.scrollIntoView) panel.scrollIntoView(); }
   } else {
     selectedFolderBuyer = b;
     renderHomeFolders();
