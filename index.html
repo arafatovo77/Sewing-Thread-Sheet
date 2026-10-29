@@ -624,8 +624,6 @@
     </table></div>
     <div class="row" style="margin-top:8px">
       <button class="btn btn-p" id="btnSaveSheetAcc">SAVE</button>
-      <button class="btn btn-o" id="btnAccPrev">◀</button>
-      <button class="btn btn-o" id="btnAccNext">▶</button>
       <button class="btn btn-o" id="btnAddAcc">+ Add accessory row</button>
       <button class="btn btn-o" id="btnExportExcel2">Export Excel</button>
       <button class="btn btn-p" id="btnExportPdf2">DOWNLOAD ACCESSORIES PDF</button>
@@ -2426,8 +2424,6 @@ function accFocusStep(dir){
   if(idx >= els.length) idx = els.length - 1;
   els[idx].focus();
 }
-$("btnAccPrev").onclick = function(){ accFocusStep(-1); };
-$("btnAccNext").onclick = function(){ accFocusStep(1); };
 /* ================= Sheet check -> main list (item 18) =================
    Checking happens on the sheet. A checked style is upserted into the
    main buyer-wise list (styleList) so it appears there directly — there
@@ -5134,6 +5130,8 @@ function exportAccessoriesExcel(){
 }
 $("btnExportExcel").onclick = exportExcel;
 $("btnExportExcel2").onclick = exportAccessoriesExcel;
+$("btnExportPdf").onclick = downloadThreadPdf;
+$("btnExportPdf2").onclick = downloadAccPdf;
 /* Item 27: scale long print content down so it stays on one A4 page.
    Chrome honours the zoom property in print; other browsers ignore it
    and degrade gracefully to multi-page. Screen measurement overestimates
