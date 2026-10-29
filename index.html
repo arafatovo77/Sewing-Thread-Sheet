@@ -325,9 +325,9 @@
   <!-- HOME: Buyer-wise accessories list -->
   <section class="card" id="accListPanel">
     <h2>▼ Buyer-wise accessories <span id="accPanelBuyer" class="mut"></span></h2>
-    <p class="sub">Oi buyer-er style gulor accessories. OPEN dile style-ta Accessories tab-e khulbe.</p>
+    <p class="sub">Oi buyer-er style gulor accessories. OPEN dile style-ta Accessories tab-e khulbe, MERCHANT dile merchant list-e jabe, STYLE COPY dile copy khulbe.</p>
     <div class="tbl-wrap"><table>
-      <thead><tr><th>BUYER</th><th>STYLE</th><th>ITEM</th><th>SIZE</th><th>ACCESSORY</th><th>RULE</th><th>SEAM LEN</th><th>ALLOWANCE</th><th>UNIT</th><th>CM</th><th>ALLOW %</th><th>PER GARM. (cm)</th><th>ORDER TOTAL (cm)</th><th class="no-print"></th></tr></thead>
+      <thead><tr><th>BUYER</th><th>STYLE</th><th>ITEM</th><th>SIZE</th><th>ACCESSORY</th><th>RULE</th><th>SEAM LEN</th><th>ALLOWANCE</th><th>UNIT</th><th>CM</th><th>ALLOW %</th><th>PER GARM. (cm)</th><th>ORDER TOTAL (cm)</th><th class="no-print">OPEN</th><th class="no-print">MERCHANT</th><th class="no-print">COPY</th></tr></thead>
       <tbody id="accListBody"></tbody>
     </table></div>
   </section>
@@ -2916,6 +2916,8 @@ $("accFolderButtons").addEventListener("click", function(e){
   if(!btn) return;
   currentAccBuyer = btn.getAttribute("data-acc-folder");
   renderAccList();
+  var panel = $("accListPanel");
+  if(panel && panel.scrollIntoView) panel.scrollIntoView();
 });
 $("accFolderButtons").addEventListener("keydown", function(e){
   if(e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
@@ -2963,10 +2965,12 @@ function renderAccList(){
         + '<td>' + esc(r.seamLength) + '</td><td>' + esc(r.seamAllowance) + '</td><td>' + esc(r.unit || "") + '</td>'
         + '<td>' + cm.toFixed(2) + '</td><td>' + accPct(rule, r.customPct).toFixed(2) + "%" + '</td>'
         + '<td>' + pg.toFixed(2) + '</td><td>' + od.toFixed(2) + '</td>'
-        + '<td class="no-print"><button class="btn btn-p btn-sm" data-open-acc="' + esc(it.key) + '">OPEN</button></td></tr>';
+        + '<td class="no-print"><button class="btn btn-p btn-sm" data-open-acc="' + esc(it.key) + '">OPEN</button></td>'
+        + '<td class="no-print"><button class="btn btn-o btn-sm" data-add-send-key="' + esc(it.key) + '" title="Add to merchant list">＋ MERCHANT</button></td>'
+        + '<td class="no-print"><button class="btn btn-p btn-sm" data-copy-key="' + esc(it.key) + '" title="Open a copy as a new style">STYLE COPY</button></td></tr>';
     });
   });
-  body.innerHTML = html || '<tr><td colspan="14" class="mut">No accessories yet for this buyer.</td></tr>';
+  body.innerHTML = html || '<tr><td colspan="16" class="mut">No accessories yet for this buyer.</td></tr>';
 }
 function openAccStyle(key){
   var all = listRowsForBuyer("", true);
@@ -2978,6 +2982,10 @@ function openAccStyle(key){
   }
 }
 $("accListBody").addEventListener("click", function(e){
+  var snd = e.target.closest ? e.target.closest("[data-add-send-key]") : null;
+  if(snd){ addRowToSendList(snd.getAttribute("data-add-send-key")); return; }
+  var cpy = e.target.closest ? e.target.closest("[data-copy-key]") : null;
+  if(cpy){ copyListStyle(cpy.getAttribute("data-copy-key")); return; }
   var btn = e.target.closest ? e.target.closest("[data-open-acc]") : null;
   if(!btn) return;
   openAccStyle(btn.getAttribute("data-open-acc"));
