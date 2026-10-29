@@ -283,12 +283,17 @@
     </table></div>
   </section>
 
-  <!-- HOME: Buyer folders -->
+  <!-- HOME: Sewing Thread Consumption folders -->
   <section class="card" id="homeFolders">
-    <h2>📁 Buyer folders</h2>
+    <h2>📁 Sewing Thread Consumption</h2>
     <p class="sub">1st tap-e folder select hobe, 2nd tap-e khulbe. Keyboard-er ◀ ▶ (arrow key) diye folder bodlan jabe. Notun style auto oi buyer-er folder-e joma hobe.</p>
     <div class="row" id="folderButtons"></div>
-    <h3 style="margin:10px 0 6px;font-size:15px">Buyer-wise accessories</h3>
+  </section>
+
+  <!-- HOME: Accessories folders -->
+  <section class="card" id="homeAccFolders">
+    <h2>📁 Accessories</h2>
+    <p class="sub">Tap korle khulbe. Keyboard-er ◀ ▶ (arrow key) diye folder bodlan jabe, Enter dile khulbe.</p>
     <div class="row" id="accFolderButtons"></div>
   </section>
 
@@ -4968,30 +4973,34 @@ function patchXlsxAccessoriesColors(buf){
     var bordersM = sXml.match(/<borders count="(\d+)">/);
     if(!bordersM || sXml.indexOf("</borders>") === -1) return bytes;
     var newBorderId = parseInt(bordersM[1], 10);
+    function fillXml(rgb){ return '<fill><patternFill patternType="solid"><fgColor rgb="' + rgb + '"/><bgColor indexed="64"/></patternFill></fill>'; }
+    var F_HDR = newFillId, F_YEL = newFillId + 1, F_GRN = newFillId + 2, F_QTY = newFillId + 3, F_GREY = newFillId + 4, F_LBLUE = newFillId + 5, F_PEACH = newFillId + 6, F_CPEACH = newFillId + 7;
+    var FT_B10 = newFontId, FT_BLUE16 = newFontId + 1, FT_GRN14 = newFontId + 2, FT_B12 = newFontId + 3, FT_P10 = newFontId + 4;
     sXml = sXml.replace(/<borders count="\d+">/, '<borders count="' + (newBorderId + 1) + '">');
     sXml = sXml.replace("</borders>", '<border><left style="thin"><color rgb="FF8C97AB"/></left><right style="thin"><color rgb="FF8C97AB"/></right><top style="thin"><color rgb="FF8C97AB"/></top><bottom style="thin"><color rgb="FF8C97AB"/></bottom><diagonal/></border></borders>');
-    sXml = sXml.replace(/<fills count="\d+">/, '<fills count="' + (newFillId + 4) + '">');
-    sXml = sXml.replace("</fills>", '<fill><patternFill patternType="solid"><fgColor rgb="FFC8C8C8"/><bgColor indexed="64"/></patternFill></fill>'
-      + '<fill><patternFill patternType="solid"><fgColor rgb="FFDDEBF7"/><bgColor indexed="64"/></patternFill></fill>'
-      + '<fill><patternFill patternType="solid"><fgColor rgb="FFB8C4DC"/><bgColor indexed="64"/></patternFill></fill>'
-      + '<fill><patternFill patternType="solid"><fgColor rgb="FF92D050"/><bgColor indexed="64"/></patternFill></fill></fills>');
-    sXml = sXml.replace(/<fonts count="\d+">/, '<fonts count="' + (newFontId + 4) + '">');
-    sXml = sXml.replace("</fonts>", '<font><b/><sz val="16"/><color rgb="FF0B8FC9"/><name val="Arial"/><family val="2"/></font>'
+    sXml = sXml.replace(/<fills count="\d+">/, '<fills count="' + (newFillId + 8) + '">');
+    sXml = sXml.replace("</fills>", fillXml("FFB8C4DC") + fillXml("FFFFFF00") + fillXml("FF92D050") + fillXml("FFBDD7EE") + fillXml("FFC8C8C8") + fillXml("FFDDEBF7") + fillXml("FFF4B183") + fillXml("FFFCE4D6") + "</fills>");
+    sXml = sXml.replace(/<fonts count="\d+">/, '<fonts count="' + (newFontId + 5) + '">');
+    sXml = sXml.replace("</fonts>", '<font><b/><sz val="10"/><name val="Arial"/><family val="2"/></font>'
+      + '<font><b/><sz val="16"/><color rgb="FF0B8FC9"/><name val="Arial"/><family val="2"/></font>'
       + '<font><b/><sz val="14"/><color rgb="FF3B7D23"/><name val="Cambria"/><family val="2"/></font>'
-      + '<font><b/><sz val="10"/><name val="Arial"/><family val="2"/></font>'
-      + '<font><sz val="10"/><name val="Arial"/><family val="2"/></font></fonts>');
+      + '<font><b/><sz val="12"/><name val="Arial"/><family val="2"/></font>'
+      + '<font><sz val="10"/><name val="Arial"/><family val="2"/></font>' + "</fonts>");
+    function xf(font, fill, border, align){
+      var s = '<xf numFmtId="0" fontId="' + font + '" fillId="' + fill + '" borderId="' + border + '" xfId="0" applyFont="1"';
+      if(fill) s += ' applyFill="1"';
+      if(align) return s + ' applyAlignment="1"><alignment ' + align + '/></xf>';
+      return s + '/>';
+    }
+    var AL_CC = 'horizontal="center" vertical="center"';
+    var AL_CCW = 'horizontal="center" vertical="center" wrapText="1"';
+    var AL_VC = 'vertical="center"';
     var X_TITLE = newXfId, X_SUB = newXfId + 1, X_INFOB = newXfId + 2, X_INFOP = newXfId + 3,
       X_HDR = newXfId + 4, X_DATAL = newXfId + 5, X_DATAC = newXfId + 6, X_TOTL = newXfId + 7, X_TOTG = newXfId + 8;
     sXml = sXml.replace(/<cellXfs count="\d+">/, '<cellXfs count="' + (newXfId + 9) + '">');
-    sXml = sXml.replace("</cellXfs>", '<xf numFmtId="0" fontId="' + newFontId + '" fillId="' + newFillId + '" borderId="' + newBorderId + '" xfId="0" applyFont="1" applyFill="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
-      + '<xf numFmtId="0" fontId="' + (newFontId + 1) + '" fillId="' + (newFillId + 1) + '" borderId="' + newBorderId + '" xfId="0" applyFont="1" applyFill="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
-      + '<xf numFmtId="0" fontId="' + (newFontId + 2) + '" fillId="0" borderId="' + newBorderId + '" xfId="0" applyFont="1"/></xf>'
-      + '<xf numFmtId="0" fontId="' + (newFontId + 3) + '" fillId="0" borderId="' + newBorderId + '" xfId="0" applyFont="1"/></xf>'
-      + '<xf numFmtId="0" fontId="' + (newFontId + 2) + '" fillId="' + (newFillId + 2) + '" borderId="' + newBorderId + '" xfId="0" applyFont="1" applyFill="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
-      + '<xf numFmtId="0" fontId="' + (newFontId + 3) + '" fillId="0" borderId="' + newBorderId + '" xfId="0" applyFont="1"/></xf>'
-      + '<xf numFmtId="0" fontId="' + (newFontId + 3) + '" fillId="0" borderId="' + newBorderId + '" xfId="0" applyFont="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
-      + '<xf numFmtId="0" fontId="' + (newFontId + 2) + '" fillId="0" borderId="' + newBorderId + '" xfId="0" applyFont="1"/></xf>'
-      + '<xf numFmtId="0" fontId="' + (newFontId + 2) + '" fillId="' + (newFillId + 3) + '" borderId="' + newBorderId + '" xfId="0" applyFont="1" applyFill="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf></cellXfs>');
+    sXml = sXml.replace("</cellXfs>", xf(FT_BLUE16, F_GREY, 0, AL_CC) + xf(FT_GRN14, F_LBLUE, 0, AL_CC) + xf(FT_B10, 0, 0, "") + xf(FT_P10, 0, 0, "")
+      + xf(FT_B10, F_HDR, newBorderId, AL_CCW) + xf(FT_P10, 0, newBorderId, AL_VC) + xf(FT_P10, 0, newBorderId, AL_CC)
+      + xf(FT_B10, 0, newBorderId, AL_VC) + xf(FT_B12, F_GRN, newBorderId, AL_CC) + "</cellXfs>");
     function tag(ref, xf){
       var re = new RegExp('<c r="' + ref + '"(?![^>]*\\bs=)');
       shXml = shXml.replace(re, '<c r="' + ref + '" s="' + xf + '"');
