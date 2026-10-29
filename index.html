@@ -200,6 +200,7 @@
   #printSheetView .psl, #printAccView .psl{text-align:left}
   #printSheetView .psb, #printAccView .psb{font-weight:700}
   #printSheetView .psb12, #printAccView .psb12{font-size:12px}
+  .folder-sel{outline:2px solid #0B8FC9;background:#DDEBF7 !important;}
 </style>
 </head>
 <body>
@@ -285,7 +286,8 @@
   <!-- HOME: Buyer folders -->
   <section class="card" id="homeFolders">
     <h2>📁 Buyer folders</h2>
-    <p class="sub">Buyer folder-e tap korle oi buyer-er style list dekhabe. Notun style auto oi buyer-er folder-e joma hobe.</p>
+    <p class="sub">1st tap-e folder select hobe, 2nd tap-e khulbe. ◀ ▶ diye folder bodlan jabe. Notun style auto oi buyer-er folder-e joma hobe.</p>
+    <div class="row"><button class="btn btn-o" id="btnFolderPrev">◀</button> <button class="btn btn-o" id="btnFolderNext">▶</button></div>
     <div class="row" id="folderButtons"></div>
     <h3 style="margin:10px 0 6px;font-size:15px">Buyer-wise accessories</h3>
     <div class="row" id="accFolderButtons"></div>
@@ -623,6 +625,8 @@
     </table></div>
     <div class="row" style="margin-top:8px">
       <button class="btn btn-p" id="btnSaveSheetAcc">SAVE</button>
+      <button class="btn btn-o" id="btnAccPrev">◀</button>
+      <button class="btn btn-o" id="btnAccNext">▶</button>
       <button class="btn btn-o" id="btnAddAcc">+ Add accessory row</button>
       <button class="btn btn-o" id="btnExportExcel2">Export Excel</button>
       <button class="btn btn-p" id="btnExportPdf2">DOWNLOAD ACCESSORIES PDF</button>
@@ -697,6 +701,8 @@ var coneQtyMap = {}; /* cone qty overrides, keyed "body" / "grp:<key>" */
 var conePctMap = {}; /* per-row cone extra % overrides, keyed "body" / "grp:<key>" (custom rows keep pct on the row) */
 var currentStyleKey = ""; /* selected saved-style key ("" = none) */
 var currentListBuyer = ""; /* "" = all buyers in Style list panel */
+var selectedFolderBuyer = null; /* null = none selected; "" = All buyers */
+var lastFolderOrder = [];
 var currentAccBuyer = ""; /* "" = all buyers in Accessories list panel */
 var currentListPeriod = ""; /* "" = all periods in Style list panel (YYYY-MM) */
 var listSearchTerm = ""; /* Home folder search text */
@@ -1552,6 +1558,49 @@ $("opsBody").addEventListener("keydown", function(e){
     if(!movedR) focusAt(ri + 1, 0);
   }
 });
+$("accBody").addEventListener("keydown", function(e){
+  if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].indexOf(e.key) === -1) return;
+  if(e.altKey || e.ctrlKey || e.metaKey) return;
+  var t = e.target;
+  var tr = t.closest ? t.closest("tr") : null;
+  if(!tr) return;
+  var rows = Array.prototype.slice.call($("accBody").querySelectorAll("tr"));
+  var ri = rows.indexOf(tr);
+  if(ri === -1) return;
+  var cells = Array.prototype.slice.call(tr.querySelectorAll("input,select,button"));
+  var ci = cells.indexOf(t);
+  if(ci === -1) return;
+  function accFocusAt(r, c){
+    var rws = $("accBody").querySelectorAll("tr");
+    if(r < 0 || r >= rws.length) return false;
+    var cs = rws[r].querySelectorAll("input,select,button");
+    if(!cs.length) return false;
+    if(c < 0) c = 0;
+    if(c >= cs.length) c = cs.length - 1;
+    for(var k = 0; k < cs.length; k++){
+      var idx = (k % 2 === 0) ? c + Math.floor(k / 2) : c - Math.ceil(k / 2);
+      if(idx >= 0 && idx < cs.length && !cs[idx].disabled){ cs[idx].focus(); return true; }
+    }
+    return false;
+  }
+  function caretPos(el){ try{ return el.selectionStart; }catch(err){ return null; } }
+  if(e.key === "ArrowUp"){ e.preventDefault(); accFocusAt(ri - 1, ci); }
+  else if(e.key === "ArrowDown"){ e.preventDefault(); accFocusAt(ri + 1, ci); }
+  else if(e.key === "ArrowLeft"){
+    if(t.tagName === "INPUT"){ var p = caretPos(t); if(p === null || p > 0) return; }
+    e.preventDefault();
+    var movedL = false;
+    for(var li = ci - 1; li >= 0; li--){ if(!cells[li].disabled){ cells[li].focus(); movedL = true; break; } }
+    if(!movedL) accFocusAt(ri - 1, 9999);
+  }
+  else if(e.key === "ArrowRight"){
+    if(t.tagName === "INPUT"){ var q = caretPos(t); if(q === null || q < t.value.length) return; }
+    e.preventDefault();
+    var movedR = false;
+    for(var rj = ci + 1; rj < cells.length; rj++){ if(!cells[rj].disabled){ cells[rj].focus(); movedR = true; break; } }
+    if(!movedR) accFocusAt(ri + 1, 0);
+  }
+});
 $("btnAddOp").onclick = function(){ pushUndo(); OPS.push(newOp({})); renderOps(); };
 $("btnShowAll").onclick = function(){ filterProcs = []; filterMachs = []; renderOps(); syncPanelPctFromFilter(); };
 /* Auto-save triggers: any edit inside the sheet wraps schedules a save;
@@ -2360,6 +2409,26 @@ function saveSheetNow(){
 }
 $("btnSaveSheet").onclick = saveSheetNow;
 $("btnSaveSheetAcc").onclick = saveSheetNow;
+function accFocusables(){
+  var tb = $("accBody");
+  if(!tb) return [];
+  var tbl = tb.parentNode;
+  var all = tbl ? tbl.querySelectorAll("input,select,button") : [];
+  return Array.prototype.slice.call(all).filter(function(el){ return !el.disabled; });
+}
+function accFocusStep(dir){
+  var els = accFocusables();
+  if(!els.length) return;
+  var ae = document.activeElement;
+  var idx = els.indexOf(ae);
+  if(idx === -1) idx = dir > 0 ? -1 : els.length;
+  idx += dir;
+  if(idx < 0) idx = 0;
+  if(idx >= els.length) idx = els.length - 1;
+  els[idx].focus();
+}
+$("btnAccPrev").onclick = function(){ accFocusStep(-1); };
+$("btnAccNext").onclick = function(){ accFocusStep(1); };
 /* ================= Sheet check -> main list (item 18) =================
    Checking happens on the sheet. A checked style is upserted into the
    main buyer-wise list (styleList) so it appears there directly — there
@@ -2813,10 +2882,14 @@ function renderHomeFolders(){
     if(!counts[b]){ counts[b] = 0; order.push(b); }
     counts[b]++;
   });
-  var html = '<button class="btn btn-o" data-folder="">📁 All buyers (' + rows.length + ')</button>';
+  var fOrder = [""];
+  order.forEach(function(b){ if(b !== "(No buyer)") fOrder.push(b); });
+  if(selectedFolderBuyer !== null && fOrder.indexOf(selectedFolderBuyer) === -1) selectedFolderBuyer = null;
+  lastFolderOrder = fOrder;
+  var html = '<button class="btn btn-o' + (selectedFolderBuyer === "" ? " folder-sel" : "") + '" data-folder="">📁 All buyers (' + rows.length + ')</button>';
   order.forEach(function(b){
     if(b === "(No buyer)") return; /* no-buyer styles stay visible under All buyers */
-    html += ' <button class="btn btn-o" data-folder="' + esc(b) + '">📁 ' + esc(b) + ' (' + counts[b] + ')</button>';
+    html += ' <button class="btn btn-o' + (selectedFolderBuyer === b ? " folder-sel" : "") + '" data-folder="' + esc(b) + '">📁 ' + esc(b) + ' (' + counts[b] + ')</button>';
   });
   box.innerHTML = html;
   /* Accessories folders: same buyers, but only styles that have accessory
@@ -2902,14 +2975,29 @@ $("folderButtons").addEventListener("click", function(e){
   var btn = e.target.closest ? e.target.closest("[data-folder]") : null;
   if(!btn) return;
   var b = btn.getAttribute("data-folder");
-  currentListBuyer = b;
-  var sel = $("listBuyerSel");
-  if(sel) sel.value = b;
-  if(b) expandedBuyers[b] = true;
-  renderStyleList();
-  var panel = $("homeListPanel");
-  if(panel && panel.scrollIntoView) panel.scrollIntoView();
+  if(selectedFolderBuyer !== null && selectedFolderBuyer === b){
+    currentListBuyer = b;
+    var sel = $("listBuyerSel");
+    if(sel) sel.value = b;
+    if(b) expandedBuyers[b] = true;
+    renderStyleList();
+    var panel = $("homeListPanel");
+    if(panel && panel.scrollIntoView) panel.scrollIntoView();
+  } else {
+    selectedFolderBuyer = b;
+    renderHomeFolders();
+  }
 });
+function folderStep(dir){
+  var ord = lastFolderOrder.length ? lastFolderOrder : [""];
+  var idx = ord.indexOf(selectedFolderBuyer);
+  if(idx === -1) idx = dir > 0 ? -1 : 0;
+  idx = (idx + dir + ord.length) % ord.length;
+  selectedFolderBuyer = ord[idx];
+  renderHomeFolders();
+}
+$("btnFolderPrev").onclick = function(){ folderStep(-1); };
+$("btnFolderNext").onclick = function(){ folderStep(1); };
 function renderStyleList(){
   var buyer = currentListBuyer;
   var q = (listSearchTerm || "").trim().toLowerCase();
