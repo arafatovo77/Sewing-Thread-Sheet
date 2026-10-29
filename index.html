@@ -2954,6 +2954,7 @@ function renderStyleList(){
     });
   });
   var ldt = $("listDeleteTh"); if(ldt) ldt.style.display = isAdmin() ? "" : "none";
+  var clb = $("btnClearList"); if(clb) clb.style.display = isAdmin() ? "" : "none";
   $("listBody").innerHTML = html || '<tr><td colspan="13" class="mut">Style list is empty.</td></tr>';
   var ph = $("listPrintHeading"); if(ph) ph.textContent = $("listHeading").value;
   updateListBuyerSel();
@@ -2989,6 +2990,7 @@ $("listBody").addEventListener("click", function(e){
   renderStyleList();
 });
 $("btnClearList").onclick = function(){
+  if(!isAdmin()){ alert("Only admin can clear the list."); return; }
   if(!currentListBuyer){ alert("Pick a buyer first."); return; }
   var rows = listRowsForBuyer(currentListBuyer);
   var scope = currentListBuyer + (currentListPeriod ? " (" + currentListPeriod + ")" : "");
@@ -3861,6 +3863,7 @@ function applyRoleUI(){
      empty page (page1 holds only the Admin Panel, hidden from them).
      Removed per user 2026-10-28: the button is hidden for non-admins. */
   var nav = $("navPage1"); if(nav){ nav.textContent = "Admin Panel"; nav.style.display = admin ? "" : "none"; }
+  var clb2 = $("btnClearList"); if(clb2) clb2.style.display = admin ? "" : "none";
   var nu = $("navUser"); if(nu) nu.textContent = currentUser ? (currentUser.name + (admin ? " (Admin)" : "")) : "";
   var lo = $("btnLogout"); if(lo) lo.style.display = currentUser ? "" : "none";
   if(currentUser){
@@ -4122,22 +4125,24 @@ function buildAccessoriesSheet(){
   var fit = $("fFit").value, date = $("fDate").value || "", oq = orderQtyNum();
   var rows = [];
   rows.push(["GMS COMPOSITE KNITTING KNITTING IND LTD."]);
-  rows.push(["Accessories Consumption"]);
+  rows.push(["Accessories Consumption Report"]);
   rows.push([]);
   rows.push(["BUYER", buyer, "ORDER QTY:", oq ? oq : null]);
   rows.push(["STYLE", style, "FIT:", fit]);
   rows.push(["ITEM", item, "DATE:", date]);
-  rows.push(["SIZE", size, "", ""]);
+  rows.push(["SIZE", size, "OUTPUT UNIT:", "CM"]);
   rows.push([]);
-  rows.push(["Accessories consumption (order qty " + (oq ? oq : "-") + ")"]);
-  rows.push(["Item", "Allowance rule", "Actual total (cm)", "Allowance %", "Per garment (cm)", "Order total (cm)"]);
+  rows.push(["Accessories breakdown"]);
+  rows.push(["Item", "Allowance rule", "Seam length", "Seam allow.", "Input unit", "Actual cm", "Allow. %", "Per pc (cm)", "Order (cm)"]);
   var sumPg = 0, sumOd = 0;
   ACCS.forEach(function(row){
     var c = accCompute(row);
     sumPg += c.perGarment; sumOd += c.order;
-    rows.push([row.item, accRuleLabel(c.rule), r4(c.cm), r4(c.pct), r4(c.perGarment), r4(c.order)]);
+    var sl = (row.seamLength === "" || row.seamLength == null) ? null : num(row.seamLength);
+    var sa = (row.seamAllowance === "" || row.seamAllowance == null) ? null : num(row.seamAllowance);
+    rows.push([row.item, accRuleLabelFull({rule: c.rule, customPct: row.customPct}), sl, sa, row.unit || "CM", r4(c.cm), r4(c.pct), r4(c.perGarment), r4(c.order)]);
   });
-  rows.push(["Total", "", "", "", r4(sumPg), r4(sumOd)]);
+  rows.push(["Total", "", "", "", "", "", "", r4(sumPg), r4(sumOd)]);
   return rows;
 }
 function buildStyleListSheet(){
@@ -4894,14 +4899,14 @@ function patchXlsxAccessoriesColors(buf){
     tag("A2", X_SUB);
     [4, 5, 6, 7].forEach(function(rr){ tagRow(rr, ["A", "C"], X_INFOB); tagRow(rr, ["B", "D"], X_INFOP); });
     tag("A9", X_INFOB);
-    tagRow(10, ["A", "B", "C", "D", "E", "F"], X_HDR);
+    tagRow(10, ["A", "B", "C", "D", "E", "F", "G", "H", "I"], X_HDR);
     var n = accPatchN;
     for(var i = 0; i < n; i++){
       var dr = 11 + i;
-      tagRow(dr, ["A", "B"], X_DATAL); tagRow(dr, ["C", "D", "E", "F"], X_DATAC);
+      tagRow(dr, ["A", "B"], X_DATAL); tagRow(dr, ["C", "D", "E", "F", "G", "H", "I"], X_DATAC);
     }
     var tr = 11 + n;
-    tag("A" + tr, X_TOTL); tagRow(tr, ["B", "C", "D"], X_TOTL); tagRow(tr, ["E", "F"], X_TOTG);
+    tag("A" + tr, X_TOTL); tagRow(tr, ["B", "C", "D", "E", "F", "G"], X_TOTL); tagRow(tr, ["H", "I"], X_TOTG);
     shXml = shXml.replace(/<row r="1"(?=[\s>])(?![^>]*\bht=)/, '<row r="1" ht="26" customHeight="1"');
     shXml = shXml.replace(/<row r="2"(?=[\s>])(?![^>]*\bht=)/, '<row r="2" ht="22" customHeight="1"');
     if(shXml === sheet.xml) return bytes;
@@ -5004,8 +5009,8 @@ function exportAccessoriesExcel(){
     try{
       var wb = XLSX.utils.book_new();
       var accWs = XLSX.utils.aoa_to_sheet(buildAccessoriesSheet());
-      accWs["!cols"] = [{ wch: 28 }, { wch: 22 }, { wch: 16 }, { wch: 12 }, { wch: 16 }, { wch: 16 }];
-      accWs["!merges"] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 5 } }, { s: { r: 1, c: 0 }, e: { r: 1, c: 5 } }];
+      accWs["!cols"] = [{ wch: 28 }, { wch: 22 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 16 }, { wch: 12 }, { wch: 16 }, { wch: 16 }];
+      accWs["!merges"] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 8 } }, { s: { r: 1, c: 0 }, e: { r: 1, c: 8 } }];
       XLSX.utils.book_append_sheet(wb, accWs, "Accessories");
       var style = styleNameVal().replace(/[\\\/\?\%\*\:\|\"<>]/g, "");
       accPatchN = ACCS.length;
@@ -5185,7 +5190,7 @@ function buildPrintSheetHtml(){
    shows a status message instead of opening print preview. */
 function jspdfReady(){
   if(window.jspdf && window.jspdf.jsPDF){
-    var d = new window.jspdf.jsPDF({unit: "mm", format: "a4", orientation: "landscape"});
+    var d = new window.jspdf.jsPDF({unit: "mm", format: "a4", orientation: "portrait"});
     if(d.autoTable) return d;
   }
   return null;
@@ -5199,13 +5204,14 @@ function pdfNum(v){
   var t = n.toFixed(2);
   return t.replace(/\.?0+$/, "") || "0";
 }
+var PDF_FS = 8, PDF_PAD = 1.2;
 function pdfTitle(doc, title, sub){
-  doc.setFillColor.apply(doc, pdfHex("#C8C8C8")); doc.rect(10, 8, 277, 9, "F");
+  doc.setFillColor.apply(doc, pdfHex("#C8C8C8")); doc.rect(10, 8, 190, 9, "F");
   doc.setFont("helvetica", "bold"); doc.setFontSize(15); doc.setTextColor.apply(doc, pdfHex("#0B8FC9"));
-  doc.text(title, 148.5, 14.5, {align: "center"});
-  doc.setFillColor.apply(doc, pdfHex("#DDEBF7")); doc.rect(10, 17, 277, 8, "F");
+  doc.text(title, 105, 14.5, {align: "center"});
+  doc.setFillColor.apply(doc, pdfHex("#DDEBF7")); doc.rect(10, 17, 190, 8, "F");
   doc.setFontSize(12); doc.setTextColor.apply(doc, pdfHex("#3B7D23"));
-  doc.text(sub, 148.5, 22.5, {align: "center"});
+  doc.text(sub, 105, 22.5, {align: "center"});
   doc.setTextColor(0, 0, 0);
 }
 function pdfInfo(doc, pairs){
@@ -5213,8 +5219,8 @@ function pdfInfo(doc, pairs){
     startY: 27, margin: {left: 10, right: 10, top: 8},
     body: pairs,
     theme: "grid",
-    styles: {font: "helvetica", fontSize: 8, cellPadding: 1.2, lineColor: pdfHex("#8C97AB"), lineWidth: 0.2},
-    columnStyles: {0: {fontStyle: "bold", cellWidth: 28}, 1: {cellWidth: 110}, 2: {fontStyle: "bold", cellWidth: 28}, 3: {cellWidth: 111}}
+    styles: {font: "helvetica", fontSize: PDF_FS, cellPadding: PDF_PAD, lineColor: pdfHex("#8C97AB"), lineWidth: 0.2},
+    columnStyles: {0: {fontStyle: "bold", cellWidth: 24}, 1: {cellWidth: 71}, 2: {fontStyle: "bold", cellWidth: 24}, 3: {cellWidth: 71}}
   });
   return doc.lastAutoTable.finalY + 3;
 }
@@ -5225,7 +5231,7 @@ function pdfTable(doc, y, head, body, widths, opts){
     startY: y, margin: {left: 10, right: 10, top: 8},
     head: [head], body: body,
     theme: "grid",
-    styles: {font: "helvetica", fontSize: 8, cellPadding: 1.2, lineColor: pdfHex("#8C97AB"), lineWidth: 0.2, halign: "center"},
+    styles: {font: "helvetica", fontSize: PDF_FS, cellPadding: PDF_PAD, lineColor: pdfHex("#8C97AB"), lineWidth: 0.2, halign: "center"},
     headStyles: {fillColor: pdfHex("#B8C4DC"), textColor: 0, fontStyle: "bold"},
     columnStyles: cs,
     didParseCell: function(d){
@@ -5251,7 +5257,7 @@ function pdfTable(doc, y, head, body, widths, opts){
   return doc.lastAutoTable.finalY + 3;
 }
 function pdfSection(doc, y, text){
-  doc.setFont("helvetica", "bold"); doc.setFontSize(9);
+  doc.setFont("helvetica", "bold"); doc.setFontSize(PDF_FS + 1);
   doc.text(text, 10, y + 4);
   return y + 7;
 }
@@ -5277,9 +5283,9 @@ function pdfInfoPairs(buyer, style, item, size, fit, date, oq, outUnit){
     ["SIZE", pdfCell(size), "OUTPUT UNIT", outUnit]
   ];
 }
-function downloadThreadPdf(){
+function buildThreadDoc(){
   var doc = jspdfReady();
-  if(!doc){ setStatus("PDF library load hoy nai — internet connection check kore abar try koren."); return; }
+  if(!doc) return null;
   var rows = buildSingleStyleSheet();
   var n = OPS.length, k = contrastGroups().length, C = CONES.length;
   function rowAt(i){ return rows[i] || []; }
@@ -5297,7 +5303,7 @@ function downloadThreadPdf(){
     opsFill.push(lab ? specialRowColour(lab) : "");
   }
   y = pdfTable(doc, y, [oh[0], oh[1], oh[2], oh[3], oh[4], oh[5], oh[6], oh[7], oh[8], oh[9]], opsBody,
-    [10, 62, 22, 24, 24, 20, 28, 28, 28, 31],
+    [8, 42, 16, 16, 16, 14, 19, 19, 19, 21],
     {leftCols: [1, 9], yellowCol: 4, qtyBlueCol: 5, rowFill: opsFill, keepCellFill: [4, 5],
      headFill: {4: "#FFFF00", 8: "#F4B183"}});
   y = pdfSection(doc, y, pdfCell(rowAt(10 + n)[0]));
@@ -5311,14 +5317,14 @@ function downloadThreadPdf(){
   var ar = rowAt(13 + n + k);
   totBody.push([pdfCell(ar[0]), pdfNum(ar[1]), pdfNum(ar[2]), pdfNum(ar[3]), pdfNum(ar[4])]);
   y = pdfTable(doc, y, [th[0], th[1], th[2], th[3], th[4]], totBody,
-    [100, 44, 44, 44, 45], {leftCols: [0], greenCol: 4, boldRows: [totBody.length - 1]});
+    [52, 34, 34, 34, 36], {leftCols: [0], greenCol: 4, boldRows: [totBody.length - 1]});
   y = pdfSection(doc, y, "Accessories breakdown");
   var acc = pdfAccTableData();
   y = pdfTable(doc, y, acc.head, acc.body,
-    [45, 48, 24, 24, 20, 28, 20, 32, 36], {leftCols: [0, 1], boldRows: [acc.body.length - 1]});
+    [32, 32, 17, 17, 15, 20, 14, 21, 22], {leftCols: [0, 1], boldRows: [acc.body.length - 1]});
   var note = pdfCell(rowAt(15 + n + k)[0]);
   doc.setFont("helvetica", "bold"); doc.setFontSize(9);
-  var lines = doc.splitTextToSize(note, 277);
+  var lines = doc.splitTextToSize(note, 190);
   lines.forEach(function(ln, li){ doc.text(ln, 10, y + 4 + li * 4); });
   y = y + 4 + lines.length * 4 + 2;
   var coneBody = [], coneFill = [];
@@ -5331,18 +5337,29 @@ function downloadThreadPdf(){
   coneBody.push(["Total", "", "", pdfNum(tr[4]), "", pdfNum(tr[6]), pdfCell(tr[7])]);
   coneFill.push("");
   pdfTable(doc, y, ["Thread and colour", "Qty (pcs)", "Thread per pc (Mtr)", "Total thread (Mtr)", "Cone (Mtr)", "Cones", "Cones to order"], coneBody,
-    [90, 30, 35, 40, 30, 25, 27],
+    [62, 20, 25, 28, 20, 17, 18],
     {leftCols: [0], rowFill: coneFill, greenCol: 3, greenRows: [coneBody.length - 1], boldRows: [coneBody.length - 1]});
+  return doc;
+}
+function downloadThreadPdf(){
+  var doc = null;
+  var tries = [[8, 1.2], [7.5, 1], [7, 0.8], [6.5, 0.7], [6, 0.6]];
+  for(var ti = 0; ti < tries.length; ti++){
+    PDF_FS = tries[ti][0]; PDF_PAD = tries[ti][1];
+    doc = buildThreadDoc();
+    if(!doc){ setStatus("PDF library load hoy nai — internet connection check kore abar try koren."); return; }
+    if(doc.getNumberOfPages() === 1) break;
+  }
   var at = singleStyleAllTotals();
   var sz = selVal("fSize", "fSizeCustom");
   var st = styleNameVal().replace(/[\\\/\?\%\*\:\|\"<>]/g, "");
   var docTitle = (st || "Thread-Sheet") + (sz ? "_" + sz : "") + "_" + at.total.toFixed(2) + "m";
   doc.save(docTitle + ".pdf");
-  setStatus("PDF downloaded: " + docTitle + ".pdf");
+  setStatus(doc.getNumberOfPages() === 1 ? "PDF downloaded: " + docTitle + ".pdf" : "PDF downloaded (" + doc.getNumberOfPages() + " page-e): " + docTitle + ".pdf");
 }
-function downloadAccPdf(){
+function buildAccDoc(){
   var doc = jspdfReady();
-  if(!doc){ setStatus("PDF library load hoy nai — internet connection check kore abar try koren."); return; }
+  if(!doc) return null;
   pdfTitle(doc, "GMS COMPOSITE KNITTING KNITTING IND LTD.", "Accessories Consumption Report");
   var y = pdfInfo(doc, pdfInfoPairs(
     selVal("fBuyer", "fBuyerCustom"), styleNameVal(), selVal("fItem", "fItemCustom"), selVal("fSize", "fSizeCustom"),
@@ -5350,56 +5367,23 @@ function downloadAccPdf(){
   y = pdfSection(doc, y, "Accessories breakdown");
   var acc = pdfAccTableData();
   pdfTable(doc, y, acc.head, acc.body,
-    [45, 48, 24, 24, 20, 28, 20, 32, 36], {leftCols: [0, 1], boldRows: [acc.body.length - 1]});
+    [32, 32, 17, 17, 15, 20, 14, 21, 22], {leftCols: [0, 1], boldRows: [acc.body.length - 1]});
+  return doc;
+}
+function downloadAccPdf(){
+  var doc = null;
+  var tries = [[8, 1.2], [7.5, 1], [7, 0.8], [6.5, 0.7], [6, 0.6]];
+  for(var ti = 0; ti < tries.length; ti++){
+    PDF_FS = tries[ti][0]; PDF_PAD = tries[ti][1];
+    doc = buildAccDoc();
+    if(!doc){ setStatus("PDF library load hoy nai — internet connection check kore abar try koren."); return; }
+    if(doc.getNumberOfPages() === 1) break;
+  }
   var st = styleNameVal().replace(/[\\\/\?\%\*\:\|\"<>]/g, "");
   var docTitle = (st || "Thread-Sheet") + "-Accessories";
   doc.save(docTitle + ".pdf");
-  setStatus("PDF downloaded: " + docTitle + ".pdf");
+  setStatus(doc.getNumberOfPages() === 1 ? "PDF downloaded: " + docTitle + ".pdf" : "PDF downloaded (" + doc.getNumberOfPages() + " page-e): " + docTitle + ".pdf");
 }
-$("btnExportPdf").onclick = function(){ downloadThreadPdf(); };
-/* ============ ACCESSORIES PDF PRINT VIEW (JJA sample format) ============ */
-/* Standalone accessories report: title + info + accessories table + total,
-   same layout as the style PDF's accessories section, scaled to one page. */
-function buildPrintAccHtml(){
-  var buyer = selVal("fBuyer", "fBuyerCustom"), style = styleNameVal();
-  var item = selVal("fItem", "fItemCustom"), size = selVal("fSize", "fSizeCustom");
-  var fit = $("fFit").value, date = $("fDate").value || "";
-  var oqText = orderQtyNum() ? String(orderQtyNum()) : "-";
-  var HDR = "#B8C4DC";
-  function trimAccPct(v){
-    var s = Number(v).toFixed(2);
-    return s.replace(/\.?0+$/, "") || "0";
-  }
-  function infoRow(a, av, b, bv){
-    return '<tr><td class="psb">' + psVal(a) + '</td><td>' + psVal(av) + '</td><td class="psb">' + psVal(b) + '</td><td>' + psVal(bv) + '</td></tr>';
-  }
-  var h = "";
-  h += '<div class="ps-title">GMS COMPOSITE KNITTING KNITTING IND LTD.</div>';
-  h += '<div class="ps-sub">Accessories Consumption</div>';
-  h += '<table class="ps-info">';
-  h += infoRow("BUYER", buyer, "ORDER QTY", orderQtyNum() ? orderQtyNum() : "");
-  h += infoRow("STYLE", style, "FIT", fit);
-  h += infoRow("ITEM", item, "DATE", date);
-  h += infoRow("SIZE", size, "", "");
-  h += '</table>';
-  h += '<div class="ps-sec psb">Accessories consumption (order qty ' + esc(oqText) + ')</div>';
-  h += '<table class="ps-acc"><tr>';
-  ["Item", "Allowance rule", "Actual total (cm)", "Allowance %", "Per garment (cm)", "Order total (cm)"].forEach(function(t){ h += psTh(t, HDR); });
-  h += '</tr>';
-  var sumPg = 0, sumOd = 0;
-  ACCS.forEach(function(r){
-    var c = accCompute(r);
-    sumPg += c.perGarment; sumOd += c.order;
-    h += '<tr><td class="psl">' + esc(r.item || "") + '</td><td class="psl">' + esc(accRuleLabel(c.rule)) + '</td>'
-      + '<td class="psc">' + c.cm.toFixed(2) + '</td><td class="psc">' + trimAccPct(c.pct) + '</td>'
-      + '<td class="psc">' + c.perGarment.toFixed(2) + '</td><td class="psc">' + c.order.toFixed(2) + '</td></tr>';
-  });
-  h += '<tr><td class="psl psb">Total</td><td></td><td></td><td></td>'
-    + '<td class="psc psb">' + sumPg.toFixed(2) + '</td><td class="psc psb">' + sumOd.toFixed(2) + '</td></tr>';
-  h += '</table>';
-  return h;
-}
-$("btnExportPdf2").onclick = function(){ downloadAccPdf(); };
 </script>
 </body>
 </html>
