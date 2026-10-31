@@ -1342,6 +1342,11 @@ $("opsBody").addEventListener("click", function(e){
      number can be typed straight over it (no delete key needed). */
   var sq = e.target.closest ? e.target.closest('input[data-f="seamQty"]') : null;
   if(sq){ sq.value = "0"; try{ sq.select(); }catch(err){} return; }
+  /* Seam length: same one-click-to-0 behaviour as seam qty — click, the
+     cell becomes 0 with the text selected, so a number can be typed
+     straight over it (no delete key needed). */
+  var sl = e.target.closest ? e.target.closest('input[data-f="seamLength"]') : null;
+  if(sl){ sl.value = "0"; try{ sl.select(); }catch(err){} return; }
   var insId = e.target.getAttribute("data-ins");
   if(insId){
     var idx = -1;
@@ -1495,7 +1500,7 @@ $("opsBody").addEventListener("keydown", function(e){
     e.preventDefault();
     var nr = opsStepRow(ri0, e.shiftKey ? -1 : 1, rows0.length);
     if(nr === -1) return; /* first/last row: stay, do not create rows */
-    focusAt(nr, ci0); /* skips locked cells, e.g. Looper % on a body-thread row */
+    focusField(nr, f0, ci0); /* same FIELD in the next row, not the same index: rows with a custom machine have one extra cell */
     /* Enter-down fast entry: landing on a Seam length / Seam qty cell
        selects its text, so the typed number replaces it cleanly; an empty
        seam cell first becomes 0 (same as 0 in the maths), then typing
@@ -1522,6 +1527,21 @@ $("opsBody").addEventListener("keydown", function(e){
   var cells = Array.prototype.slice.call(tr.querySelectorAll("input,select,button"));
   var ci = cells.indexOf(t);
   if(ci === -1) return;
+  /* Same-FIELD vertical move: rows do not all have the same cell count (a
+     custom machine adds an extra input), so moving by column INDEX lands on
+     the wrong field. Match by data-f instead, falling back to the index. */
+  function focusField(r, field, fallbackIdx){
+    var rws = $("opsBody").querySelectorAll("tr");
+    if(r < 0 || r >= rws.length) return false;
+    var target = null;
+    if(field) target = rws[r].querySelector('[data-f="' + field + '"]');
+    if(target && !target.disabled){ target.focus(); revealActive(); return true; }
+    return focusAt(r, fallbackIdx);
+  }
+  /* Keep the newly focused cell visible in a wide, scrolling table. */
+  function revealActive(){
+    try{ var ae = document.activeElement; if(ae && ae.scrollIntoView) ae.scrollIntoView({block: "nearest", inline: "nearest"}); }catch(err){}
+  }
   function focusAt(r, c){
     var rws = $("opsBody").querySelectorAll("tr");
     if(r < 0 || r >= rws.length) return false;
@@ -1532,15 +1552,16 @@ $("opsBody").addEventListener("keydown", function(e){
     /* Skip locked (disabled) cells, e.g. Looper % on a body-thread row. */
     for(var k = 0; k < cs.length; k++){
       var idx = (k % 2 === 0) ? c + Math.floor(k / 2) : c - Math.ceil(k / 2);
-      if(idx >= 0 && idx < cs.length && !cs[idx].disabled){ cs[idx].focus(); return true; }
+      if(idx >= 0 && idx < cs.length && !cs[idx].disabled){ cs[idx].focus(); revealActive(); return true; }
     }
     return false;
   }
   function caretPos(el){
     try{ return el.selectionStart; }catch(err){ return null; }
   }
-  if(e.key === "ArrowUp"){ e.preventDefault(); focusAt(ri - 1, ci); }
-  else if(e.key === "ArrowDown"){ e.preventDefault(); focusAt(ri + 1, ci); }
+  var curF = t.getAttribute ? t.getAttribute("data-f") : null;
+  if(e.key === "ArrowUp"){ e.preventDefault(); focusField(ri - 1, curF, ci); }
+  else if(e.key === "ArrowDown"){ e.preventDefault(); focusField(ri + 1, curF, ci); }
   else if(e.key === "ArrowLeft"){
     if(t.tagName === "INPUT"){
       var p = caretPos(t);
@@ -1548,7 +1569,7 @@ $("opsBody").addEventListener("keydown", function(e){
     }
     e.preventDefault();
     var movedL = false;
-    for(var li = ci - 1; li >= 0; li--){ if(!cells[li].disabled){ cells[li].focus(); movedL = true; break; } }
+    for(var li = ci - 1; li >= 0; li--){ if(!cells[li].disabled){ cells[li].focus(); revealActive(); movedL = true; break; } }
     if(!movedL) focusAt(ri - 1, 9999);
   }
   else if(e.key === "ArrowRight"){
@@ -1558,7 +1579,7 @@ $("opsBody").addEventListener("keydown", function(e){
     }
     e.preventDefault();
     var movedR = false;
-    for(var rj = ci + 1; rj < cells.length; rj++){ if(!cells[rj].disabled){ cells[rj].focus(); movedR = true; break; } }
+    for(var rj = ci + 1; rj < cells.length; rj++){ if(!cells[rj].disabled){ cells[rj].focus(); revealActive(); movedR = true; break; } }
     if(!movedR) focusAt(ri + 1, 0);
   }
 });
