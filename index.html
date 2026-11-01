@@ -286,7 +286,7 @@
   <!-- HOME: Sewing Thread Consumption folders -->
   <section class="card" id="homeFolders">
     <h2>📁 Sewing Thread Consumption</h2>
-    <p class="sub">1st tap-e folder select hobe, 2nd tap-e khulbe. Keyboard-er ◀ ▶ (arrow key) diye folder bodlan jabe. Notun style auto oi buyer-er folder-e joma hobe.</p>
+    <p class="sub">1st tap-e folder select hobe, 2nd tap-e khulbe. Keyboard-er ◀ ▶ (arrow key) diye folder bodlan jabe. Notun style auto oi buyer-er folder-e joma hobe. Period faka thakle sob masher style folder-e dekhabe.</p>
     <div class="row" id="folderButtons"></div>
   </section>
 
@@ -2806,12 +2806,17 @@ function entryDate(d){
    Buyer+Style, newer updatedAt wins; each row keeps its source node so
    CLEAR LIST deletes from the right place. The standards node itself is
    never deleted — old final saves stay visible in the main list. */
-function listRowsForBuyer(buyer, skipPeriod){
+function listRowsForBuyer(buyer, skipPeriod, sewingOnly){
   var rows = [];
   function addFrom(cache, src){
     cache.forEach(function(it){
       var d = it.data || {};
       if(buyer && (d.buyer || "") !== buyer) return;
+      /* Sewing side only: a style with no sewing operations is not a
+         sewing style (e.g. accessories-only records) — it belongs in the
+         Accessories section only, mirroring the accessories side which
+         already shows only styles that have accessory rows. */
+      if(sewingOnly && !(d.ops && d.ops.length)) return;
       if(!skipPeriod && currentListPeriod && entryMonth(d) !== currentListPeriod) return;
       rows.push({ key: it.key, data: d, src: src });
     });
@@ -2907,7 +2912,7 @@ function listConeNoteText(){
 function renderHomeFolders(){
   var box = $("folderButtons");
   if(!box) return;
-  var rows = listRowsForBuyer("", false);
+  var rows = listRowsForBuyer("", false, true);
   var counts = {}, order = [];
   rows.forEach(function(it){
     var b = (it.data && it.data.buyer) || "(No buyer)";
@@ -3080,7 +3085,7 @@ $("folderButtons").addEventListener("keydown", function(e){
 function renderStyleList(){
   var buyer = currentListBuyer;
   var q = (listSearchTerm || "").trim().toLowerCase();
-  var rows = listRowsForBuyer(buyer, !!q); /* searching bypasses the period filter, so any month's style is found */
+  var rows = listRowsForBuyer(buyer, !!q, true); /* searching bypasses the period filter, so any month's style is found */
   if(q){
     rows = rows.filter(function(it){
       var d = it.data || {};
@@ -3159,7 +3164,7 @@ $("listBody").addEventListener("click", function(e){
 $("btnClearList").onclick = function(){
   if(!isAdmin()){ alert("Only admin can clear the list."); return; }
   if(!currentListBuyer){ alert("Pick a buyer first."); return; }
-  var rows = listRowsForBuyer(currentListBuyer);
+  var rows = listRowsForBuyer(currentListBuyer, undefined, true);
   var scope = currentListBuyer + (currentListPeriod ? " (" + currentListPeriod + ")" : "");
   if(!rows.length){ alert("Nothing to clear for " + scope + "."); return; }
   if(!confirm("Clear " + rows.length + " list row(s) for " + scope + "?")) return;
@@ -3174,7 +3179,7 @@ function buildListSheetForBuyer(buyer){
   rows.push([buyer ? buyer + " THREAD CONSUMPTION" : "ALL BUYERS THREAD CONSUMPTION"]);
   rows.push([listConeNoteText()]);
   rows.push(["SL", "BUYER", "STYLE", "ITEM", "SIZE", "MTR", "BODY THREAD", "SPECIAL THREAD", "REMARKS", "PROCESS"]);
-  listRowsForBuyer(buyer).forEach(function(it, i){
+  listRowsForBuyer(buyer, undefined, true).forEach(function(it, i){
     var d = it.data || {};
     var m = listRowMetres(d);
     rows.push([i + 1, d.buyer || "", d.style || "", d.item || "", d.size || "", m.total,
@@ -3194,7 +3199,7 @@ $("btnListExcel").onclick = function(){
       ws["!merges"] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 9 } }, { s: { r: 1, c: 0 }, e: { r: 1, c: 9 } }, { s: { r: 2, c: 0 }, e: { r: 2, c: 9 } }];
       ws["!cols"] = [{ wch: 5 }, { wch: 16 }, { wch: 28 }, { wch: 14 }, { wch: 10 }, { wch: 12 }, { wch: 20 }, { wch: 28 }, { wch: 18 }, { wch: 40 }];
       var listRowHeights = [{}, {}, {}, {}];
-      listRowsForBuyer(currentListBuyer).forEach(function(it){
+      listRowsForBuyer(currentListBuyer, undefined, true).forEach(function(it){
         var g = listRowMetres(it.data || {}).groups.length;
         var pc = Math.min(((it.data || {}).ops || []).length, 3);
         listRowHeights.push({ hpt: 15 * Math.max(1, g, pc) });
@@ -3939,8 +3944,8 @@ $("btnSaveSpecialDefaults").onclick = function(){
 
 /* ================= Init ================= */
 if($("fDate")) $("fDate").value = todayISO();
-/* Style list create Period defaults to the running month (YYYY-MM). */
-if($("listPeriod") && !$("listPeriod").value){ var _pd = new Date(); var _pym = _pd.getFullYear() + "-" + ("0" + (_pd.getMonth() + 1)).slice(-2); $("listPeriod").value = _pym; currentListPeriod = _pym; }
+/* Style list create Period starts EMPTY = all months, so every saved style
+   is findable from the folders. Pick a month only to narrow to that month. */
 refreshMasterSelects();
 refreshStyleSelects();
 applyStyleChosenClass();
