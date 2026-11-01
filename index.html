@@ -327,7 +327,7 @@
     <h2>▼ Buyer-wise accessories <span id="accPanelBuyer" class="mut"></span></h2>
     <p class="sub">Oi buyer-er style gulor accessories. OPEN dile style-ta Accessories tab-e khulbe, MERCHANT dile merchant list-e jabe, STYLE COPY dile copy khulbe.</p>
     <div class="tbl-wrap"><table>
-      <thead><tr><th>BUYER</th><th>STYLE</th><th>ITEM</th><th>SIZE</th><th>ACCESSORY</th><th>RULE</th><th>SEAM LEN</th><th>ALLOWANCE</th><th>UNIT</th><th>CM</th><th>ALLOW %</th><th>PER GARM. (cm)</th><th>ORDER TOTAL (cm)</th><th class="no-print" id="accDeleteTh">DELETE</th><th class="no-print">OPEN</th><th class="no-print">MERCHANT</th><th class="no-print">COPY</th></tr></thead>
+      <thead><tr><th>BUYER</th><th>STYLE</th><th>ITEM</th><th>SIZE</th><th>ACCESSORY</th><th>RULE</th><th>SEAM LEN</th><th>ALLOWANCE</th><th>UNIT</th><th>CM</th><th>ALLOW %</th><th>PER GARM. (cm)</th><th>ORDER TOTAL (cm)</th><th class="no-print">OPEN</th><th class="no-print">MERCHANT</th><th class="no-print">COPY</th></tr></thead>
       <tbody id="accListBody"></tbody>
     </table></div>
   </section>
@@ -1338,11 +1338,15 @@ $("opsBody").addEventListener("change", function(e){
   renderOps();
 });
 $("opsBody").addEventListener("click", function(e){
-  /* Single click only selects the cell's text — it never changes the
-     value (no zeroing), so typing replaces the whole text with the new
-     writing instead of editing/appending to the old one. */
-  var ci = e.target.closest ? e.target.closest('input[data-f="name"],input[data-f="machine"],input[data-f="seamLength"],input[data-f="mcThread"],input[data-f="seamQty"]') : null;
-  if(ci){ try{ ci.select(); }catch(err){} return; }
+  /* Seam qty: one click clears the cell to 0 with the text selected, so a
+     number can be typed straight over it (no delete key needed). */
+  var sq = e.target.closest ? e.target.closest('input[data-f="seamQty"]') : null;
+  if(sq){ sq.value = "0"; try{ sq.select(); }catch(err){} return; }
+  /* Seam length: same one-click-to-0 behaviour as seam qty — click, the
+     cell becomes 0 with the text selected, so a number can be typed
+     straight over it (no delete key needed). */
+  var sl = e.target.closest ? e.target.closest('input[data-f="seamLength"]') : null;
+  if(sl){ sl.value = "0"; try{ sl.select(); }catch(err){} return; }
   var insId = e.target.getAttribute("data-ins");
   if(insId){
     var idx = -1;
@@ -1366,27 +1370,6 @@ $("opsBody").addEventListener("click", function(e){
   pushUndo();
   OPS = OPS.filter(function(o){ return o.id !== delId; });
   renderOps();
-});
-/* Any focus landing in an Operation-description → Seam qty box selects
-   the whole text, so typing replaces it (never appends). This covers
-   click, Enter, arrow keys and Tab, and it re-selects after a re-render
-   (e.g. a change-driven rebuild) wipes the earlier selection — without
-   it, typing after Enter appended to the old value (1 + 2 = 12). */
-$("opsBody").addEventListener("focusin", function(e){
-  var t = e.target;
-  if(!t || t.tagName !== "INPUT") return;
-  var f = t.getAttribute ? t.getAttribute("data-f") : null;
-  if(f !== "name" && f !== "machine" && f !== "seamLength" && f !== "mcThread" && f !== "seamQty") return;
-  try{ t.select(); }catch(err){}
-});
-/* Double-click puts a cell into in-place edit mode: caret at the end of
-   the text, so part of the value can be changed (single click only
-   selects the whole text, and typing then replaces it). */
-$("opsBody").addEventListener("dblclick", function(e){
-  var inp = e.target.closest ? e.target.closest('input[data-f="name"],input[data-f="machine"],input[data-f="seamLength"],input[data-f="mcThread"],input[data-f="seamQty"]') : null;
-  if(!inp) return;
-  inp.focus();
-  try{ var L = inp.value.length; inp.setSelectionRange(L, L); }catch(err){}
 });
 /* Enter-key navigation: step one row in the given direction; -1 means "stay"
    (already at the first/last row, never creates rows). */
@@ -1517,13 +1500,21 @@ $("opsBody").addEventListener("keydown", function(e){
     e.preventDefault();
     var nr = opsStepRow(ri0, e.shiftKey ? -1 : 1, rows0.length);
     if(nr === -1) return; /* first/last row: stay, do not create rows */
-    focusAt(nr, ci0); /* skips locked cells, e.g. Looper % on a body-thread row */
+    focusField(nr, f0, ci0); /* same FIELD in the next row, not the same index: rows with a custom machine have one extra cell */
     /* Enter-down fast entry: landing on a Seam length / Seam qty cell
-       selects its text, so the typed number replaces it cleanly. Landing
-       on a cell never changes its value (no zeroing): only what is typed
-       sits in the cell. */
+       selects its text, so the typed number replaces it cleanly; an empty
+       seam cell first becomes 0 (same as 0 in the maths), then typing
+       replaces it. Filled values are never cleared without typing. */
     var ae2 = document.activeElement;
     if(ae2 && (ae2.getAttribute("data-f") === "seamLength" || ae2.getAttribute("data-f") === "seamQty")){
+      var tr2 = ae2.closest ? ae2.closest("tr") : null;
+      var id2 = tr2 ? tr2.getAttribute("data-id") : null;
+      var op2 = id2 ? OPS.filter(function(o){ return o.id === id2; })[0] : null;
+      if(op2 && ae2.value === ""){
+        commitOpField(op2, ae2.getAttribute("data-f"), "0");
+        ae2.value = "0";
+        renderTotals(); /* refresh figures + auto-save, without rebuilding rows */
+      }
       try{ ae2.select(); }catch(err){}
     }
     return;
@@ -1536,6 +1527,21 @@ $("opsBody").addEventListener("keydown", function(e){
   var cells = Array.prototype.slice.call(tr.querySelectorAll("input,select,button"));
   var ci = cells.indexOf(t);
   if(ci === -1) return;
+  /* Same-FIELD vertical move: rows do not all have the same cell count (a
+     custom machine adds an extra input), so moving by column INDEX lands on
+     the wrong field. Match by data-f instead, falling back to the index. */
+  function focusField(r, field, fallbackIdx){
+    var rws = $("opsBody").querySelectorAll("tr");
+    if(r < 0 || r >= rws.length) return false;
+    var target = null;
+    if(field) target = rws[r].querySelector('[data-f="' + field + '"]');
+    if(target && !target.disabled){ target.focus(); revealActive(); return true; }
+    return focusAt(r, fallbackIdx);
+  }
+  /* Keep the newly focused cell visible in a wide, scrolling table. */
+  function revealActive(){
+    try{ var ae = document.activeElement; if(ae && ae.scrollIntoView) ae.scrollIntoView({block: "nearest", inline: "nearest"}); }catch(err){}
+  }
   function focusAt(r, c){
     var rws = $("opsBody").querySelectorAll("tr");
     if(r < 0 || r >= rws.length) return false;
@@ -1546,15 +1552,16 @@ $("opsBody").addEventListener("keydown", function(e){
     /* Skip locked (disabled) cells, e.g. Looper % on a body-thread row. */
     for(var k = 0; k < cs.length; k++){
       var idx = (k % 2 === 0) ? c + Math.floor(k / 2) : c - Math.ceil(k / 2);
-      if(idx >= 0 && idx < cs.length && !cs[idx].disabled){ cs[idx].focus(); return true; }
+      if(idx >= 0 && idx < cs.length && !cs[idx].disabled){ cs[idx].focus(); revealActive(); return true; }
     }
     return false;
   }
   function caretPos(el){
     try{ return el.selectionStart; }catch(err){ return null; }
   }
-  if(e.key === "ArrowUp"){ e.preventDefault(); focusAt(ri - 1, ci); }
-  else if(e.key === "ArrowDown"){ e.preventDefault(); focusAt(ri + 1, ci); }
+  var curF = t.getAttribute ? t.getAttribute("data-f") : null;
+  if(e.key === "ArrowUp"){ e.preventDefault(); focusField(ri - 1, curF, ci); }
+  else if(e.key === "ArrowDown"){ e.preventDefault(); focusField(ri + 1, curF, ci); }
   else if(e.key === "ArrowLeft"){
     if(t.tagName === "INPUT"){
       var p = caretPos(t);
@@ -1562,7 +1569,7 @@ $("opsBody").addEventListener("keydown", function(e){
     }
     e.preventDefault();
     var movedL = false;
-    for(var li = ci - 1; li >= 0; li--){ if(!cells[li].disabled){ cells[li].focus(); movedL = true; break; } }
+    for(var li = ci - 1; li >= 0; li--){ if(!cells[li].disabled){ cells[li].focus(); revealActive(); movedL = true; break; } }
     if(!movedL) focusAt(ri - 1, 9999);
   }
   else if(e.key === "ArrowRight"){
@@ -1572,7 +1579,7 @@ $("opsBody").addEventListener("keydown", function(e){
     }
     e.preventDefault();
     var movedR = false;
-    for(var rj = ci + 1; rj < cells.length; rj++){ if(!cells[rj].disabled){ cells[rj].focus(); movedR = true; break; } }
+    for(var rj = ci + 1; rj < cells.length; rj++){ if(!cells[rj].disabled){ cells[rj].focus(); revealActive(); movedR = true; break; } }
     if(!movedR) focusAt(ri + 1, 0);
   }
 });
@@ -2999,14 +3006,12 @@ function renderAccList(){
         + '<td>' + esc(r.seamLength) + '</td><td>' + esc(r.seamAllowance) + '</td><td>' + esc(r.unit || "") + '</td>'
         + '<td>' + cm.toFixed(2) + '</td><td>' + accPct(rule, r.customPct).toFixed(2) + "%" + '</td>'
         + '<td>' + pg.toFixed(2) + '</td><td>' + od.toFixed(2) + '</td>'
-        + (isAdmin() ? '<td class="no-print"><button class="btn btn-d btn-sm" data-del-key="' + esc(it.key) + '">DELETE</button></td>' : '')
         + '<td class="no-print"><button class="btn btn-p btn-sm" data-open-acc="' + esc(it.key) + '">OPEN</button></td>'
         + '<td class="no-print"><button class="btn btn-o btn-sm" data-add-send-key="' + esc(it.key) + '" title="Add to merchant list">＋ MERCHANT</button></td>'
         + '<td class="no-print"><button class="btn btn-p btn-sm" data-copy-key="' + esc(it.key) + '" title="Open a copy as a new style">STYLE COPY</button></td></tr>';
     });
   });
-  var adt = $("accDeleteTh"); if(adt) adt.style.display = isAdmin() ? "" : "none";
-  body.innerHTML = html || '<tr><td colspan="17" class="mut">No accessories yet for this buyer.</td></tr>';
+  body.innerHTML = html || '<tr><td colspan="16" class="mut">No accessories yet for this buyer.</td></tr>';
 }
 function openAccStyle(key){
   var all = listRowsForBuyer("", true);
@@ -3018,8 +3023,6 @@ function openAccStyle(key){
   }
 }
 $("accListBody").addEventListener("click", function(e){
-  var del = e.target.closest ? e.target.closest("[data-del-key]") : null;
-  if(del){ deleteSavedStyle(del.getAttribute("data-del-key")); return; }
   var snd = e.target.closest ? e.target.closest("[data-add-send-key]") : null;
   if(snd){ addRowToSendList(snd.getAttribute("data-add-send-key")); return; }
   var cpy = e.target.closest ? e.target.closest("[data-copy-key]") : null;
@@ -4026,8 +4029,44 @@ function setLoginMsg(msg, isErr){
   el.textContent = msg || "";
   el.style.color = isErr ? "#B3261E" : "#1E6B2F";
 }
+/* ============ Phone back button: stay in the app, end on the main page ============
+   Every page change pushes a history entry, so the phone's back button walks
+   back through the app's own pages. Pressing back past the app's first entry
+   does NOT leave the app for Google: it lands on the main page and re-arms
+   the guard, so the main page is always the last stop. While the login
+   screen is showing, back behaves normally (no trap). */
+var NAV_CUR_PAGE = "home", NAV_CUR_SUB = "thread", NAV_SILENT = false;
+function navActive(){ var ls = $("loginScreen"); return !ls || ls.style.display === "none"; }
+function armBackTrap(){
+  try{
+    var st = history.state;
+    if(st && st.app === "sheet") return;
+    history.pushState({app:"sheet", page:"home", sub:"thread"}, "");
+  }catch(err){}
+}
+window.addEventListener("popstate", function(e){
+  var st = e.state;
+  if(st && st.app === "sheet"){
+    NAV_SILENT = true;
+    try{
+      if($("sheetModal").classList.contains("open")) closeSheetModal();
+      showPage(st.page === undefined ? "home" : st.page);
+      if(st.page === 2 && st.sub) showSub(st.sub);
+    }finally{ NAV_SILENT = false; }
+    return;
+  }
+  /* Back past the app's first entry (or a foreign state): do not exit to
+     Google — land on the main page and re-arm the guard. */
+  if(!navActive()) return;
+  NAV_SILENT = true;
+  try{
+    if($("sheetModal").classList.contains("open")) closeSheetModal();
+    else showPage("home");
+  }finally{ NAV_SILENT = false; }
+  try{ history.pushState({app:"sheet", page:"home", sub:NAV_CUR_SUB}, ""); }catch(err){}
+});
 function showLoginScreen(){ var ls = $("loginScreen"); if(ls) ls.style.display = ""; }
-function hideLoginScreen(){ var ls = $("loginScreen"); if(ls) ls.style.display = "none"; }
+function hideLoginScreen(){ var ls = $("loginScreen"); if(ls) ls.style.display = "none"; armBackTrap(); }
 function applyRoleUI(){
   var admin = isAdmin();
   var ap = $("adminPanelSection"); if(ap) ap.style.display = admin ? "" : "none";
@@ -4149,19 +4188,35 @@ if(FB_OK){
 
 /* ================= Page navigation (show/hide only — no reload, no data loss) ================= */
 function showPage(p){
+  NAV_CUR_PAGE = p;
   $("pageHome").style.display = p === "home" ? "" : "none";
   $("page1").style.display = p === 1 ? "" : "none";
   $("page2").style.display = p === 2 ? "" : "none";
   $("navHome").className = "btn " + (p === "home" ? "btn-p" : "btn-o");
   $("navPage1").className = "btn " + (p === 1 ? "btn-p" : "btn-o");
   $("navPage2").className = "btn " + (p === 2 ? "btn-p" : "btn-o");
+  /* Phone back button: every page change pushes a history entry, so back
+     walks through the app's own pages. Skip pushing when the current entry
+     already is this exact page (avoids a double guard on login). */
+  if(!NAV_SILENT && navActive()){
+    try{
+      var st = history.state;
+      if(!(st && st.app === "sheet" && st.page === p && st.sub === NAV_CUR_SUB))
+        history.pushState({app:"sheet", page:p, sub:NAV_CUR_SUB}, "");
+    }catch(err){}
+  }
 }
 function showSub(s){
+  NAV_CUR_SUB = s;
   $("subThreadWrap").style.display = s === "thread" ? "" : "none";
   $("subAccWrap").style.display = s === "acc" ? "" : "none";
   $("subThread").className = "btn " + (s === "thread" ? "btn-p" : "btn-o");
   $("subAcc").className = "btn " + (s === "acc" ? "btn-p" : "btn-o");
   if(s === "acc") syncAccHeader();
+  /* Sub-tabs do not add a back step: just tag the current entry. */
+  if(!NAV_SILENT && navActive()){
+    try{ history.replaceState({app:"sheet", page:NAV_CUR_PAGE, sub:s}, ""); }catch(err){}
+  }
 }
 $("navHome").onclick = function(){ showPage("home"); };
 $("navPage1").onclick = function(){ showPage(1); };
