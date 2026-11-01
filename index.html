@@ -1338,15 +1338,15 @@ $("opsBody").addEventListener("change", function(e){
   renderOps();
 });
 $("opsBody").addEventListener("click", function(e){
-  /* Seam qty: one click clears the cell to 0 with the text selected, so a
-     number can be typed straight over it (no delete key needed). */
+  /* Seam qty: one click only SELECTS the cell's text — the value stays
+     exactly as it is (no zero is ever written). Typing replaces the
+     selection, so no delete key is needed. */
   var sq = e.target.closest ? e.target.closest('input[data-f="seamQty"]') : null;
-  if(sq){ sq.value = "0"; try{ sq.select(); }catch(err){} return; }
-  /* Seam length: same one-click-to-0 behaviour as seam qty — click, the
-     cell becomes 0 with the text selected, so a number can be typed
-     straight over it (no delete key needed). */
+  if(sq){ try{ sq.select(); }catch(err){} return; }
+  /* Seam length: same click-to-select behaviour as seam qty — select
+     only, never zero. */
   var sl = e.target.closest ? e.target.closest('input[data-f="seamLength"]') : null;
-  if(sl){ sl.value = "0"; try{ sl.select(); }catch(err){} return; }
+  if(sl){ try{ sl.select(); }catch(err){} return; }
   var insId = e.target.getAttribute("data-ins");
   if(insId){
     var idx = -1;
@@ -1500,23 +1500,11 @@ $("opsBody").addEventListener("keydown", function(e){
     e.preventDefault();
     var nr = opsStepRow(ri0, e.shiftKey ? -1 : 1, rows0.length);
     if(nr === -1) return; /* first/last row: stay, do not create rows */
-    focusField(nr, f0, ci0); /* same FIELD in the next row, not the same index: rows with a custom machine have one extra cell */
-    /* Enter-down fast entry: landing on a Seam length / Seam qty cell
-       selects its text, so the typed number replaces it cleanly; an empty
-       seam cell first becomes 0 (same as 0 in the maths), then typing
-       replaces it. Filled values are never cleared without typing. */
-    var ae2 = document.activeElement;
-    if(ae2 && (ae2.getAttribute("data-f") === "seamLength" || ae2.getAttribute("data-f") === "seamQty")){
-      var tr2 = ae2.closest ? ae2.closest("tr") : null;
-      var id2 = tr2 ? tr2.getAttribute("data-id") : null;
-      var op2 = id2 ? OPS.filter(function(o){ return o.id === id2; })[0] : null;
-      if(op2 && ae2.value === ""){
-        commitOpField(op2, ae2.getAttribute("data-f"), "0");
-        ae2.value = "0";
-        renderTotals(); /* refresh figures + auto-save, without rebuilding rows */
-      }
-      try{ ae2.select(); }catch(err){}
-    }
+    var enteredOk = focusField(nr, f0, ci0); /* same FIELD in the next row, not the same index: rows with a custom machine have one extra cell */
+    /* Enter-down landing: numeric cells land SELECTED, value untouched —
+       no zero is ever written. Typing replaces the selection cleanly, and
+       the next arrow then moves to the next cell at once. */
+    if(enteredOk) selectIfNumeric();
     return;
   }
   if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].indexOf(e.key) === -1) return;
@@ -1542,6 +1530,17 @@ $("opsBody").addEventListener("keydown", function(e){
   function revealActive(){
     try{ var ae = document.activeElement; if(ae && ae.scrollIntoView) ae.scrollIntoView({block: "nearest", inline: "nearest"}); }catch(err){}
   }
+  /* Numeric cells land SELECTED, so the next arrow moves to the next cell
+     at once instead of first stepping the caret through the number.
+     Text cells (name, colour) keep caret placement for mid-text editing. */
+  function selectIfNumeric(){
+    try{
+      var ae = document.activeElement;
+      if(!ae || ae.tagName !== "INPUT") return;
+      var nf = ae.getAttribute ? ae.getAttribute("data-f") : null;
+      if(nf === "seamLength" || nf === "mcThread" || nf === "seamQty" || nf === "pct1" || nf === "pct2" || nf === "pct3") ae.select();
+    }catch(err){}
+  }
   function focusAt(r, c){
     var rws = $("opsBody").querySelectorAll("tr");
     if(r < 0 || r >= rws.length) return false;
@@ -1560,13 +1559,13 @@ $("opsBody").addEventListener("keydown", function(e){
     try{ return el.selectionStart; }catch(err){ return null; }
   }
   var curF = t.getAttribute ? t.getAttribute("data-f") : null;
-  if(e.key === "ArrowUp"){ e.preventDefault(); focusField(ri - 1, curF, ci); }
-  else if(e.key === "ArrowDown"){ e.preventDefault(); focusField(ri + 1, curF, ci); }
+  if(e.key === "ArrowUp"){ e.preventDefault(); if(focusField(ri - 1, curF, ci)) selectIfNumeric(); }
+  else if(e.key === "ArrowDown"){ e.preventDefault(); if(focusField(ri + 1, curF, ci)) selectIfNumeric(); }
   else if(e.key === "ArrowLeft"){
     if(t.tagName === "INPUT"){
       var p = caretPos(t);
       if(p === null) return;
-      /* Full selection (e.g. after Enter-down fast entry or click-to-0):
+      /* Full selection (e.g. after Enter-down fast entry or click-to-select):
          move to the next cell at once instead of only collapsing the
          selection on the first press. Partial selections keep caret moves. */
       var pEnd = null; try{ pEnd = t.selectionEnd; }catch(err){}
@@ -1575,8 +1574,8 @@ $("opsBody").addEventListener("keydown", function(e){
     }
     e.preventDefault();
     var movedL = false;
-    for(var li = ci - 1; li >= 0; li--){ if(!cells[li].disabled){ cells[li].focus(); revealActive(); movedL = true; break; } }
-    if(!movedL) focusAt(ri - 1, 9999);
+    for(var li = ci - 1; li >= 0; li--){ if(!cells[li].disabled){ cells[li].focus(); revealActive(); selectIfNumeric(); movedL = true; break; } }
+    if(!movedL && focusAt(ri - 1, 9999)) selectIfNumeric();
   }
   else if(e.key === "ArrowRight"){
     if(t.tagName === "INPUT"){
@@ -1588,8 +1587,8 @@ $("opsBody").addEventListener("keydown", function(e){
     }
     e.preventDefault();
     var movedR = false;
-    for(var rj = ci + 1; rj < cells.length; rj++){ if(!cells[rj].disabled){ cells[rj].focus(); revealActive(); movedR = true; break; } }
-    if(!movedR) focusAt(ri + 1, 0);
+    for(var rj = ci + 1; rj < cells.length; rj++){ if(!cells[rj].disabled){ cells[rj].focus(); revealActive(); selectIfNumeric(); movedR = true; break; } }
+    if(!movedR && focusAt(ri + 1, 0)) selectIfNumeric();
   }
 });
 $("accBody").addEventListener("keydown", function(e){
