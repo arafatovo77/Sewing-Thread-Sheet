@@ -1565,7 +1565,13 @@ $("opsBody").addEventListener("keydown", function(e){
   else if(e.key === "ArrowLeft"){
     if(t.tagName === "INPUT"){
       var p = caretPos(t);
-      if(p === null || p > 0) return;
+      if(p === null) return;
+      /* Full selection (e.g. after Enter-down fast entry or click-to-0):
+         move to the next cell at once instead of only collapsing the
+         selection on the first press. Partial selections keep caret moves. */
+      var pEnd = null; try{ pEnd = t.selectionEnd; }catch(err){}
+      var fullSelL = (p === 0 && pEnd !== null && pEnd === t.value.length && t.value.length > 0);
+      if(!fullSelL && p > 0) return;
     }
     e.preventDefault();
     var movedL = false;
@@ -1575,7 +1581,10 @@ $("opsBody").addEventListener("keydown", function(e){
   else if(e.key === "ArrowRight"){
     if(t.tagName === "INPUT"){
       var q = caretPos(t);
-      if(q === null || q < t.value.length) return;
+      if(q === null) return;
+      var qEnd = null; try{ qEnd = t.selectionEnd; }catch(err){}
+      var fullSelR = (q === 0 && qEnd !== null && qEnd === t.value.length && t.value.length > 0);
+      if(!fullSelR && q < t.value.length) return;
     }
     e.preventDefault();
     var movedR = false;
