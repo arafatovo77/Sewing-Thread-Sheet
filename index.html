@@ -1363,10 +1363,24 @@ $("opsBody").addEventListener("input", function(e){
   if(f === "pct2") op.pct2Auto = false;
   /* Typing a colour with no thread picked means a contrast thread: default
      the slot to Contrast so its Looper % unlocks (otherwise a typed colour
-     can never count in any calculation). */
+     can never count in any calculation). The % unlocks AT ONCE here: the
+     auto % is filled now and this row's % box is enabled in place (no
+     full re-render, so the caret stays where the user is typing). Before
+     this, the % stayed grey and 0 until blur, so a freshly typed contrast
+     colour never counted in totals or in the Excel export. */
   if((f === "colour1" || f === "colour2" || f === "colour3") && String(inp.value || "").trim() !== ""){
     var ctf = f === "colour1" ? "thread1" : (f === "colour2" ? "thread2" : "thread3");
-    if(!String(op[ctf] || "").trim()) op[ctf] = "Contrast";
+    if(!String(op[ctf] || "").trim()){
+      op[ctf] = "Contrast";
+      applyMachineToRow(op);
+      var pctF = f === "colour1" ? "pct1" : (f === "colour2" ? "pct2" : "pct3");
+      var pctEl = tr.querySelector('[data-f="' + pctF + '"]');
+      if(pctEl){
+        pctEl.disabled = false;
+        pctEl.style.background = "";
+        if((pctEl.value === "" || pctEl.value == null) && op[pctF] != null && op[pctF] !== "") pctEl.value = op[pctF];
+      }
+    }
   }
   renderTotals(); /* no full re-render while typing, so focus is kept (expressions like 2+1 stay typable) */
 });
