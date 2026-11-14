@@ -4667,11 +4667,18 @@ function buildSingleStyleSheet(){
      (label in A, sum the Special metres in I), so typing a NEW label in
      K of any op row moves that op out of its old group and into the new
      one with no formula edit;
-   - one template row, "New contrast thread", sits after the last group:
-     type the new label over it and its metres appear at once;
-   - "All threads" is a range SUM over body..template, so a copied
+   - three template rows, "New contrast thread 1/2/3", sit after the last
+     group: type a new label over any of them and its metres appear at
+     once; plus one "Other special threads" row that catches every special
+     thread not yet named in a row above it (SUMIFS over the label column),
+     so a second, third or further new contrast never vanishes from the
+     totals: typing it in an op row moves its metres out of Body and into
+     Other at once, and naming it in a template row moves it from Other
+     into its own row. The All-threads total therefore never drops when a
+     special thread is added;
+   - "All threads" is a range SUM over body..Other, so a copied
      template row pasted above it is counted too. Cone rows below shift
-     by one row, so their own-row formulas are rebuilt with the new row
+     by four rows, so their own-row formulas are rebuilt with the new row
      numbers; the print sheet and PDF are unaffected. */
 function buildSingleStyleSheetExcel(){
   var rows = buildSingleStyleSheet();
@@ -4694,23 +4701,45 @@ function buildSingleStyleSheetExcel(){
     var gr = bodyRow + 1 + j, grow = rows[13 + n + j];
     grow[1] = {f: "ROUND(SUMIF($K$" + opFirstRow + ":$K$" + opLastRow + ",A" + gr + ",$I$" + opFirstRow + ":$I$" + opLastRow + "),2)", v: grow[1].v, t: "n"};
   }
-  var tr = bodyRow + 1 + k;
-  rows.splice(13 + n + k, 0, ["New contrast thread",
-    {f: n ? "ROUND(SUMIF($K$" + opFirstRow + ":$K$" + opLastRow + ",A" + tr + ",$I$" + opFirstRow + ":$I$" + opLastRow + "),2)" : "0", v: 0, t: "n"},
-    {f: "ROUND(B" + tr + "*0.0254,2)", v: 0, t: "n"},
-    {f: "ROUND(C" + tr + "*" + (allow / 100) + ",2)", v: 0, t: "n"},
-    {f: "ROUND(C" + tr + "+D" + tr + ",2)", v: 0, t: "n"}]);
-  var allRow = bodyRow + 1 + k + 1;
-  var arow = rows[14 + n + k];
+  var tmplRows = [];
+  var ti;
+  for(ti = 0; ti < 3; ti++){
+    var tr = bodyRow + 1 + k + ti;
+    tmplRows.push(["New contrast thread " + (ti + 1),
+      {f: n ? "ROUND(SUMIF($K$" + opFirstRow + ":$K$" + opLastRow + ",A" + tr + ",$I$" + opFirstRow + ":$I$" + opLastRow + "),2)" : "0", v: 0, t: "n"},
+      {f: "ROUND(B" + tr + "*0.0254,2)", v: 0, t: "n"},
+      {f: "ROUND(C" + tr + "*" + (allow / 100) + ",2)", v: 0, t: "n"},
+      {f: "ROUND(C" + tr + "+D" + tr + ",2)", v: 0, t: "n"}]);
+  }
+  var otherRow = bodyRow + 1 + k + 3;
+  var otherF = "0";
+  if(n){
+    /* SUMIFS: every op whose label cell is filled and matches none of the
+       named rows above (groups + the three templates) lands here. */
+    var oc = "SUMIFS($I$" + opFirstRow + ":$I$" + opLastRow + ",$K$" + opFirstRow + ":$K$" + opLastRow + ",\"<>\"";
+    var oj;
+    for(oj = 0; oj < k; oj++) oc += ",$K$" + opFirstRow + ":$K$" + opLastRow + ",\"<>\"&$A$" + (bodyRow + 1 + oj);
+    for(oj = 0; oj < 3; oj++) oc += ",$K$" + opFirstRow + ":$K$" + opLastRow + ",\"<>\"&$A$" + (bodyRow + 1 + k + oj);
+    oc += ")";
+    otherF = "ROUND(" + oc + ",2)";
+  }
+  tmplRows.push(["Other special threads",
+    {f: otherF, v: 0, t: "n"},
+    {f: "ROUND(B" + otherRow + "*0.0254,2)", v: 0, t: "n"},
+    {f: "ROUND(C" + otherRow + "*" + (allow / 100) + ",2)", v: 0, t: "n"},
+    {f: "ROUND(C" + otherRow + "+D" + otherRow + ",2)", v: 0, t: "n"}]);
+  rows.splice.apply(rows, [13 + n + k, 0].concat(tmplRows));
+  var allRow = bodyRow + 1 + k + 4;
+  var arow = rows[17 + n + k];
   arow[1] = {f: "SUM(B" + bodyRow + ":B" + (allRow - 1) + ")", v: arow[1].v, t: "n"};
   arow[2] = {f: "ROUND(B" + allRow + "*0.0254,2)", v: arow[2].v, t: "n"};
   arow[3] = {f: "ROUND(C" + allRow + "*" + (allow / 100) + ",2)", v: arow[3].v, t: "n"};
   arow[4] = {f: "ROUND(C" + allRow + "+D" + allRow + ",2)", v: arow[4].v, t: "n"};
-  var coneFirstRow = 18 + n + k + 1;
+  var coneFirstRow = 18 + n + k + 4;
   var coneCount = 1 + k + CONES.length;
   var ci;
   for(ci = 0; ci < coneCount; ci++){
-    var crow = rows[18 + n + k + ci], cr = coneFirstRow + ci;
+    var crow = rows[21 + n + k + ci], cr = coneFirstRow + ci;
     crow[4] = {f: "ROUND(C" + cr + "*D" + cr + ",2)", v: crow[4].v, t: "n"};
     if(crow[5] && typeof crow[5] === "object" && crow[5].f){
       crow[5] = {f: "IF(C" + cr + "<" + SETTINGS.coneThreshold + ",2000,4000)", v: crow[5].v, t: "n"};
@@ -4719,7 +4748,7 @@ function buildSingleStyleSheetExcel(){
     crow[7] = {f: "CEILING(E" + cr + "/F" + cr + ",1)", v: crow[7].v, t: "n"};
   }
   var coneLastRow = coneFirstRow + coneCount - 1;
-  var trow = rows[18 + n + k + coneCount];
+  var trow = rows[21 + n + k + coneCount];
   trow[4] = {f: "SUM(E" + coneFirstRow + ":E" + coneLastRow + ")", v: trow[4].v, t: "n"};
   trow[6] = {f: "SUM(G" + coneFirstRow + ":G" + coneLastRow + ")", v: trow[6].v, t: "n"};
   trow[7] = {f: "SUM(H" + coneFirstRow + ":H" + coneLastRow + ")", v: trow[7].v, t: "n"};
@@ -5093,9 +5122,10 @@ function patchXlsxMtrGreen(buf){
    Total metres column green + bold 12, contrast rows in their screen pastel
    (singlePatchRowFills: excelRow -> "#RRGGBB", set by exportExcel).
    Row numbers come from singlePatchN (ops), singlePatchK (contrasts),
-   singlePatchC (extra cone rows) — plus one for the batch-60 "New contrast
-   thread" template row, which pushes All threads and the cone block down
-   by one row. Same zip-patch pattern as the MTR patch:
+   singlePatchC (extra cone rows) — plus four for the batch-61 rows below
+   the groups (three "New contrast thread" templates + "Other special
+   threads"), which push All threads and the cone block down by four
+   rows. Same zip-patch pattern as the MTR patch:
    if anything unexpected is found, the original bytes return untouched. */
 var singlePatchN = 0, singlePatchK = 0, singlePatchC = 0, singlePatchRowFills = {};
 function patchXlsxSingleStyleColors(buf){
@@ -5222,7 +5252,7 @@ function patchXlsxSingleStyleColors(buf){
       tagRow(pr, ["B", "K", "L"], X_PLAIN_L);
       tagRow(pr, ["A", "C", "D", "F", "G", "H", "I", "J"], X_PLAIN_C);
     }
-    var labelRow = 11 + n, totHdr = 12 + n, bodyRow = 13 + n, allRow = 15 + n + k;
+    var labelRow = 11 + n, totHdr = 12 + n, bodyRow = 13 + n, allRow = 18 + n + k;
     tag("A" + labelRow, X_BOLD);
     tagRow(totHdr, ["A", "B", "C", "D", "E"], X_HDR);
     tag("A" + bodyRow, X_PLAIN_L); tagRow(bodyRow, ["B", "C", "D"], X_PLAIN_C); tag("E" + bodyRow, X_TOTM);
@@ -5230,16 +5260,19 @@ function patchXlsxSingleStyleColors(buf){
       var cr = 14 + n + j;
       tag("A" + cr, X_PLAIN_L); tagRow(cr, ["B", "C", "D"], X_PLAIN_C); tag("E" + cr, X_TOTM);
     }
-    /* Batch 60: the "New contrast thread" template row sits right after the
-       last group row (14 + n + k) and is styled like the other group rows. */
-    var tmplRow = 14 + n + k;
-    tag("A" + tmplRow, X_PLAIN_L); tagRow(tmplRow, ["B", "C", "D"], X_PLAIN_C); tag("E" + tmplRow, X_TOTM);
+    /* Batch 61: the three "New contrast thread" template rows plus the
+       "Other special threads" row sit right after the last group row
+       (14 + n + k .. 17 + n + k) and are styled like the other group rows. */
+    for(var tj = 0; tj < 4; tj++){
+      var tmplRow = 14 + n + k + tj;
+      tag("A" + tmplRow, X_PLAIN_L); tagRow(tmplRow, ["B", "C", "D"], X_PLAIN_C); tag("E" + tmplRow, X_TOTM);
+    }
     tag("A" + allRow, X_BOLD_L); tagRow(allRow, ["B", "C", "D"], X_BOLD_C); tag("E" + allRow, X_TOTM);
-    var coneNote = 17 + n + k, coneHdr = 18 + n + k, coneTot = 20 + n + 2 * k + singlePatchC;
+    var coneNote = 20 + n + k, coneHdr = 21 + n + k, coneTot = 23 + n + 2 * k + singlePatchC;
     tag("A" + coneNote, X_BOLD);
     tagRow(coneHdr, ["B", "C", "D", "E", "F", "G", "H"], X_HDR);
     for(var ci = 0; ci < 1 + k + singlePatchC; ci++){
-      var cdr = 19 + n + k + ci;
+      var cdr = 22 + n + k + ci;
       tag("B" + cdr, X_CONE_L); tagRow(cdr, ["C", "D", "E", "F", "G", "H"], X_CONE_C);
     }
     tag("B" + coneTot, X_BOLD_L); tagRow(coneTot, ["C", "D", "F", "G", "H"], X_BOLD_C); tag("E" + coneTot, X_TOTM);
